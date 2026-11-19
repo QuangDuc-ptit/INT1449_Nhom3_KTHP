@@ -89,6 +89,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
       if (exception.code === 'P2025') return fromStatus(404);
       return fromStatus(500);
     }
+    // Dữ liệu sai kiểu lọt qua DTO (vd null cho cột NOT NULL): lỗi của client, không phải 500
+    if (exception instanceof Prisma.PrismaClientValidationError) {
+      return {
+        status: 400,
+        errorCode: 'VALIDATION_ERROR',
+        message: 'Dữ liệu không hợp lệ',
+      };
+    }
     // Lỗi từ body-parser của Express (JSON hỏng, body quá lớn...) mang sẵn status 4xx
     const status = (exception as { status?: unknown } | null)?.status;
     if (typeof status === 'number' && status >= 400 && status < 500) {

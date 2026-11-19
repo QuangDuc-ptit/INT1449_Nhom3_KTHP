@@ -86,4 +86,16 @@ describe('AllExceptionsFilter', () => {
     expect(res.statusCode).toBe(413);
     expect(res.body).toMatchObject({ errorCode: 'PAYLOAD_TOO_LARGE' });
   });
+
+  it('PrismaClientValidationError (dữ liệu sai kiểu từ client) thành 400', () => {
+    const err = new Prisma.PrismaClientValidationError(
+      'Argument title must not be null',
+      {
+        clientVersion: 'x',
+      },
+    );
+    const res = run(err);
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toMatchObject({ errorCode: 'VALIDATION_ERROR' });
+  });
 });

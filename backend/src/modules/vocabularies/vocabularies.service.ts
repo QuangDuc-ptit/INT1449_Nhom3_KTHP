@@ -175,7 +175,10 @@ export class VocabulariesService {
     dto: UpdateVocabularyDto,
   ): Promise<VocabularyDto> {
     const current = await this.assertOwned(userId, id);
-    if (dto.term !== undefined && termKey(dto.term) !== termKey(current.term)) {
+    if (
+      typeof dto.term === 'string' &&
+      termKey(dto.term) !== termKey(current.term)
+    ) {
       const others = await this.prisma.vocabulary.findMany({
         where: { collectionId: current.collectionId, NOT: { id } },
         select: { term: true },
