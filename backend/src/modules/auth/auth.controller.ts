@@ -4,6 +4,7 @@ import type { AuthUser } from '../../common/auth/auth-user';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import { Public } from '../../common/auth/public.decorator';
 import { ResponseMessage } from '../../common/http/response-message.decorator';
+import { RateLimit } from '../../common/rate-limit/rate-limit.decorator';
 import { AuthResult, AuthService } from './auth.service';
 import { LoginDto, RefreshTokenDto, RegisterDto } from './dto/auth.dto';
 import { UserDto } from './user.mapper';
@@ -24,6 +25,7 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(200)
+  @RateLimit({ key: 'login', limit: 5, windowSec: 60, by: 'ip+email' })
   @ApiOperation({ summary: 'Đăng nhập bằng email và mật khẩu (Màn 02)' })
   @ResponseMessage('Đăng nhập thành công')
   login(@Body() dto: LoginDto): Promise<AuthResult> {

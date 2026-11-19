@@ -3,7 +3,7 @@ import request from 'supertest';
 import { PrismaService } from '../src/infra/prisma/prisma.service';
 import { createTestApp } from './utils/app';
 import { registerUser } from './utils/auth';
-import { resetDb } from './utils/db';
+import { resetDb, resetRedis } from './utils/db';
 
 describe('Auth (e2e)', () => {
   let app: INestApplication;
@@ -16,6 +16,7 @@ describe('Auth (e2e)', () => {
 
   beforeEach(async () => {
     await resetDb(prisma);
+    await resetRedis(app);
   });
 
   afterAll(async () => {
@@ -183,6 +184,24 @@ describe('Auth (e2e)', () => {
         .send({ refreshToken: 'abc' })
         .expect(401);
       expect(res.body.errorCode).toBe('REFRESH_TOKEN_INVALID');
+    });
+  });
+
+  describe('Chống brute-force đăng nhập', () => {
+    it('đăng nhập sai quá 5 lần trong 60 giây thì lần thứ 6 bị 429', async () => {
+      await registerUser(app, { email: 'bf@example.com' });
+      for (let i = 0; i < 5; i++) {
+        await http()
+          .post('/api/v1/auth/login')
+          .send({ email: 'bf@example.com', password: 'Wrong12345' })
+          .expect(401);
+      }
+      const res = await http()
+        .post('/api/v1/auth/login')
+        .send({ email: 'bf@example.com', password: 'Password123' })
+        .expect(429);
+      expect(res.body.errorCode).toBe('RATE_LIMITED');
+      expect(Number(res.headers['retry-after'])).toBeGreaterThan(0);
     });
   });
 
