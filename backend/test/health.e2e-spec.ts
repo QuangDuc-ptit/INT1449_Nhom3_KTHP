@@ -17,6 +17,9 @@ describe('Health (e2e)', () => {
     const res = await request(app.getHttpServer())
       .get('/api/v1/health')
       .expect(200);
-    expect(res.body).toEqual({ db: 'up', redis: 'up' });
+    expect(res.body).toMatchObject({
+      success: true,
+      data: { db: 'up', redis: 'up' },
+    });
   });
 });
