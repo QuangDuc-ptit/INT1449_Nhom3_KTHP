@@ -1,0 +1,30 @@
+# Flutter build & caches
+**/build/
+**/.dart_tool/
+**/.pub-cache/
+**/.pub/
+**/.flutter-plugins-dependencies
+
+# IDE & Editor files
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+
+# System files
+.DS_Store
+Thumbs.db
+*.log
+
+# Android build artifacts
+**/android/.gradle/
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
+.gradle/
+
+# Internal Agent tools & scripts
+.agents/
+diagram-skills-package/
+install-global.ps1
