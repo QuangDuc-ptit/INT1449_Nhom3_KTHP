@@ -7,6 +7,7 @@ import { PrismaService } from '../../infra/prisma/prisma.service';
 import { hashPassword, verifyPassword } from '../auth/password.util';
 import { TokenPair, TokenService } from '../auth/token.service';
 import { UserDto, toUserDto } from '../auth/user.mapper';
+import { UserMetrics, badgeProgress } from '../gamification/badge-rules';
 import { StorageService } from '../storage/storage.service';
 import {
   ChangePasswordDto,
@@ -17,19 +18,6 @@ import {
   UpdateSettingsDto,
 } from './dto/users.dto';
 import { IMAGE_CONTENT_TYPE, detectImage } from './image.util';
-
-interface Metrics {
-  currentStreak: number;
-  learnedWords: number;
-  collectionsCount: number;
-}
-
-/** Chỉ số dùng để tính tiến độ từng huy hiệu (xem seed huy hiệu). */
-const BADGE_METRIC: Record<string, keyof Metrics> = {
-  streak_7: 'currentStreak',
-  first_100: 'learnedWords',
-  explorer_5: 'collectionsCount',
-};
 
 const toSettings = (u: User): SettingsDto => ({
   dailyGoalWords: u.dailyGoalWords,
@@ -65,7 +53,7 @@ export class UsersService {
         this.prisma.badge.findMany({ orderBy: { requiredPoints: 'asc' } }),
         this.prisma.userBadge.findMany({ where: { userId } }),
       ]);
-    const metrics: Metrics = {
+    const metrics: UserMetrics = {
       currentStreak: user.currentStreak,
       learnedWords,
       collectionsCount,
@@ -74,8 +62,6 @@ export class UsersService {
       unlocked.map((ub) => [ub.badgeId, ub.unlockedAt]),
     );
     const badgeDtos: ProfileBadgeDto[] = badges.map((b) => {
-      const metric = BADGE_METRIC[b.code];
-      const value = metric ? metrics[metric] : 0;
       return {
         code: b.code,
         title: b.title,
@@ -84,7 +70,7 @@ export class UsersService {
         requiredPoints: b.requiredPoints,
         unlocked: unlockedAt.has(b.id),
         unlockedAt: unlockedAt.get(b.id) ?? null,
-        progress: Math.min(value, b.requiredPoints),
+        progress: badgeProgress(b.code, b.requiredPoints, metrics),
       };
     });
     return {

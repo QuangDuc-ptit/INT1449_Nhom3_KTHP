@@ -9,6 +9,7 @@ import { AiModule } from './modules/ai/ai.module';
 import { AudioModule } from './modules/audio/audio.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CollectionsModule } from './modules/collections/collections.module';
+import { GamificationModule } from './modules/gamification/gamification.module';
 import { HealthModule } from './modules/health/health.module';
 import { MailModule } from './modules/mail/mail.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -38,6 +39,7 @@ import { VocabulariesModule } from './modules/vocabularies/vocabularies.module';
     SyncModule,
     AiModule,
     StreakModule,
+    GamificationModule,
     QuizModule,
   ],
 })

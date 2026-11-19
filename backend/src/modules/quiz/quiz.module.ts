@@ -3,16 +3,10 @@ import { Clock } from '../../common/time/clock';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { CollectionsModule } from '../collections/collections.module';
 import { CollectionsService } from '../collections/collections.service';
+import { GamificationService } from '../gamification/gamification.service';
 import { PracticeController } from './practice.controller';
 import { QuestionService } from './question.service';
 import { SessionCompletionHook, SubmitService } from './submit.service';
-
-/** Mặc định chưa có huy hiệu; module gamification thay thế provider này. */
-class NoopSessionCompletionHook extends SessionCompletionHook {
-  onSessionCompleted() {
-    return Promise.resolve([]);
-  }
-}
 
 @Module({
   imports: [CollectionsModule],
@@ -28,7 +22,8 @@ class NoopSessionCompletionHook extends SessionCompletionHook {
       ) => new QuestionService(prisma, collections, clock),
     },
     SubmitService,
-    { provide: SessionCompletionHook, useClass: NoopSessionCompletionHook },
+    // Huy hiệu được kiểm tra cuối mỗi phiên học
+    { provide: SessionCompletionHook, useExisting: GamificationService },
   ],
   exports: [QuestionService, SubmitService],
 })
