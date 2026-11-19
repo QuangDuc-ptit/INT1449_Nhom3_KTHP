@@ -61,4 +61,20 @@ describe('Schema (e2e)', () => {
       }),
     ).rejects.toMatchObject({ code: 'P2002' });
   });
+
+  it('có đủ index bắt buộc theo đặc tả và index trigram cho tìm kiếm', async () => {
+    const rows = await prisma.$queryRaw<{ indexname: string }[]>`
+      SELECT indexname FROM pg_indexes WHERE schemaname = 'public'`;
+    const names = rows.map((r) => r.indexname);
+    expect(names).toEqual(
+      expect.arrayContaining([
+        'users_email_key',
+        'collections_user_id_category_idx',
+        'vocabularies_collection_id_term_idx',
+        'user_vocab_progress_user_id_next_review_at_status_idx',
+        'collections_title_trgm_idx',
+        'collections_description_trgm_idx',
+      ]),
+    );
+  });
 });
