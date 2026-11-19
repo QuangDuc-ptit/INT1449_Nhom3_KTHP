@@ -5,6 +5,14 @@ import { CollectionsModule } from '../collections/collections.module';
 import { CollectionsService } from '../collections/collections.service';
 import { PracticeController } from './practice.controller';
 import { QuestionService } from './question.service';
+import { SessionCompletionHook, SubmitService } from './submit.service';
+
+/** Mặc định chưa có huy hiệu; module gamification thay thế provider này. */
+class NoopSessionCompletionHook extends SessionCompletionHook {
+  onSessionCompleted() {
+    return Promise.resolve([]);
+  }
+}
 
 @Module({
   imports: [CollectionsModule],
@@ -19,7 +27,9 @@ import { QuestionService } from './question.service';
         clock: Clock,
       ) => new QuestionService(prisma, collections, clock),
     },
+    SubmitService,
+    { provide: SessionCompletionHook, useClass: NoopSessionCompletionHook },
   ],
-  exports: [QuestionService],
+  exports: [QuestionService, SubmitService],
 })
 export class QuizModule {}

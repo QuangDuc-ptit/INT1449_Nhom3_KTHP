@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { AuthUser } from '../../common/auth/auth-user';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
@@ -9,13 +9,19 @@ import {
   QuestionsQueryDto,
   RetryMissedQueryDto,
 } from './dto/practice.dto';
+import { SessionResultDto, SubmitSessionDto } from './dto/submit.dto';
 import { QuestionService } from './question.service';
+import { SubmitService } from './submit.service';
+import { ResponseMessage } from '../../common/http/response-message.decorator';
 
 @ApiTags('Practice')
 @ApiBearerAuth()
 @Controller('practice')
 export class PracticeController {
-  constructor(private readonly questions: QuestionService) {}
+  constructor(
+    private readonly questions: QuestionService,
+    private readonly submitService: SubmitService,
+  ) {}
 
   @Get('questions')
   @ApiOperation({
@@ -35,6 +41,20 @@ export class PracticeController {
     @Query() q: DueQueryDto,
   ): Promise<DueDto> {
     return this.questions.getDue(user.id, q.limit);
+  }
+
+  @Post('submit-session')
+  @HttpCode(200)
+  @ApiOperation({
+    summary:
+      'Nộp kết quả phiên luyện tập: chấm điểm, cập nhật SM-2, streak (Màn 12)',
+  })
+  @ResponseMessage('Đã ghi nhận kết quả phiên học')
+  submit(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: SubmitSessionDto,
+  ): Promise<SessionResultDto> {
+    return this.submitService.submit(user.id, dto);
   }
 
   @Get('retry-missed')
