@@ -17,3 +17,6 @@ export interface AccessTokenPayload {
   jti: string;
   exp?: number;
 }
+
+/** Khoá Redis đánh dấu access token đã bị thu hồi (đăng xuất). */
+export const blacklistKey = (jti: string) => `bl:${jti}`;

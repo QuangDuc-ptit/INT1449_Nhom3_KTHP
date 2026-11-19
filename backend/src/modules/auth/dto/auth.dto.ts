@@ -32,6 +32,13 @@ export class RegisterDto {
   fullName!: string;
 }
 
+export class RefreshTokenDto {
+  @ApiProperty()
+  @IsString({ message: 'refreshToken phải là chuỗi' })
+  @Length(1, 256, { message: 'refreshToken không hợp lệ' })
+  refreshToken!: string;
+}
+
 export class LoginDto {
   @ApiProperty({ example: 'user@example.com' })
   @Transform(normalizeEmail)

@@ -1,8 +1,9 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
+import { RedisService } from '../../infra/redis/redis.service';
 import { AppException } from '../http/app.exception';
-import { AccessTokenPayload, AuthUser } from './auth-user';
+import { AccessTokenPayload, AuthUser, blacklistKey } from './auth-user';
 import { IS_PUBLIC_KEY } from './public.decorator';
 
 interface RequestWithUser {
@@ -19,6 +20,7 @@ export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly jwt: JwtService,
+    private readonly redis: RedisService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -39,6 +41,9 @@ export class JwtAuthGuard implements CanActivate {
       payload = await this.jwt.verifyAsync<AccessTokenPayload>(token);
     } catch {
       throw unauthorized('Phiên đăng nhập không hợp lệ hoặc đã hết hạn');
+    }
+    if ((await this.redis.client.exists(blacklistKey(payload.jti))) === 1) {
+      throw unauthorized('Phiên đăng nhập đã kết thúc, vui lòng đăng nhập lại');
     }
     req.user = {
       id: payload.sub,

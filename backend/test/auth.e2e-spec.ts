@@ -136,4 +136,86 @@ describe('Auth (e2e)', () => {
       expect(res.body.data).toMatchObject({ id: user.id, email: user.email });
     });
   });
+
+  describe('POST /auth/refresh', () => {
+    it('cấp cặp token mới và thu hồi refresh token cũ', async () => {
+      const { refreshToken } = await registerUser(app);
+      const res = await http()
+        .post('/api/v1/auth/refresh')
+        .send({ refreshToken })
+        .expect(200);
+      expect(res.body.data.accessToken).toEqual(expect.any(String));
+      expect(res.body.data.refreshToken).not.toBe(refreshToken);
+    });
+
+    it('dùng lại refresh token cũ thì thu hồi toàn bộ token của user', async () => {
+      const { refreshToken: oldToken } = await registerUser(app);
+      const first = await http()
+        .post('/api/v1/auth/refresh')
+        .send({ refreshToken: oldToken })
+        .expect(200);
+      const reused = await http()
+        .post('/api/v1/auth/refresh')
+        .send({ refreshToken: oldToken })
+        .expect(401);
+      expect(reused.body.errorCode).toBe('REFRESH_TOKEN_REUSED');
+      await http()
+        .post('/api/v1/auth/refresh')
+        .send({ refreshToken: first.body.data.refreshToken })
+        .expect(401);
+    });
+
+    it('refresh token hết hạn trả 401 REFRESH_TOKEN_INVALID', async () => {
+      const { refreshToken } = await registerUser(app);
+      await prisma.refreshToken.updateMany({
+        data: { expiresAt: new Date('2020-01-01T00:00:00Z') },
+      });
+      const res = await http()
+        .post('/api/v1/auth/refresh')
+        .send({ refreshToken })
+        .expect(401);
+      expect(res.body.errorCode).toBe('REFRESH_TOKEN_INVALID');
+    });
+
+    it('refresh token không tồn tại trả 401 REFRESH_TOKEN_INVALID', async () => {
+      const res = await http()
+        .post('/api/v1/auth/refresh')
+        .send({ refreshToken: 'abc' })
+        .expect(401);
+      expect(res.body.errorCode).toBe('REFRESH_TOKEN_INVALID');
+    });
+  });
+
+  describe('POST /auth/logout', () => {
+    it('vô hiệu hoá access token hiện tại và refresh token', async () => {
+      const { accessToken, refreshToken } = await registerUser(app);
+      await http()
+        .post('/api/v1/auth/logout')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ refreshToken })
+        .expect(200);
+      await http()
+        .get('/api/v1/auth/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(401);
+      await http()
+        .post('/api/v1/auth/refresh')
+        .send({ refreshToken })
+        .expect(401);
+    });
+
+    it('không thu hồi được refresh token của người khác', async () => {
+      const a = await registerUser(app);
+      const b = await registerUser(app);
+      await http()
+        .post('/api/v1/auth/logout')
+        .set('Authorization', `Bearer ${a.accessToken}`)
+        .send({ refreshToken: b.refreshToken })
+        .expect(200);
+      await http()
+        .post('/api/v1/auth/refresh')
+        .send({ refreshToken: b.refreshToken })
+        .expect(200);
+    });
+  });
 });

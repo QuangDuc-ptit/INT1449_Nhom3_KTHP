@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { AuthUser } from '../../common/auth/auth-user';
 import { AppException } from '../../common/http/app.exception';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
@@ -51,6 +52,16 @@ export class AuthService {
       (await verifyPassword(dto.password, user.passwordHash));
     if (!user || !ok) throw invalidCredentials();
     return { ...(await this.tokens.issuePair(user)), user: toUserDto(user) };
+  }
+
+  async refresh(refreshToken: string): Promise<AuthResult> {
+    const { pair, user } = await this.tokens.rotate(refreshToken);
+    return { ...pair, user: toUserDto(user) };
+  }
+
+  async logout(user: AuthUser, refreshToken: string): Promise<void> {
+    await this.tokens.revokeRefreshToken(user.id, refreshToken);
+    await this.tokens.blacklistAccess(user.jti, user.exp);
   }
 
   async me(userId: string): Promise<UserDto> {

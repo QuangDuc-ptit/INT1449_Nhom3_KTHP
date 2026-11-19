@@ -5,7 +5,7 @@ import { CurrentUser } from '../../common/auth/current-user.decorator';
 import { Public } from '../../common/auth/public.decorator';
 import { ResponseMessage } from '../../common/http/response-message.decorator';
 import { AuthResult, AuthService } from './auth.service';
-import { LoginDto, RegisterDto } from './dto/auth.dto';
+import { LoginDto, RefreshTokenDto, RegisterDto } from './dto/auth.dto';
 import { UserDto } from './user.mapper';
 
 @ApiTags('Auth')
@@ -28,6 +28,27 @@ export class AuthController {
   @ResponseMessage('Đăng nhập thành công')
   login(@Body() dto: LoginDto): Promise<AuthResult> {
     return this.auth.login(dto);
+  }
+
+  @Public()
+  @Post('refresh')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Cấp lại cặp token (xoay vòng refresh token)' })
+  refresh(@Body() dto: RefreshTokenDto): Promise<AuthResult> {
+    return this.auth.refresh(dto.refreshToken);
+  }
+
+  @Post('logout')
+  @HttpCode(200)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Đăng xuất: thu hồi refresh token và access token' })
+  @ResponseMessage('Đăng xuất thành công')
+  async logout(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: RefreshTokenDto,
+  ): Promise<null> {
+    await this.auth.logout(user, dto.refreshToken);
+    return null;
   }
 
   @Get('me')
