@@ -5,13 +5,18 @@ import {
   ProgressStatus,
   VocabSource,
 } from '@prisma/client';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
   IsEnum,
   IsOptional,
   IsString,
+  IsUUID,
   Length,
   MaxLength,
+  ValidateNested,
 } from 'class-validator';
 
 const trim = ({ value }: { value: unknown }) =>
@@ -70,6 +75,36 @@ export class CreateVocabularyDto {
 }
 
 export class UpdateVocabularyDto extends PartialType(CreateVocabularyDto) {}
+
+/** Một từ do AI sinh (Màn 14); `ipa` của AI được lưu vào ipaUk. */
+export class BatchWordDto extends CreateVocabularyDto {
+  @ApiPropertyOptional({ example: '/ˈsəʊlə/' })
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(100, { message: 'Phiên âm tối đa 100 ký tự' })
+  ipa?: string;
+}
+
+export class BatchSaveDto {
+  @ApiProperty()
+  @IsUUID('all', { message: 'collectionId không hợp lệ' })
+  collectionId!: string;
+
+  @ApiProperty({ type: [BatchWordDto] })
+  @IsArray({ message: 'words phải là danh sách' })
+  @ArrayMinSize(1, { message: 'Cần chọn ít nhất 1 từ' })
+  @ArrayMaxSize(50, { message: 'Tối đa 50 từ mỗi lần lưu' })
+  @ValidateNested({ each: true })
+  @Type(() => BatchWordDto)
+  words!: BatchWordDto[];
+}
+
+export interface BatchSaveResultDto {
+  savedCount: number;
+  skippedTerms: string[];
+  vocabularies: VocabularyDto[];
+}
 
 export type CreateVocabularyInput = Pick<
   CreateVocabularyDto,

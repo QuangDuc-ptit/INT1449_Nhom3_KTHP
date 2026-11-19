@@ -4,20 +4,7 @@ import { PrismaService } from '../src/infra/prisma/prisma.service';
 import { createTestApp } from './utils/app';
 import { bearer, registerUser } from './utils/auth';
 import { resetDb, resetRedis } from './utils/db';
-
-/** Chờ điều kiện đúng trong tối đa `timeoutMs`. */
-export async function waitFor<T>(
-  fn: () => Promise<T | null | undefined | false>,
-  timeoutMs = 5000,
-): Promise<T> {
-  const start = Date.now();
-  for (;;) {
-    const v = await fn();
-    if (v) return v;
-    if (Date.now() - start > timeoutMs) throw new Error('Hết thời gian chờ');
-    await new Promise((r) => setTimeout(r, 100));
-  }
-}
+import { waitFor } from './utils/wait';
 
 describe('Sinh audio TTS qua hàng đợi (e2e)', () => {
   let app: INestApplication;
