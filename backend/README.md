@@ -1,98 +1,83 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# KarVocab Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API cho ứng dụng học từ vựng KarVocab (đồ án INT1449, Nhóm 03): xác thực, học phần, từ vựng, phát âm TTS, sinh từ bằng AI, luyện tập 4 chế độ với thuật toán SM-2, streak, huy hiệu, dashboard, push notification và đồng bộ offline.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+- **Đặc tả:** `../docs/karvocab/BE-SPECIFICATION.md`
+- **Kế hoạch triển khai và các quyết định bổ sung:** `../docs/superpowers/plans/2026-11-19-karvocab-backend.md`
+- **Những thay đổi FE cần làm theo BE:** `../docs/karvocab/FE-BE-ALIGNMENT.md`
 
-## Description
+## Công nghệ
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+NestJS 11, TypeScript, Prisma 6, PostgreSQL 15, Redis 7 (blacklist token, OTP, rate limit, hàng đợi BullMQ), `@nestjs/schedule` cho cron, Jest và supertest.
 
-## Project setup
+## Chạy trên máy
+
+Yêu cầu: Node 24, Docker Desktop.
 
 ```bash
-$ npm install
+cd backend
+cp .env.example .env              # chỉnh nếu cần
+docker compose up -d              # Postgres :5433, Redis :6380
+npm install
+npx prisma migrate deploy         # tạo bảng
+npm run db:seed                   # 3 huy hiệu
+npm run start:dev                 # http://localhost:3100
 ```
 
-## Compile and run the project
+- API: `http://localhost:3100/api/v1`
+- Swagger: `http://localhost:3100/api/docs`
+- pgAdmin (tuỳ chọn): `docker compose --profile tools up -d`, mở `http://localhost:5050`
+
+Mặc định mọi dịch vụ ngoài đều chạy **mock**, nên backend hoạt động đầy đủ khi không có mạng hay API key.
+
+## Kiểm thử
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm run lint
+npm run build
+npm test                          # unit test
+npm run test:e2e                  # e2e trên DB karvocab_test và Redis DB 1
+npm test -- sm2                   # chạy riêng một file unit
+npm run test:e2e -- auth          # chạy riêng một file e2e
 ```
 
-## Run tests
+E2E tự áp migration và seed lên DB `karvocab_test` trước khi chạy, rồi xoá dữ liệu giữa các test. Nếu schema của DB test bị lệch (ví dụ khi đổi migration cũ), hãy reset thủ công: `npx dotenv -e .env.test -- npx prisma migrate reset`.
 
-```bash
-# unit tests
-$ npm run test
+## Biến môi trường chọn provider
 
-# e2e tests
-$ npm run test:e2e
+| Biến | Giá trị | Ghi chú |
+| --- | --- | --- |
+| `AI_PROVIDER` | `mock` \| `gemini` | `gemini` cần `GEMINI_API_KEY`, model `GEMINI_MODEL` |
+| `TTS_PROVIDER` | `mock` \| `google` | `google` dùng `GOOGLE_APPLICATION_CREDENTIALS` |
+| `STORAGE_PROVIDER` | `local` \| `s3` | `local` lưu vào `UPLOAD_DIR`, phục vụ tại `/uploads`; `s3` hỗ trợ R2/MinIO qua `S3_ENDPOINT` |
+| `PUSH_PROVIDER` | `mock` \| `fcm` | `fcm` cần `FIREBASE_SERVICE_ACCOUNT_PATH` |
+| `MAIL_PROVIDER` | `console` \| `resend` | `resend` cần `RESEND_API_KEY` |
+| `SOCIAL_AUTH_MODE` | `mock` \| `real` | `mock` nhận token dạng `mock:<id>:<email>:<tên>` |
+| `JOBS_ENABLED` | `true` \| `false` | Bật lịch cron (reset streak mỗi giờ, nhắc ôn mỗi 15 phút) |
 
-# test coverage
-$ npm run test:cov
+## Cấu trúc
+
+```
+src/
+  common/      response chuẩn, lỗi, validation, JWT guard, rate limit, Clock, múi giờ
+  infra/       Prisma, Redis
+  modules/     auth, users, collections, vocabularies, storage, audio, mail, ai,
+               quiz, spaced-repetition, streak, gamification, dashboard,
+               notifications, sync, health
+  jobs/        cron reset streak và nhắc ôn tập
+prisma/        schema, migrations, seed
+test/          e2e (mỗi file một nhóm API)
+scripts/       backup-db.sh
+load/          k6-submit-and-ai.js
 ```
 
-## Deployment
+## Vận hành
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+- **Sao lưu CSDL:** `sh scripts/backup-db.sh` dump qua docker compose ra `backups/*.sql.gz` và giữ 7 bản mới nhất.
+- **Load test:** `k6 run -e BASE_URL=http://localhost:3100 load/k6-submit-and-ai.js` (cần cài k6; script chưa được chạy trong quá trình phát triển).
+- **Docker image:** `docker build -t karvocab-backend .`; container tự chạy `prisma migrate deploy` trước khi khởi động.
+- **CI:** `.github/workflows/backend-ci.yml` chạy lint, build, unit, e2e rồi build image.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Quy ước commit
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Conventional Commits, mô tả tiếng Việt: `<type>(<scope>): <mô tả>`, kèm `Refs: <mã task trong đặc tả>`. Xem chi tiết trong file kế hoạch.

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConditionalModule, ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { CommonModule } from './common/common.module';
 import { validateEnv } from './config/env.schema';
@@ -11,6 +12,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { CollectionsModule } from './modules/collections/collections.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { GamificationModule } from './modules/gamification/gamification.module';
+import { JobsModule } from './jobs/jobs.module';
 import { HealthModule } from './modules/health/health.module';
 import { MailModule } from './modules/mail/mail.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -25,6 +27,11 @@ import { VocabulariesModule } from './modules/vocabularies/vocabularies.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
     EventEmitterModule.forRoot(),
+    // Chỉ bật lịch cron khi JOBS_ENABLED=true (test và môi trường phụ để false)
+    ConditionalModule.registerWhen(
+      ScheduleModule.forRoot(),
+      (env) => env.JOBS_ENABLED === 'true',
+    ),
     CommonModule,
     PrismaModule,
     RedisModule,
@@ -43,6 +50,7 @@ import { VocabulariesModule } from './modules/vocabularies/vocabularies.module';
     GamificationModule,
     QuizModule,
     DashboardModule,
+    JobsModule,
   ],
 })
 export class AppModule {}
