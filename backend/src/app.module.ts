@@ -11,6 +11,7 @@ import { CollectionsModule } from './modules/collections/collections.module';
 import { HealthModule } from './modules/health/health.module';
 import { MailModule } from './modules/mail/mail.module';
 import { StorageModule } from './modules/storage/storage.module';
+import { UsersModule } from './modules/users/users.module';
 import { VocabulariesModule } from './modules/vocabularies/vocabularies.module';
 
 @Module({
@@ -27,6 +28,7 @@ import { VocabulariesModule } from './modules/vocabularies/vocabularies.module';
     CollectionsModule,
     VocabulariesModule,
     AudioModule,
+    UsersModule,
   ],
 })
 export class AppModule {}
