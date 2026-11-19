@@ -9,6 +9,7 @@ import { AiModule } from './modules/ai/ai.module';
 import { AudioModule } from './modules/audio/audio.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CollectionsModule } from './modules/collections/collections.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { GamificationModule } from './modules/gamification/gamification.module';
 import { HealthModule } from './modules/health/health.module';
 import { MailModule } from './modules/mail/mail.module';
@@ -41,6 +42,7 @@ import { VocabulariesModule } from './modules/vocabularies/vocabularies.module';
     StreakModule,
     GamificationModule,
     QuizModule,
+    DashboardModule,
   ],
 })
 export class AppModule {}
