@@ -54,6 +54,14 @@ export const envSchema = z
         message: 'JWT_ACCESS_SECRET phải dài ít nhất 16 ký tự',
       });
     }
+    // Token mock giả được mọi email: chỉ dùng cho dev/test/Demo, không bao giờ cho production
+    if (env.NODE_ENV === 'production' && env.SOCIAL_AUTH_MODE === 'mock') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['SOCIAL_AUTH_MODE'],
+        message: 'Production phải đặt SOCIAL_AUTH_MODE=real',
+      });
+    }
     if (env.AI_PROVIDER === 'gemini' && !env.GEMINI_API_KEY) {
       ctx.addIssue({
         code: 'custom',

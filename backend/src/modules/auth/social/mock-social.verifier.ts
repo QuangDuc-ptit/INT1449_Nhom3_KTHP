@@ -9,6 +9,9 @@ import {
  * Token có dạng `mock:<providerId>:<email>:<fullName>`.
  */
 export class MockSocialVerifier extends SocialVerifier {
+  /** Token mock tự khai email, không ai xác minh. */
+  readonly emailVerifiedByProvider = false;
+
   verify(_provider: string, token: string): Promise<SocialProfile> {
     const [prefix, providerId, email, ...nameParts] = token.split(':');
     const fullName = nameParts.join(':').trim();

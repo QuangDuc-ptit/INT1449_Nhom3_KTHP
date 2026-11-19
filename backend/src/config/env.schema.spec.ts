@@ -15,6 +15,27 @@ describe('env.schema', () => {
     expect(durationToSeconds('7d')).toBe(604800);
   });
 
+  it('production không được chạy đăng nhập mạng xã hội ở chế độ mock', () => {
+    expect(() =>
+      validateEnv({
+        ...base,
+        NODE_ENV: 'production',
+        SOCIAL_AUTH_MODE: 'mock',
+      }),
+    ).toThrow(/SOCIAL_AUTH_MODE/);
+    expect(() => validateEnv({ ...base, NODE_ENV: 'production' })).toThrow(
+      /SOCIAL_AUTH_MODE/,
+    );
+    expect(() =>
+      validateEnv({
+        ...base,
+        NODE_ENV: 'production',
+        SOCIAL_AUTH_MODE: 'real',
+        GOOGLE_CLIENT_ID: 'id',
+      }),
+    ).not.toThrow();
+  });
+
   it('báo lỗi khi thiếu biến bắt buộc', () => {
     expect(() => validateEnv({})).toThrow(/DATABASE_URL/);
   });

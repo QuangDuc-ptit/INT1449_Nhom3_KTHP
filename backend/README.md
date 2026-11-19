@@ -52,7 +52,7 @@ E2E tự áp migration và seed lên DB `karvocab_test` trước khi chạy, r�
 | `STORAGE_PROVIDER` | `local` \| `s3` | `local` lưu vào `UPLOAD_DIR`, phục vụ tại `/uploads`; `s3` hỗ trợ R2/MinIO qua `S3_ENDPOINT` |
 | `PUSH_PROVIDER` | `mock` \| `fcm` | `fcm` cần `FIREBASE_SERVICE_ACCOUNT_PATH` |
 | `MAIL_PROVIDER` | `console` \| `resend` | `resend` cần `RESEND_API_KEY` |
-| `SOCIAL_AUTH_MODE` | `mock` \| `real` | `mock` nhận token dạng `mock:<id>:<email>:<tên>` |
+| `SOCIAL_AUTH_MODE` | `mock` \| `real` | `mock` nhận token dạng `mock:<id>:<email>:<tên>` và không liên kết vào tài khoản có mật khẩu; **production bắt buộc `real`** |
 | `JOBS_ENABLED` | `true` \| `false` | Bật lịch cron (reset streak mỗi giờ, nhắc ôn mỗi 15 phút) |
 
 ## Cấu trúc

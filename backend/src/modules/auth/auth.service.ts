@@ -4,7 +4,11 @@ import { AppException } from '../../common/http/app.exception';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 import { hashPassword, verifyPassword } from './password.util';
-import { SocialProvider, SocialVerifier } from './social/social-verifier';
+import {
+  SocialProvider,
+  SocialVerifier,
+  socialEmailConflict,
+} from './social/social-verifier';
 import { TokenPair, TokenService } from './token.service';
 import { UserDto, toUserDto } from './user.mapper';
 
@@ -66,27 +70,35 @@ export class AuthService {
     token: string,
   ): Promise<AuthResult> {
     const profile = await this.social.verify(provider, token);
-    const user =
-      (await this.prisma.user.findUnique({
-        where: {
-          authProvider_providerId: {
-            authProvider: provider,
-            providerId: profile.providerId,
-          },
-        },
-      })) ??
-      (await this.prisma.user.findUnique({
-        where: { email: profile.email },
-      })) ??
-      (await this.prisma.user.create({
-        data: {
-          email: profile.email,
-          fullName: profile.fullName.slice(0, 100),
-          avatarUrl: profile.avatarUrl,
+    const linked = await this.prisma.user.findUnique({
+      where: {
+        authProvider_providerId: {
           authProvider: provider,
           providerId: profile.providerId,
         },
-      }));
+      },
+    });
+    let user = linked;
+    if (!user) {
+      const sameEmail = await this.prisma.user.findUnique({
+        where: { email: profile.email },
+      });
+      // Chỉ liên kết vào tài khoản có mật khẩu khi email đã được nhà cung cấp xác minh
+      if (sameEmail?.passwordHash && !this.social.emailVerifiedByProvider) {
+        throw socialEmailConflict();
+      }
+      user =
+        sameEmail ??
+        (await this.prisma.user.create({
+          data: {
+            email: profile.email,
+            fullName: profile.fullName.slice(0, 100),
+            avatarUrl: profile.avatarUrl,
+            authProvider: provider,
+            providerId: profile.providerId,
+          },
+        }));
+    }
     return { ...(await this.tokens.issuePair(user)), user: toUserDto(user) };
   }
 

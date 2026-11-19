@@ -8,6 +8,8 @@ import {
 
 /** Gọi đúng verifier thật theo provider. */
 export class RealSocialVerifier extends SocialVerifier {
+  readonly emailVerifiedByProvider = true;
+
   constructor(
     private readonly google: GoogleVerifier,
     private readonly facebook: FacebookVerifier,
