@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import helmet from 'helmet';
 import { resolve } from 'node:path';
 import { AllExceptionsFilter } from './common/http/all-exceptions.filter';
 import { ResponseInterceptor } from './common/http/response.interceptor';
@@ -17,6 +18,20 @@ export const API_PREFIX = 'api/v1';
 export function configureApp(app: INestApplication): void {
   const clock = app.get(Clock);
   const config = app.get<ConfigService<Env, true>>(ConfigService);
+  const express = app as NestExpressApplication;
+
+  // Bảo mật HTTP: header an toàn, ẩn X-Powered-By, CORS theo danh sách, giới hạn body
+  app.use(helmet());
+  express.disable('x-powered-by');
+  const origins = config
+    .get('CORS_ORIGINS', { infer: true })
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  app.enableCors({ origin: origins.length ? origins : false });
+  express.useBodyParser('json', { limit: '1mb' });
+  express.useBodyParser('urlencoded', { limit: '1mb', extended: true });
+
   app.setGlobalPrefix(API_PREFIX);
   app.useGlobalPipes(createValidationPipe());
   app.useGlobalInterceptors(new ResponseInterceptor(app.get(Reflector), clock));
@@ -24,7 +39,7 @@ export function configureApp(app: INestApplication): void {
 
   // Storage cục bộ: phục vụ file tĩnh (audio, avatar) tại /uploads
   if (config.get('STORAGE_PROVIDER', { infer: true }) === 'local') {
-    (app as NestExpressApplication).useStaticAssets(
+    express.useStaticAssets(
       resolve(config.get('UPLOAD_DIR', { infer: true })),
       { prefix: UPLOADS_ROUTE, dotfiles: 'deny', index: false },
     );
