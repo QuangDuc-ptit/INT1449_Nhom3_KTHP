@@ -247,4 +247,72 @@ describe('Nộp bài luyện tập (e2e)', () => {
       collectionId: foreign.collectionId,
     }).expect(404);
   });
+
+  describe('Huy hiệu', () => {
+    const one = () =>
+      baseBody([
+        {
+          vocabularyId: ids.coherent,
+          userAnswer: 'coherent',
+          responseTimeMs: 1,
+        },
+      ]);
+
+    it('đạt streak 7 ngày thì mở khoá streak_7 đúng một lần', async () => {
+      await prisma.user.update({
+        where: { id: u.user.id },
+        data: {
+          currentStreak: 6,
+          highestStreak: 6,
+          lastStreakDate: new Date('2026-11-18T00:00:00.000Z'),
+        },
+      });
+      const first = await submit(one()).expect(200);
+      expect(first.body.data.streak.currentStreak).toBe(7);
+      expect(
+        first.body.data.newBadges.map((b: { code: string }) => b.code),
+      ).toEqual(['streak_7']);
+      expect(first.body.data.newBadges[0]).toMatchObject({
+        title: 'Chuỗi 7 Ngày',
+        requiredPoints: 7,
+      });
+
+      const second = await submit(one()).expect(200);
+      expect(second.body.data.newBadges).toEqual([]);
+      expect(
+        await prisma.userBadge.count({ where: { userId: u.user.id } }),
+      ).toBe(1);
+    });
+
+    it('đủ 5 học phần thì mở khoá explorer_5 sau phiên học', async () => {
+      for (let i = 0; i < 4; i++) {
+        await prisma.collection.create({
+          data: { userId: u.user.id, title: `C${i}` },
+        });
+      }
+      const res = await submit(one()).expect(200);
+      expect(
+        res.body.data.newBadges.map((b: { code: string }) => b.code),
+      ).toEqual(['explorer_5']);
+    });
+
+    it('hồ sơ hiển thị huy hiệu đã mở khoá', async () => {
+      await prisma.user.update({
+        where: { id: u.user.id },
+        data: {
+          currentStreak: 6,
+          lastStreakDate: new Date('2026-11-18T00:00:00.000Z'),
+        },
+      });
+      await submit(one()).expect(200);
+      const profile = await request(app.getHttpServer())
+        .get('/api/v1/users/profile')
+        .set(bearer(u.accessToken))
+        .expect(200);
+      const streak7 = profile.body.data.badges.find(
+        (b: { code: string }) => b.code === 'streak_7',
+      );
+      expect(streak7).toMatchObject({ unlocked: true, progress: 7 });
+    });
+  });
 });
