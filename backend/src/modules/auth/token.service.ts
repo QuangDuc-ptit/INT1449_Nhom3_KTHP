@@ -106,7 +106,8 @@ export class TokenService {
 
   /** Đưa access token vào blacklist Redis tới khi nó tự hết hạn. */
   async blacklistAccess(jti: string, exp: number): Promise<void> {
-    const ttl = exp - Math.floor(this.clock.now().getTime() / 1000);
+    // Dùng giờ hệ thống: thư viện JWT kiểm tra hạn token theo giờ hệ thống, không theo Clock
+    const ttl = exp - Math.floor(Date.now() / 1000);
     if (ttl > 0) {
       await this.redis.client.set(blacklistKey(jti), '1', 'EX', ttl);
     }
