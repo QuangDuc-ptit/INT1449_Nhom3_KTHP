@@ -28,6 +28,7 @@ export const envSchema = z
     TTS_PROVIDER: z.enum(['mock', 'google']).default('mock'),
     STORAGE_PROVIDER: z.enum(['local', 's3']).default('local'),
     PUBLIC_BASE_URL: z.string().default('http://localhost:3100'),
+    UPLOAD_DIR: z.string().default('uploads'),
     S3_ENDPOINT: z.string().default(''),
     S3_REGION: z.string().default('auto'),
     S3_BUCKET: z.string().default(''),

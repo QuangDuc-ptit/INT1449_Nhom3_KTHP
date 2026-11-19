@@ -9,6 +9,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { CollectionsModule } from './modules/collections/collections.module';
 import { HealthModule } from './modules/health/health.module';
 import { MailModule } from './modules/mail/mail.module';
+import { StorageModule } from './modules/storage/storage.module';
 import { VocabulariesModule } from './modules/vocabularies/vocabularies.module';
 
 @Module({
@@ -21,6 +22,7 @@ import { VocabulariesModule } from './modules/vocabularies/vocabularies.module';
     HealthModule,
     MailModule,
     AuthModule,
+    StorageModule,
     CollectionsModule,
     VocabulariesModule,
   ],
