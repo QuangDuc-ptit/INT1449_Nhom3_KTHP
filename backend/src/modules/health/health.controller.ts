@@ -1,4 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
+import { Public } from '../../common/auth/public.decorator';
 import { ApiTags } from '@nestjs/swagger';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { RedisService } from '../../infra/redis/redis.service';
@@ -6,6 +7,7 @@ import { RedisService } from '../../infra/redis/redis.service';
 type Status = 'up' | 'down';
 
 @ApiTags('Health')
+@Public()
 @Controller('health')
 export class HealthController {
   constructor(

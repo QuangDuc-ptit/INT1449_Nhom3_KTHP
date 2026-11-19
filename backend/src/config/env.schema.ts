@@ -16,7 +16,10 @@ export const envSchema = z
     REDIS_PORT: z.coerce.number().int().positive(),
     REDIS_DB: z.coerce.number().int().min(0).default(0),
     JWT_ACCESS_SECRET: z.string().min(1),
-    JWT_ACCESS_TTL: z.string().default('15m'),
+    JWT_ACCESS_TTL: z
+      .string()
+      .regex(/^\d+[smhd]$/, 'Định dạng như 15m, 1h, 900s')
+      .default('15m'),
     REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(7),
     CORS_ORIGINS: z.string().default(''),
     AI_PROVIDER: z.enum(['mock', 'gemini']).default('mock'),
@@ -60,6 +63,15 @@ export const envSchema = z
   });
 
 export type Env = z.infer<typeof envSchema>;
+
+const UNIT_SECONDS = { s: 1, m: 60, h: 3600, d: 86400 } as const;
+
+/** Đổi chuỗi thời lượng ("15m", "1h", "900s", "7d") sang số giây. */
+export function durationToSeconds(value: string): number {
+  const match = /^(\d+)([smhd])$/.exec(value);
+  if (!match) throw new Error(`Thời lượng không hợp lệ: ${value}`);
+  return Number(match[1]) * UNIT_SECONDS[match[2] as keyof typeof UNIT_SECONDS];
+}
 
 export function validateEnv(raw: Record<string, unknown>): Env {
   const result = envSchema.safeParse(raw);
