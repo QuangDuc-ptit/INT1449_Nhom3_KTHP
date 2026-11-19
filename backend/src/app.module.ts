@@ -5,6 +5,7 @@ import { CommonModule } from './common/common.module';
 import { validateEnv } from './config/env.schema';
 import { PrismaModule } from './infra/prisma/prisma.module';
 import { RedisModule } from './infra/redis/redis.module';
+import { AiModule } from './modules/ai/ai.module';
 import { AudioModule } from './modules/audio/audio.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CollectionsModule } from './modules/collections/collections.module';
@@ -33,6 +34,7 @@ import { VocabulariesModule } from './modules/vocabularies/vocabularies.module';
     UsersModule,
     NotificationsModule,
     SyncModule,
+    AiModule,
   ],
 })
 export class AppModule {}

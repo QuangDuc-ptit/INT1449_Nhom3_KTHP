@@ -5,6 +5,8 @@ import { AppException } from '../../common/http/app.exception';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { CollectionsService } from '../collections/collections.service';
 import {
+  BatchSaveDto,
+  BatchSaveResultDto,
   CreateVocabularyDto,
   CreateVocabularyInput,
   UpdateVocabularyDto,
@@ -127,6 +129,35 @@ export class VocabulariesService {
       });
     }
     return { saved, skippedTerms };
+  }
+
+  /** Lưu các từ AI đã chọn (Màn 14) trong một transaction, rồi đẩy job sinh audio. */
+  async batchSave(
+    userId: string,
+    dto: BatchSaveDto,
+  ): Promise<BatchSaveResultDto> {
+    const words: CreateVocabularyInput[] = dto.words.map(({ ipa, ...w }) => ({
+      ...w,
+      ipaUk: w.ipaUk ?? ipa,
+    }));
+    const { saved, skippedTerms } = await this.createBatch(
+      userId,
+      dto.collectionId,
+      words,
+      'ai_generated',
+    );
+    this.emitCreated(saved);
+    return {
+      savedCount: saved.length,
+      skippedTerms,
+      vocabularies: saved.map((v) =>
+        toVocabularyDto(v, {
+          status: 'new',
+          repetitionLevel: 0,
+          nextReviewAt: null,
+        }),
+      ),
+    };
   }
 
   emitCreated(vocabularies: Pick<Vocabulary, 'id'>[]): void {

@@ -5,6 +5,7 @@ import { VocabulariesService } from '../src/modules/vocabularies/vocabularies.se
 import { createTestApp } from './utils/app';
 import { RegisteredUser, bearer, registerUser } from './utils/auth';
 import { resetDb, resetRedis } from './utils/db';
+import { waitFor } from './utils/wait';
 
 const COHERENT = {
   term: 'coherent',
@@ -215,5 +216,82 @@ describe('Từ vựng (e2e)', () => {
     expect(result.skippedTerms).toEqual(['COHERENT', 'mitigate']);
     expect(await totalWords()).toBe(2);
     expect(await prisma.userVocabProgress.count()).toBe(2);
+  });
+
+  describe('POST /vocabularies/batch-save', () => {
+    const aiWord = (term: string) => ({
+      term,
+      partOfSpeech: 'noun',
+      ipa: `/${term}/`,
+      definitionEn: `meaning of ${term}`,
+      definitionVi: `nghĩa của ${term}`,
+      exampleSentence: `I like ${term}.`,
+      cefrLevel: 'B1',
+    });
+    const batchSave = (user: RegisteredUser, body: Record<string, unknown>) =>
+      http()
+        .post('/api/v1/vocabularies/batch-save')
+        .set(bearer(user.accessToken))
+        .send(body);
+
+    it('lưu 3 từ AI trong một transaction, tạo progress và sinh audio', async () => {
+      const res = await batchSave(a, {
+        collectionId,
+        words: ['solar', 'wind', 'turbine'].map(aiWord),
+      }).expect(201);
+      expect(res.body.data.savedCount).toBe(3);
+      expect(res.body.data.skippedTerms).toEqual([]);
+      expect(res.body.data.vocabularies).toHaveLength(3);
+      expect(res.body.data.vocabularies[0]).toMatchObject({
+        term: 'solar',
+        source: 'ai_generated',
+        ipaUk: '/solar/',
+        progress: { status: 'new' },
+      });
+      expect(await totalWords()).toBe(3);
+      expect(await prisma.userVocabProgress.count()).toBe(3);
+
+      await waitFor(async () => {
+        const n = await prisma.vocabulary.count({
+          where: { collectionId, audioUkUrl: { not: null } },
+        });
+        return n === 3;
+      });
+    });
+
+    it('bỏ qua từ đã có trong học phần và báo lại', async () => {
+      await addWord(a, COHERENT).expect(201);
+      const res = await batchSave(a, {
+        collectionId,
+        words: [aiWord('Coherent'), aiWord('solar')],
+      }).expect(201);
+      expect(res.body.data.savedCount).toBe(1);
+      expect(res.body.data.skippedTerms).toEqual(['Coherent']);
+    });
+
+    it('một từ không hợp lệ thì trả 400 và không lưu từ nào', async () => {
+      const { term: _t, ...noTerm } = aiWord('broken');
+      void _t;
+      await batchSave(a, {
+        collectionId,
+        words: [aiWord('solar'), noTerm],
+      }).expect(400);
+      expect(await prisma.vocabulary.count()).toBe(0);
+      expect(await totalWords()).toBe(0);
+    });
+
+    it('danh sách rỗng hoặc quá 50 từ trả 400', async () => {
+      await batchSave(a, { collectionId, words: [] }).expect(400);
+      const many = Array.from({ length: 51 }, (_, i) => aiWord(`w${i}`));
+      await batchSave(a, { collectionId, words: many }).expect(400);
+    });
+
+    it('học phần của người khác trả 404, không lưu gì', async () => {
+      await batchSave(b, {
+        collectionId,
+        words: [aiWord('solar')],
+      }).expect(404);
+      expect(await prisma.vocabulary.count()).toBe(0);
+    });
   });
 });

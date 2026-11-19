@@ -13,6 +13,8 @@ import { CurrentUser } from '../../common/auth/current-user.decorator';
 import { ResponseMessage } from '../../common/http/response-message.decorator';
 import { UuidParam } from '../collections/collections.controller';
 import {
+  BatchSaveDto,
+  BatchSaveResultDto,
   CreateVocabularyDto,
   UpdateVocabularyDto,
   VocabularyDto,
@@ -24,6 +26,18 @@ import { VocabulariesService } from './vocabularies.service';
 @Controller()
 export class VocabulariesController {
   constructor(private readonly vocabularies: VocabulariesService) {}
+
+  @Post('vocabularies/batch-save')
+  @ApiOperation({
+    summary: 'Lưu hàng loạt từ AI đã chọn vào học phần (Màn 14)',
+  })
+  @ResponseMessage('Đã lưu từ vựng vào học phần')
+  batchSave(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: BatchSaveDto,
+  ): Promise<BatchSaveResultDto> {
+    return this.vocabularies.batchSave(user.id, dto);
+  }
 
   @Get('collections/:id/words')
   @ApiOperation({ summary: 'Danh sách từ trong học phần (Màn 06)' })
