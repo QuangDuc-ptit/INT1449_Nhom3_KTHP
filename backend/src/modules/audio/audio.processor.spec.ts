@@ -1,6 +1,9 @@
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { AudioProcessor } from './audio.processor';
 
+/** Mốc thời gian dùng làm phiên bản tên file audio (chống cache CDN). */
+const TS = 1_763_546_400_000;
+
 function setup(vocab: Record<string, unknown> | null) {
   const prisma = {
     vocabulary: {
@@ -18,10 +21,12 @@ function setup(vocab: Record<string, unknown> | null) {
       Promise.resolve(`https://cdn.test/${key}`),
     ),
   };
+  const clock = { now: () => new Date(TS) };
   const processor = new AudioProcessor(
     prisma as unknown as PrismaService,
     tts,
     storage,
+    clock,
   );
   return { processor, prisma, tts, storage };
 }
@@ -38,20 +43,20 @@ describe('AudioProcessor', () => {
     expect(tts.synthesize).toHaveBeenCalledWith('coherent', 'uk');
     expect(tts.synthesize).toHaveBeenCalledWith('coherent', 'us');
     expect(storage.putObject).toHaveBeenCalledWith(
-      'audio/v1-uk.mp3',
+      'audio/v1-uk-1763546400000.mp3',
       Buffer.from('coherent-uk'),
       'audio/mpeg',
     );
     expect(storage.putObject).toHaveBeenCalledWith(
-      'audio/v1-us.mp3',
+      'audio/v1-us-1763546400000.mp3',
       Buffer.from('coherent-us'),
       'audio/mpeg',
     );
     expect(prisma.vocabulary.update).toHaveBeenCalledWith({
       where: { id: 'v1' },
       data: {
-        audioUkUrl: 'https://cdn.test/audio/v1-uk.mp3',
-        audioUsUrl: 'https://cdn.test/audio/v1-us.mp3',
+        audioUkUrl: 'https://cdn.test/audio/v1-uk-1763546400000.mp3',
+        audioUsUrl: 'https://cdn.test/audio/v1-us-1763546400000.mp3',
       },
     });
   });
@@ -68,7 +73,7 @@ describe('AudioProcessor', () => {
     expect(tts.synthesize).toHaveBeenCalledWith('souvenir', 'us');
     expect(prisma.vocabulary.update).toHaveBeenCalledWith({
       where: { id: 'v2' },
-      data: { audioUsUrl: 'https://cdn.test/audio/v2-us.mp3' },
+      data: { audioUsUrl: 'https://cdn.test/audio/v2-us-1763546400000.mp3' },
     });
   });
 

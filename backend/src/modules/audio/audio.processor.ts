@@ -2,6 +2,7 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { Job } from 'bullmq';
+import { Clock } from '../../common/time/clock';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { AUDIO_QUEUE, GenerateVocabAudioJob } from './audio.constants';
@@ -18,6 +19,7 @@ export class AudioProcessor extends WorkerHost {
     private readonly prisma: PrismaService,
     private readonly tts: TtsProvider,
     private readonly storage: StorageService,
+    private readonly clock: Clock,
   ) {
     super();
   }
@@ -33,11 +35,13 @@ export class AudioProcessor extends WorkerHost {
     if (!vocab) return; // từ đã bị xoá trước khi job chạy
 
     const data: Prisma.VocabularyUpdateInput = {};
+    // Tên file có phiên bản để CDN/app không phát lại audio cũ sau khi đổi từ
+    const version = this.clock.now().getTime();
     for (const accent of ACCENTS) {
       if (vocab[URL_FIELD[accent]]) continue;
       const mp3 = await this.tts.synthesize(vocab.term, accent);
       data[URL_FIELD[accent]] = await this.storage.putObject(
-        `audio/${vocab.id}-${accent}.mp3`,
+        `audio/${vocab.id}-${accent}-${version}.mp3`,
         mp3,
         'audio/mpeg',
       );
