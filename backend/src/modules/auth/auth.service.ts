@@ -4,6 +4,7 @@ import { AppException } from '../../common/http/app.exception';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 import { hashPassword, verifyPassword } from './password.util';
+import { SocialProvider, SocialVerifier } from './social/social-verifier';
 import { TokenPair, TokenService } from './token.service';
 import { UserDto, toUserDto } from './user.mapper';
 
@@ -23,6 +24,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokens: TokenService,
+    private readonly social: SocialVerifier,
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthResult> {
@@ -51,6 +53,40 @@ export class AuthService {
       !!user?.passwordHash &&
       (await verifyPassword(dto.password, user.passwordHash));
     if (!user || !ok) throw invalidCredentials();
+    return { ...(await this.tokens.issuePair(user)), user: toUserDto(user) };
+  }
+
+  /**
+   * Đăng nhập Google/Facebook: tìm theo (provider, providerId); nếu chưa có thì
+   * liên kết với tài khoản cùng email (email đã được nhà cung cấp xác minh),
+   * cuối cùng mới tạo tài khoản mới không có mật khẩu.
+   */
+  async socialLogin(
+    provider: SocialProvider,
+    token: string,
+  ): Promise<AuthResult> {
+    const profile = await this.social.verify(provider, token);
+    const user =
+      (await this.prisma.user.findUnique({
+        where: {
+          authProvider_providerId: {
+            authProvider: provider,
+            providerId: profile.providerId,
+          },
+        },
+      })) ??
+      (await this.prisma.user.findUnique({
+        where: { email: profile.email },
+      })) ??
+      (await this.prisma.user.create({
+        data: {
+          email: profile.email,
+          fullName: profile.fullName.slice(0, 100),
+          avatarUrl: profile.avatarUrl,
+          authProvider: provider,
+          providerId: profile.providerId,
+        },
+      }));
     return { ...(await this.tokens.issuePair(user)), user: toUserDto(user) };
   }
 

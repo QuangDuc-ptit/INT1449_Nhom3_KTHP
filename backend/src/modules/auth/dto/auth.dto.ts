@@ -1,6 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsEmail, IsString, Length, Matches, MaxLength } from 'class-validator';
+import {
+  IsEmail,
+  IsIn,
+  IsString,
+  Length,
+  Matches,
+  MaxLength,
+} from 'class-validator';
+import { SOCIAL_PROVIDERS } from '../social/social-verifier';
+import type { SocialProvider } from '../social/social-verifier';
 import {
   STRONG_PASSWORD_MESSAGE,
   STRONG_PASSWORD_REGEX,
@@ -30,6 +39,17 @@ export class RegisterDto {
   @IsString({ message: 'Họ tên phải là chuỗi' })
   @Length(1, 100, { message: 'Họ tên phải từ 1 đến 100 ký tự' })
   fullName!: string;
+}
+
+export class SocialLoginDto {
+  @ApiProperty({ enum: SOCIAL_PROVIDERS })
+  @IsIn(SOCIAL_PROVIDERS, { message: 'provider phải là google hoặc facebook' })
+  provider!: SocialProvider;
+
+  @ApiProperty({ description: 'Google ID token hoặc Facebook access token' })
+  @IsString({ message: 'idToken phải là chuỗi' })
+  @Length(1, 4096, { message: 'idToken không hợp lệ' })
+  idToken!: string;
 }
 
 export class ForgotPasswordDto {

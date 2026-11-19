@@ -12,6 +12,7 @@ import {
   RefreshTokenDto,
   RegisterDto,
   ResetPasswordDto,
+  SocialLoginDto,
 } from './dto/auth.dto';
 import { PasswordResetService } from './password-reset.service';
 import { UserDto } from './user.mapper';
@@ -40,6 +41,16 @@ export class AuthController {
   @ResponseMessage('Đăng nhập thành công')
   login(@Body() dto: LoginDto): Promise<AuthResult> {
     return this.auth.login(dto);
+  }
+
+  @Public()
+  @Post('social-login')
+  @HttpCode(200)
+  @RateLimit({ key: 'social', limit: 10, windowSec: 60, by: 'ip' })
+  @ApiOperation({ summary: 'Đăng nhập bằng Google hoặc Facebook (Màn 02)' })
+  @ResponseMessage('Đăng nhập thành công')
+  socialLogin(@Body() dto: SocialLoginDto): Promise<AuthResult> {
+    return this.auth.socialLogin(dto.provider, dto.idToken);
   }
 
   @Public()

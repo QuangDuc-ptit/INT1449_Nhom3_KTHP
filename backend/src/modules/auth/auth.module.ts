@@ -7,6 +7,11 @@ import { Env, durationToSeconds } from '../../config/env.schema';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { PasswordResetService } from './password-reset.service';
+import { FacebookVerifier } from './social/facebook.verifier';
+import { GoogleVerifier } from './social/google.verifier';
+import { MockSocialVerifier } from './social/mock-social.verifier';
+import { RealSocialVerifier } from './social/real-social.verifier';
+import { SocialVerifier } from './social/social-verifier';
 import { TokenService } from './token.service';
 
 @Global()
@@ -29,6 +34,22 @@ import { TokenService } from './token.service';
     AuthService,
     TokenService,
     PasswordResetService,
+    {
+      provide: SocialVerifier,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<Env, true>): SocialVerifier =>
+        config.get('SOCIAL_AUTH_MODE', { infer: true }) === 'real'
+          ? new RealSocialVerifier(
+              new GoogleVerifier(
+                config.get('GOOGLE_CLIENT_ID', { infer: true }),
+              ),
+              new FacebookVerifier(
+                config.get('FACEBOOK_APP_ID', { infer: true }),
+                config.get('FACEBOOK_APP_SECRET', { infer: true }),
+              ),
+            )
+          : new MockSocialVerifier(),
+    },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
   exports: [TokenService],
