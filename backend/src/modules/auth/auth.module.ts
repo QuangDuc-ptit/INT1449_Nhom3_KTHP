@@ -6,6 +6,7 @@ import { JwtAuthGuard } from '../../common/auth/jwt-auth.guard';
 import { Env, durationToSeconds } from '../../config/env.schema';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { PasswordResetService } from './password-reset.service';
 import { TokenService } from './token.service';
 
 @Global()
@@ -27,6 +28,7 @@ import { TokenService } from './token.service';
   providers: [
     AuthService,
     TokenService,
+    PasswordResetService,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
   exports: [TokenService],

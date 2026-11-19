@@ -6,13 +6,23 @@ import { Public } from '../../common/auth/public.decorator';
 import { ResponseMessage } from '../../common/http/response-message.decorator';
 import { RateLimit } from '../../common/rate-limit/rate-limit.decorator';
 import { AuthResult, AuthService } from './auth.service';
-import { LoginDto, RefreshTokenDto, RegisterDto } from './dto/auth.dto';
+import {
+  ForgotPasswordDto,
+  LoginDto,
+  RefreshTokenDto,
+  RegisterDto,
+  ResetPasswordDto,
+} from './dto/auth.dto';
+import { PasswordResetService } from './password-reset.service';
 import { UserDto } from './user.mapper';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly auth: AuthService) {}
+  constructor(
+    private readonly auth: AuthService,
+    private readonly passwordReset: PasswordResetService,
+  ) {}
 
   @Public()
   @Post('register')
@@ -50,6 +60,27 @@ export class AuthController {
     @Body() dto: RefreshTokenDto,
   ): Promise<null> {
     await this.auth.logout(user, dto.refreshToken);
+    return null;
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(200)
+  @RateLimit({ key: 'forgot', limit: 3, windowSec: 900, by: 'email' })
+  @ApiOperation({ summary: 'Gửi mã OTP đặt lại mật khẩu qua email (Màn 21)' })
+  @ResponseMessage('Nếu email tồn tại, mã xác nhận đã được gửi')
+  async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<null> {
+    await this.passwordReset.requestOtp(dto.email);
+    return null;
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Đặt lại mật khẩu bằng OTP' })
+  @ResponseMessage('Đặt lại mật khẩu thành công')
+  async resetPassword(@Body() dto: ResetPasswordDto): Promise<null> {
+    await this.passwordReset.resetPassword(dto.email, dto.otp, dto.newPassword);
     return null;
   }
 

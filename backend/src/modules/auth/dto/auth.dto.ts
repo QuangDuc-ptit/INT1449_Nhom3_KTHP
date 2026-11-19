@@ -32,6 +32,30 @@ export class RegisterDto {
   fullName!: string;
 }
 
+export class ForgotPasswordDto {
+  @ApiProperty({ example: 'user@example.com' })
+  @Transform(normalizeEmail)
+  @IsEmail({}, { message: 'Email không đúng định dạng' })
+  email!: string;
+}
+
+export class ResetPasswordDto {
+  @ApiProperty({ example: 'user@example.com' })
+  @Transform(normalizeEmail)
+  @IsEmail({}, { message: 'Email không đúng định dạng' })
+  email!: string;
+
+  @ApiProperty({ example: '123456' })
+  @Matches(/^\d{6}$/, { message: 'Mã xác nhận gồm 6 chữ số' })
+  otp!: string;
+
+  @ApiProperty({ example: 'NewPassword123' })
+  @IsString({ message: 'Mật khẩu phải là chuỗi' })
+  @MaxLength(72, { message: 'Mật khẩu tối đa 72 ký tự' })
+  @Matches(STRONG_PASSWORD_REGEX, { message: STRONG_PASSWORD_MESSAGE })
+  newPassword!: string;
+}
+
 export class RefreshTokenDto {
   @ApiProperty()
   @IsString({ message: 'refreshToken phải là chuỗi' })
