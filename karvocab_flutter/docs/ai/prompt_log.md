@@ -74,3 +74,18 @@
 #### 2. Kết quả & Đóng góp của AI:
 - Hoàn thành trọn vẹn Tab "Cá nhân", nâng tiến độ của FE1 từ ~55% lên **~70%**.
 - Đáp ứng các tiêu chí tiếp cận (Accessibility), không hardcode màu sắc, hỗ trợ đầy đủ các lối thoát/hủy trong dialog.
+
+
+---
+
+### Phiên làm việc ngày 19/11/2026: FE2 — Track B (Dashboard, Quiz Engine, AI Vocab Generator)
+
+#### 1. Yêu cầu đầu vào (Prompts):
+- Tôi là FE2 (Track B). Đọc FE-SPECIFICATION (phần Track B), `core/constants`, `core/widgets`, `vocabulary_model.dart`; không sửa màn hình Track A; nút trắc nghiệm ≥ 48dp; hỗ trợ Demo offline.
+- Dựng: Quiz Engine Controller; 4 chế độ Màn 08/19/20/25; Phản hồi đáp án (Màn 11); Kết quả (Màn 12) & Thử lại câu sai (Màn 26); Chọn chế độ (Màn 10); Trang chủ Streak & Daily Goal (Màn 04); Ôn tập hôm nay SM-2 (Màn 16); AI Vocab Generator (Màn 13/14).
+
+#### 2. Kết quả & Đóng góp của AI:
+- `lib/data/models/quiz_models.dart`, `ai_vocab_draft.dart`; `lib/core/utils/fuzzy_match.dart` (Levenshtein = 1 cho từ > 6 ký tự).
+- `lib/data/repositories/`: `quiz_question_factory`, `dashboard_store` (SM-2 theo BE-SPEC 4.1), `ai_vocab_repository` (mock + công tắc giả lập lỗi), `collection_bridge`.
+- `lib/presentation/quiz/`, `dashboard/`, `ai_vocab/`; `test/track_b_quiz_test.dart` (14 test).
+- Sửa duy nhất 1 file chung: `main_shell_screen.dart` (thay 2 placeholder bằng `HomeScreen` và `PracticeModeScreen`).

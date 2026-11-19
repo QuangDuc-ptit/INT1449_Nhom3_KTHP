@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_typography.dart';
+import '../dashboard/home_screen.dart';
+import '../quiz/practice_mode_screen.dart';
 import 'library_screen.dart';
 import 'profile_screen.dart';
 
@@ -28,9 +30,9 @@ class _MainShellScreenState extends State<MainShellScreen> {
   Widget build(BuildContext context) {
     // 4 Màn hình tương ứng 4 Tab
     final List<Widget> pages = [
-      _buildHomePlaceholder(),
+      const HomeScreen(), // Tab Trang chủ do FE2 phát triển (Màn 04)
       const LibraryScreen(), // Tab Thư viện do FE1 phát triển
-      _buildPracticePlaceholder(), // Tab Luyện tập chờ FE2 cắm Quiz Engine
+      const PracticeModeScreen(), // Tab Luyện tập do FE2 phát triển (Màn 10)
       const ProfileScreen(), // Tab Hồ sơ cá nhân do FE1 phát triển (Màn 15)
     ];
 
@@ -80,64 +82,6 @@ class _MainShellScreenState extends State<MainShellScreen> {
               icon: Icon(Icons.person_outline_rounded),
               activeIcon: Icon(Icons.person_rounded),
               label: 'Cá nhân',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Placeholder cho Trang chủ (Màn 04 - do FE2 phụ trách)
-  Widget _buildHomePlaceholder() {
-    return Scaffold(
-      appBar: AppBar(title: Text('Trang chủ', style: AppTypography.headingLarge)),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration(
-                color: AppColors.softBlueSurface,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.local_fire_department_rounded, size: 64, color: AppColors.warningOrange),
-            ),
-            const SizedBox(height: 20),
-            Text('Chào mừng bạn đến với KarVocab!', style: AppTypography.headingMedium),
-            const SizedBox(height: 8),
-            Text(
-              'Chuyển sang tab "Thư viện" để bắt đầu khám phá từ vựng.',
-              style: AppTypography.bodyMedium,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Placeholder cho Luyện tập (Màn 10 - do FE2 phụ trách)
-  Widget _buildPracticePlaceholder() {
-    return Scaffold(
-      appBar: AppBar(title: Text('Luyện tập & Quiz', style: AppTypography.headingLarge)),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration(
-                color: AppColors.softBlueSurface,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.school_rounded, size: 64, color: AppColors.primaryBlue),
-            ),
-            const SizedBox(height: 20),
-            Text('Khu vực Luyện tập (Quiz Engine)', style: AppTypography.headingMedium),
-            const SizedBox(height: 8),
-            Text(
-              '4 Chế độ luyện tập đang được FE2 hoàn thiện.',
-              style: AppTypography.bodyMedium,
             ),
           ],
         ),
