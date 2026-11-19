@@ -10,6 +10,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { CollectionsModule } from './modules/collections/collections.module';
 import { HealthModule } from './modules/health/health.module';
 import { MailModule } from './modules/mail/mail.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { UsersModule } from './modules/users/users.module';
 import { VocabulariesModule } from './modules/vocabularies/vocabularies.module';
@@ -29,6 +30,7 @@ import { VocabulariesModule } from './modules/vocabularies/vocabularies.module';
     VocabulariesModule,
     AudioModule,
     UsersModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}
