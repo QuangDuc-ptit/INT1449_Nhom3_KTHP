@@ -5,6 +5,8 @@ import 'presentation/screens/splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  // Màn 01: giải mã logo trước frame đầu để nối liền với splash native
+  SplashScreen.precacheLogoBeforeFirstFrame();
   runApp(const KarVocabApp());
 }
 
@@ -20,16 +22,16 @@ class KarVocabApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        scaffoldBackgroundColor: AppColors.mainBackground,
+        scaffoldBackgroundColor: AppColors.background,
         primaryColor: AppColors.primaryBlue,
         fontFamily: AppTypography.fontFamily,
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primaryBlue,
           primary: AppColors.primaryBlue,
-          surface: AppColors.mainBackground,
+          surface: AppColors.background,
         ),
         appBarTheme: const AppBarTheme(
-          backgroundColor: AppColors.mainBackground,
+          backgroundColor: AppColors.background,
           elevation: 0,
           scrolledUnderElevation: 0,
           iconTheme: IconThemeData(color: AppColors.textPrimary),

@@ -3,24 +3,31 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/theme/app_typography.dart';
 import '../../data/models/user_profile_model.dart';
+import '../../data/repositories/auth_repository.dart';
+import '../../data/repositories/badge_rules.dart';
+import '../../data/repositories/collection_store.dart';
 import 'settings_screen.dart';
 
 /// Màn 15 · Hồ sơ cá nhân (User Profile & Achievement Badges Screen)
 /// Xem tiến độ học tập, huy hiệu thành tựu và truy cập cài đặt
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final AuthRepository? authRepository;
+  final CollectionStore? store;
+
+  const ProfileScreen({super.key, this.authRepository, this.store});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  late UserProfileModel _profile;
+  AuthRepository get _auth => widget.authRepository ?? AuthRepository.instance;
+  CollectionStore get _store => widget.store ?? CollectionStore.instance;
 
-  @override
-  void initState() {
-    super.initState();
-    _profile = UserProfileModel.mockDefault();
+  void _openSettings() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => SettingsScreen(authRepository: widget.authRepository)),
+    );
   }
 
   IconData _getBadgeIcon(String iconName) {
@@ -38,6 +45,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: Listenable.merge([_auth, _store]),
+      builder: (context, _) => _buildContent(context),
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
+    final storedProfile = _auth.currentUser ?? UserProfileModel.mockDefault();
+    // Số học phần lấy trực tiếp từ Thư viện để luôn khớp với dữ liệu thật.
+    final profile = storedProfile.copyWith(totalCollections: _store.collections.length);
+    final badges = BadgeRules.evaluate(
+      currentStreak: profile.currentStreak,
+      wordsLearned: profile.totalWordsLearned,
+      collectionCount: profile.totalCollections,
+    );
+
     return Scaffold(
       backgroundColor: AppColors.mainBackground,
       appBar: AppBar(
@@ -46,18 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           IconButton(
             icon: const Icon(Icons.settings_outlined, color: AppColors.primaryBlue),
             tooltip: 'Cài đặt tài khoản',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => SettingsScreen(
-                    profile: _profile,
-                    onProfileUpdated: (updated) {
-                      setState(() => _profile = updated);
-                    },
-                  ),
-                ),
-              );
-            },
+            onPressed: _openSettings,
           ),
         ],
       ),
@@ -109,12 +121,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _profile.fullName,
+                          profile.fullName,
                           style: AppTypography.headingLarge.copyWith(fontSize: 20),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          _profile.email,
+                          profile.email,
                           style: AppTypography.bodyMedium.copyWith(fontSize: 13),
                         ),
                         const SizedBox(height: AppDimensions.space8),
@@ -127,7 +139,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
                           ),
                           child: Text(
-                            '🎯 Mục tiêu: ${_profile.dailyGoalWords} từ/ngày',
+                            '🎯 Mục tiêu: ${profile.dailyGoalWords} từ/ngày',
                             style: AppTypography.labelSmall.copyWith(
                               color: AppColors.navyBlue,
                               fontWeight: FontWeight.w700,
@@ -149,7 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Expanded(
                   child: _buildStatCard(
                     title: 'Từ đã học',
-                    value: '${_profile.totalWordsLearned}',
+                    value: '${profile.totalWordsLearned}',
                     icon: Icons.menu_book_rounded,
                     iconColor: AppColors.primaryBlue,
                   ),
@@ -158,7 +170,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Expanded(
                   child: _buildStatCard(
                     title: 'Chuỗi ngày',
-                    value: '${_profile.currentStreak}',
+                    value: '${profile.currentStreak}',
                     unit: 'ngày',
                     icon: Icons.local_fire_department_rounded,
                     iconColor: AppColors.warningOrange,
@@ -168,7 +180,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Expanded(
                   child: _buildStatCard(
                     title: 'Học phần',
-                    value: '${_profile.totalCollections}',
+                    value: '${profile.totalCollections}',
                     icon: Icons.folder_special_rounded,
                     iconColor: AppColors.successGreen,
                   ),
@@ -184,7 +196,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Text('Huy hiệu thành tựu', style: AppTypography.headingMedium),
                 Text(
-                  '${_profile.badges.where((b) => b.isUnlocked).length}/${_profile.badges.length} đã đạt',
+                  '${badges.where((b) => b.isUnlocked).length}/${badges.length} đã đạt',
                   style: AppTypography.labelSmall.copyWith(color: AppColors.primaryBlue),
                 ),
               ],
@@ -195,10 +207,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: _profile.badges.length,
+              itemCount: badges.length,
               separatorBuilder: (_, _) => const SizedBox(height: AppDimensions.space12),
               itemBuilder: (context, index) {
-                final badge = _profile.badges[index];
+                final badge = badges[index];
                 return _buildBadgeCard(badge);
               },
             ),
@@ -209,30 +221,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Text('Tùy chọn khác', style: AppTypography.headingMedium),
             const SizedBox(height: AppDimensions.space12),
 
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.white,
+            // Material (thay vì Container có màu nền) để ListTile vẽ được hiệu ứng bấm
+            Material(
+              color: AppColors.white,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-                border: Border.all(color: AppColors.borderLight),
+                side: const BorderSide(color: AppColors.borderLight),
               ),
+              clipBehavior: Clip.antiAlias,
               child: Column(
                 children: [
                   ListTile(
                     leading: const Icon(Icons.settings_outlined, color: AppColors.primaryBlue),
                     title: Text('Cài đặt tài khoản & Mục tiêu', style: AppTypography.bodyBold),
                     trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.textMuted),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => SettingsScreen(
-                            profile: _profile,
-                            onProfileUpdated: (updated) {
-                              setState(() => _profile = updated);
-                            },
-                          ),
-                        ),
-                      );
-                    },
+                    onTap: _openSettings,
                   ),
                   const Divider(height: 1, color: AppColors.borderLight),
                   ListTile(
@@ -326,7 +329,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildBadgeCard(BadgeModel badge) {
     final isLocked = !badge.isUnlocked;
 
-    return Container(
+    final card = Container(
       padding: const EdgeInsets.all(AppDimensions.space16),
       decoration: BoxDecoration(
         color: isLocked ? AppColors.white.withValues(alpha: 0.6) : AppColors.white,
@@ -414,6 +417,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ],
+      ),
+    );
+
+    if (!isLocked) return card;
+    // Huy hiệu chưa mở khoá hiển thị dạng xám (grayscale) theo đặc tả Màn 15.
+    return Semantics(
+      label: 'Huy hiệu ${badge.title} chưa mở khoá, tiến độ ${badge.currentProgress}/${badge.maxProgress}',
+      child: ColorFiltered(
+        colorFilter: const ColorFilter.matrix(<double>[
+          0.2126, 0.7152, 0.0722, 0, 0,
+          0.2126, 0.7152, 0.0722, 0, 0,
+          0.2126, 0.7152, 0.0722, 0, 0,
+          0, 0, 0, 1, 0,
+        ]),
+        child: card,
       ),
     );
   }

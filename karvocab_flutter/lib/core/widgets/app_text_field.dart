@@ -15,6 +15,13 @@ class AppTextField extends StatefulWidget {
   final ValueChanged<String>? onChanged;
   final TextInputAction textInputAction;
   final bool isReadOnly;
+  final int maxLines;
+  final int? maxLength;
+  final ValueChanged<String>? onSubmitted;
+  final bool autofocus;
+
+  /// Màu viền khi không có lỗi; mặc định [AppColors.borderLight].
+  final Color? borderColor;
 
   const AppTextField({
     super.key,
@@ -28,6 +35,11 @@ class AppTextField extends StatefulWidget {
     this.onChanged,
     this.textInputAction = TextInputAction.next,
     this.isReadOnly = false,
+    this.maxLines = 1,
+    this.maxLength,
+    this.onSubmitted,
+    this.autofocus = false,
+    this.borderColor,
   });
 
   @override
@@ -46,6 +58,7 @@ class _AppTextFieldState extends State<AppTextField> {
   @override
   Widget build(BuildContext context) {
     final bool hasError = widget.errorText != null && widget.errorText!.isNotEmpty;
+    final bool isMultiline = widget.maxLines > 1 && !widget.isPassword;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,14 +76,18 @@ class _AppTextFieldState extends State<AppTextField> {
 
         // Input Field Container
         Container(
-          height: AppDimensions.inputHeight, // 52.0 dp >= 48 dp
+          // 52.0 dp >= 48 dp; ô nhiều dòng giữ chiều cao tối thiểu 52dp và tự giãn
+          height: isMultiline ? null : AppDimensions.inputHeight,
+          constraints: isMultiline
+              ? const BoxConstraints(minHeight: AppDimensions.inputHeight)
+              : null,
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
             border: Border.all(
               color: hasError
                   ? AppColors.errorRed
-                  : AppColors.borderLight,
+                  : widget.borderColor ?? AppColors.borderLight,
               width: hasError ? 1.5 : 1.0,
             ),
           ),
@@ -90,8 +107,14 @@ class _AppTextFieldState extends State<AppTextField> {
                   textInputAction: widget.textInputAction,
                   readOnly: widget.isReadOnly,
                   onChanged: widget.onChanged,
+                  onSubmitted: widget.onSubmitted,
+                  autofocus: widget.autofocus,
+                  maxLines: isMultiline ? widget.maxLines : 1,
+                  minLines: 1,
+                  maxLength: widget.maxLength,
                   style: AppTypography.bodyLarge,
                   decoration: InputDecoration(
+                    counterText: '',
                     hintText: widget.hintText,
                     hintStyle: AppTypography.bodyMedium.copyWith(
                       color: AppColors.textMuted,

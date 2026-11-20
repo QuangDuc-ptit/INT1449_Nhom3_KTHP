@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Nền icon thích ứng (sinh bởi flutter_launcher_icons) -->
+    <color name="ic_launcher_background">#F5FAFE</color>
+    <!-- Màu nền chung của app = AppColors.background (lib/core/constants/app_colors.dart) -->
+    <color name="splash_background">#F5FAFE</color>
+</resources>

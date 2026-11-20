@@ -16,6 +16,16 @@ class AppButton extends StatelessWidget {
   final double? width;
   final double height;
 
+  /// Màu nền khi bấm được (chỉ áp cho [AppButtonVariant.primary]);
+  /// mặc định [AppColors.primaryBlue].
+  final Color? backgroundColor;
+
+  /// Màu nền khi bị khoá (chỉ áp cho [AppButtonVariant.primary]).
+  final Color? disabledBackgroundColor;
+
+  /// Bo góc; mặc định [AppDimensions.radiusButton].
+  final double? borderRadius;
+
   const AppButton({
     super.key,
     required this.text,
@@ -26,27 +36,30 @@ class AppButton extends StatelessWidget {
     this.icon,
     this.width,
     this.height = AppDimensions.buttonHeight, // 52.0 dp >= 48 dp
+    this.backgroundColor,
+    this.disabledBackgroundColor,
+    this.borderRadius,
   });
 
   @override
   Widget build(BuildContext context) {
     final bool canPress = isEnabled && !isLoading && onPressed != null;
 
-    Color backgroundColor;
+    Color background;
     Color textColor;
     BorderSide borderSide = BorderSide.none;
 
     switch (variant) {
       case AppButtonVariant.primary:
-        backgroundColor = canPress ? AppColors.primaryBlue : AppColors.textMuted.withValues(alpha: 0.4);
+        background = canPress ? (backgroundColor ?? AppColors.primaryBlue) : (disabledBackgroundColor ?? AppColors.textMuted.withValues(alpha: 0.4));
         textColor = AppColors.white;
         break;
       case AppButtonVariant.secondary:
-        backgroundColor = canPress ? AppColors.secondaryBackground : AppColors.borderLight;
+        background = canPress ? AppColors.secondaryBackground : AppColors.borderLight;
         textColor = canPress ? AppColors.navyBlue : AppColors.textMuted;
         break;
       case AppButtonVariant.outline:
-        backgroundColor = Colors.transparent;
+        background = Colors.transparent;
         textColor = canPress ? AppColors.primaryBlue : AppColors.textMuted;
         borderSide = BorderSide(
           color: canPress ? AppColors.primaryBlue : AppColors.borderLight,
@@ -59,9 +72,9 @@ class AppButton extends StatelessWidget {
       width: width ?? double.infinity,
       height: height,
       child: Material(
-        color: backgroundColor,
+        color: background,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          borderRadius: BorderRadius.circular(borderRadius ?? AppDimensions.radiusButton),
           side: borderSide,
         ),
         clipBehavior: Clip.antiAlias,

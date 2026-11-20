@@ -46,6 +46,32 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
 
+  # Sinh icon app cho mọi nền tảng từ logo. Chạy lại khi đổi logo:
+  #   dart run flutter_launcher_icons
+  flutter_launcher_icons: ^0.14.4
+
+# Cấu hình icon app (logo linh vật Axolotl)
+flutter_launcher_icons:
+  image_path: "assets/images/logoapp.webp"
+  android: true
+  ios: true
+  remove_alpha_ios: true            # App Store không chấp nhận icon có nền trong suốt
+  background_color_ios: "#F5FAFE"          # = AppColors.background
+  min_sdk_android: 21
+  # Icon thích ứng (Android 8+): nền #F5FAFE + logo thu nhỏ để không bị cắt mép
+  adaptive_icon_background: "#F5FAFE"
+  adaptive_icon_foreground: "assets/images/logoapp.webp"
+  adaptive_icon_foreground_inset: 16
+  web:
+    generate: true
+    image_path: "assets/images/logoapp.webp"
+    background_color: "#F5FAFE"
+    theme_color: "#0095E8"
+  windows:
+    generate: true
+    image_path: "assets/images/logoapp.webp"
+    icon_size: 256
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
@@ -56,6 +82,28 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Logo app (linh vật Axolotl) — dùng cho màn khởi động
+  assets:
+    - assets/images/logoapp.webp
+
+  # Font Nunito (Google Fonts, giấy phép OFL — xem assets/fonts/OFL.txt).
+  # Tên family "Nunito" trùng với AppTypography.fontFamily.
+  fonts:
+    - family: Nunito
+      fonts:
+        - asset: assets/fonts/Nunito-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Nunito-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Nunito-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Nunito-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Nunito-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/Nunito-Black.ttf
+          weight: 900
 
   # To add assets to your application, add an assets section, like this:
   # assets:

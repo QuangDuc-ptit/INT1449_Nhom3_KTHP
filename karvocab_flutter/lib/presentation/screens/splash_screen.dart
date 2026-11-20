@@ -1,54 +1,89 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/theme/app_typography.dart';
+import '../../data/repositories/auth_repository.dart';
 import 'login_screen.dart';
+import 'main_shell_screen.dart';
 
 /// Màn 01 · Khởi động (Splash Screen)
-/// Hiển thị Logo Axolotl & Slogan "Learn Smart, Remember Longer"
-/// Tự động kiểm tra phiên đăng nhập sau 1.5 giây
+///
+/// Gồm 2 lớp nối tiếp nhau:
+/// 1. Splash native của Android (androidx core-splashscreen, xem
+///    MainActivity.kt + res/values/styles.xml): nền #F5FAFE, logo 160dp ở giữa.
+/// 2. Màn này: cùng nền, logo cùng vị trí/kích thước, thêm chữ "KarVocab"
+///    gần đáy — nên khi native splash biến mất, logo không bị nhảy.
+///
+/// Sau tối thiểu 1.5 giây (spec FE §4.1) và khi đã khôi phục xong phiên đăng
+/// nhập, chuyển sang Trang chủ / Đăng nhập bằng pushReplacement để splash
+/// không còn trong back stack.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
+
+  /// Đường dẫn asset logo, khai báo trong pubspec.yaml
+  static const String logoAsset = 'assets/images/logoapp.webp';
+
+  /// Logo rộng 160dp — khớp với res/drawable/splash_icon.xml (288dp − 2×64dp)
+  static const double logoSize = 160;
+
+  /// Thời gian hiển thị tối thiểu
+  static const Duration minDisplay = Duration(milliseconds: 1500);
+
+  /// Giải mã logo trước khi Flutter vẽ frame đầu, để frame đầu đã có logo
+  /// (tránh một frame trống lúc native splash vừa tắt). Gọi trong main().
+  static void precacheLogoBeforeFirstFrame() {
+    final binding = WidgetsBinding.instance;
+    binding.deferFirstFrame();
+    var released = false;
+    void release() {
+      if (released) return;
+      released = true;
+      binding.allowFirstFrame();
+    }
+
+    final stream = const AssetImage(logoAsset).resolve(ImageConfiguration.empty);
+    late final ImageStreamListener listener;
+    listener = ImageStreamListener(
+      (_, _) {
+        stream.removeListener(listener);
+        release();
+      },
+      onError: (_, _) {
+        stream.removeListener(listener);
+        release();
+      },
+    );
+    stream.addListener(listener);
+    // Phòng hờ: không bao giờ giữ frame đầu quá 1 giây
+    Timer(const Duration(seconds: 1), release);
+  }
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _animController;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
-
+class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    );
-
-    _fadeAnimation = CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeIn,
-    );
-
-    _scaleAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOutBack),
-    );
-
-    _animController.forward();
-
-    // Tự động kiểm tra phiên và điều hướng sau 1.8 giây
-    Timer(const Duration(milliseconds: 1800), _checkSessionAndNavigate);
+    _startUp();
   }
 
-  void _checkSessionAndNavigate() {
+  /// Chờ song song: thời gian tối thiểu + khôi phục phiên đăng nhập
+  Future<void> _startUp() async {
+    final results = await Future.wait<Object?>([
+      Future<void>.delayed(SplashScreen.minDisplay),
+      AuthRepository.instance.restoreSession(),
+    ]);
     if (!mounted) return;
+    final hasSession = results[1] == true;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 500),
-        pageBuilder: (context, animation, secondaryAnimation) => const LoginScreen(),
+        transitionDuration: const Duration(milliseconds: 400),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            hasSession ? const MainShellScreen() : const LoginScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },
@@ -57,108 +92,47 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   @override
-  void dispose() {
-    _animController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    // Chữ cách đáy màn hình 48dp (tính cả thanh điều hướng). Nếu thanh điều
+    // hướng 3 nút cao hơn, đẩy chữ lên để không bị che.
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+    final wordmarkBottom =
+        math.max(AppDimensions.space48, bottomInset + AppDimensions.space16);
+
     return Scaffold(
-      backgroundColor: AppColors.primaryBlue,
-      body: SafeArea(
-        child: Center(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: ScaleTransition(
-              scale: _scaleAnimation,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Logo container với hình ảnh linh vật Axolotl
-                  Container(
-                    width: 140,
-                    height: 140,
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.12),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Container(
-                        width: 96,
-                        height: 96,
-                        decoration: BoxDecoration(
-                          color: AppColors.softBlueSurface,
-                          borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-                        ),
-                        child: const Icon(
-                          Icons.pets_rounded, // Biểu tượng linh vật Axolotl
-                          size: 56,
-                          color: AppColors.primaryBlue,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: AppDimensions.space24),
-
-                  // Tên thương hiệu KarVocab
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: 'Kar',
-                          style: AppTypography.displayLarge.copyWith(
-                            color: AppColors.white,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        TextSpan(
-                          text: 'Vocab',
-                          style: AppTypography.displayLarge.copyWith(
-                            color: AppColors.lightBlue,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: AppDimensions.space8),
-
-                  // Slogan
-                  Text(
-                    'Learn Smart, Remember Longer',
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.white.withValues(alpha: 0.9),
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-
-                  const SizedBox(height: AppDimensions.space48),
-
-                  // Indicator nhẹ nhàng
-                  const SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
-                    ),
-                  ),
-                ],
-              ),
+      backgroundColor: AppColors.background,
+      body: Stack(
+        children: [
+          // Logo ở chính giữa toàn màn hình (không dùng SafeArea) để trùng
+          // vị trí với logo của splash native.
+          Center(
+            child: Image.asset(
+              SplashScreen.logoAsset,
+              key: const Key('splash_logo'),
+              width: SplashScreen.logoSize,
+              height: SplashScreen.logoSize,
+              fit: BoxFit.contain,
+              gaplessPlayback: true,
+              semanticLabel: 'Logo KarVocab',
             ),
           ),
-        ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: wordmarkBottom,
+            child: Text.rich(
+              const TextSpan(
+                style: AppTypography.brandWordmark,
+                children: [
+                  TextSpan(text: 'Kar', style: TextStyle(color: AppColors.brandKar)),
+                  TextSpan(text: 'Vocab', style: TextStyle(color: AppColors.brandVocab)),
+                ],
+              ),
+              key: const Key('splash_wordmark'),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
       ),
     );
   }

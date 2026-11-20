@@ -3,7 +3,14 @@ import '../models/vocabulary_model.dart';
 
 /// Dữ liệu mẫu chuẩn trích xuất từ chính xác file Figma KarVocab
 class MockVocabData {
-  static final List<CollectionModel> initialCollections = [
+  /// Danh sách "sống" (mutable) mà `CollectionStore` và cầu nối AI của FE2 cùng thao tác.
+  static final List<CollectionModel> initialCollections = seedCollections();
+
+  /// Danh sách "sống" của toàn bộ từ vựng.
+  static final List<VocabularyModel> initialVocabularies = seedVocabularies();
+
+  /// Bản sao mới của dữ liệu gốc — dùng để reset store (Demo / kiểm thử).
+  static List<CollectionModel> seedCollections() => [
     const CollectionModel(
       id: 'col-1',
       title: 'Học thuật & IELTS Core',
@@ -30,7 +37,7 @@ class MockVocabData {
     ),
   ];
 
-  static final List<VocabularyModel> initialVocabularies = [
+  static List<VocabularyModel> seedVocabularies() => [
     // Collection 1: Học thuật & IELTS
     const VocabularyModel(
       id: 'voc-1',

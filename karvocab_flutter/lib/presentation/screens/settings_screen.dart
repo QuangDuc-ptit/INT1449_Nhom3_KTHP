@@ -4,144 +4,75 @@ import '../../core/constants/app_dimensions.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_text_field.dart';
+import '../../core/widgets/app_toast.dart';
+import '../../core/utils/validators.dart';
 import '../../data/models/user_profile_model.dart';
+import '../../data/repositories/auth_repository.dart';
+import '../../data/services/reminder_service.dart';
 import 'login_screen.dart';
 
 /// Màn 23 · Cài đặt tài khoản (Account Settings Screen)
-/// Điều chỉnh mục tiêu ngày, giờ nhắc học, đổi mật khẩu và đăng xuất
+/// Điều chỉnh mục tiêu ngày, giờ nhắc học, đổi mật khẩu và đăng xuất.
+/// Mọi thay đổi được lưu ngay vào [AuthRepository] nên Màn 15 cập nhật theo.
 class SettingsScreen extends StatefulWidget {
-  final UserProfileModel profile;
-  final ValueChanged<UserProfileModel>? onProfileUpdated;
+  final AuthRepository? authRepository;
+  final ReminderService? reminderService;
 
-  const SettingsScreen({
-    super.key,
-    required this.profile,
-    this.onProfileUpdated,
-  });
+  const SettingsScreen({super.key, this.authRepository, this.reminderService});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  static const int minDailyGoal = 5;
+  static const int maxDailyGoal = 50;
+  static const int dailyGoalStep = 5;
+
   late int _dailyGoal;
   late bool _isNotifEnabled;
   late String _reminderTime;
   String _selectedLanguage = 'vi'; // 'vi' hoặc 'en'
 
+  AuthRepository get _auth => widget.authRepository ?? AuthRepository.instance;
+  ReminderService get _reminders => widget.reminderService ?? ReminderService.instance;
+  UserProfileModel get _profile => _auth.currentUser ?? UserProfileModel.mockDefault();
+
   @override
   void initState() {
     super.initState();
-    _dailyGoal = widget.profile.dailyGoalWords;
-    _isNotifEnabled = widget.profile.isNotificationEnabled;
-    _reminderTime = widget.profile.reminderTime;
+    final profile = _profile;
+    _dailyGoal = profile.dailyGoalWords;
+    _isNotifEnabled = profile.isNotificationEnabled;
+    _reminderTime = profile.reminderTime;
   }
 
   void _saveChanges() {
-    final updated = widget.profile.copyWith(
+    if (!_auth.isLoggedIn) return;
+    _auth.updateProfile(_profile.copyWith(
       dailyGoalWords: _dailyGoal,
       isNotificationEnabled: _isNotifEnabled,
       reminderTime: _reminderTime,
-    );
-    if (widget.onProfileUpdated != null) {
-      widget.onProfileUpdated!(updated);
+    ));
+  }
+
+  Future<void> _applyReminder() async {
+    if (_isNotifEnabled) {
+      await _reminders.scheduleDaily(_reminderTime);
+    } else {
+      await _reminders.cancel();
     }
   }
 
   // Hộp thoại đổi mật khẩu
-  void _openChangePasswordDialog() {
-    final oldPassController = TextEditingController();
-    final newPassController = TextEditingController();
-    final confirmPassController = TextEditingController();
-    String? errorText;
-
-    showDialog(
+  Future<void> _openChangePasswordDialog() async {
+    final changed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.cardBackground,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-          ),
-          title: Text('Đổi mật khẩu', style: AppTypography.headingMedium),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AppTextField(
-                  label: 'Mật khẩu hiện tại',
-                  hintText: 'Nhập mật khẩu cũ',
-                  controller: oldPassController,
-                  isPassword: true,
-                ),
-                const SizedBox(height: AppDimensions.space12),
-                AppTextField(
-                  label: 'Mật khẩu mới',
-                  hintText: 'Tối thiểu 6 ký tự',
-                  controller: newPassController,
-                  isPassword: true,
-                ),
-                const SizedBox(height: AppDimensions.space12),
-                AppTextField(
-                  label: 'Xác nhận mật khẩu mới',
-                  hintText: 'Nhập lại mật khẩu mới',
-                  controller: confirmPassController,
-                  isPassword: true,
-                  errorText: errorText,
-                ),
-              ],
-            ),
-          ),
-          actionsPadding: const EdgeInsets.all(AppDimensions.space16),
-          actions: [
-            TextButton(
-              onPressed: () {
-                oldPassController.dispose();
-                newPassController.dispose();
-                confirmPassController.dispose();
-                Navigator.of(ctx).pop();
-              },
-              child: Text(
-                'Hủy',
-                style: AppTypography.bodyBold.copyWith(color: AppColors.textSecondary),
-              ),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryBlue,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                ),
-              ),
-              onPressed: () {
-                if (newPassController.text.length < 6) {
-                  setDialogState(() => errorText = 'Mật khẩu mới phải từ 6 ký tự trở lên');
-                  return;
-                }
-                if (newPassController.text != confirmPassController.text) {
-                  setDialogState(() => errorText = 'Mật khẩu xác nhận không khớp');
-                  return;
-                }
-
-                oldPassController.dispose();
-                newPassController.dispose();
-                confirmPassController.dispose();
-                Navigator.of(ctx).pop();
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Đổi mật khẩu thành công!'),
-                    backgroundColor: AppColors.successGreen,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-              child: Text('Cập nhật', style: AppTypography.buttonText),
-            ),
-          ],
-        ),
-      ),
+      builder: (_) => ChangePasswordDialog(authRepository: _auth),
     );
+    if (changed == true && mounted) {
+      AppToast.success(context, 'Đổi mật khẩu thành công!');
+    }
   }
 
   // Hộp thoại xác nhận đăng xuất
@@ -182,7 +113,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             onPressed: () {
               Navigator.of(ctx).pop();
-              // Chuyển hướng về màn hình Đăng nhập
+              // Xoá phiên + lịch nhắc rồi chuyển hướng về màn hình Đăng nhập
+              _auth.logout();
+              _reminders.cancel();
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (_) => const LoginScreen()),
                 (route) => false,
@@ -239,11 +172,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         children: [
                           IconButton(
                             icon: const Icon(Icons.remove_circle_outline_rounded),
-                            color: _dailyGoal > 5 ? AppColors.primaryBlue : AppColors.textMuted,
+                            tooltip: 'Giảm mục tiêu',
+                            color: _dailyGoal > minDailyGoal ? AppColors.primaryBlue : AppColors.textMuted,
                             iconSize: 28,
-                            onPressed: _dailyGoal > 5
+                            onPressed: _dailyGoal > minDailyGoal
                                 ? () {
-                                    setState(() => _dailyGoal -= 5);
+                                    setState(() => _dailyGoal -= dailyGoalStep);
                                     _saveChanges();
                                   }
                                 : null,
@@ -261,11 +195,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           IconButton(
                             icon: const Icon(Icons.add_circle_outline_rounded),
-                            color: _dailyGoal < 30 ? AppColors.primaryBlue : AppColors.textMuted,
+                            tooltip: 'Tăng mục tiêu',
+                            color: _dailyGoal < maxDailyGoal ? AppColors.primaryBlue : AppColors.textMuted,
                             iconSize: 28,
-                            onPressed: _dailyGoal < 30
+                            onPressed: _dailyGoal < maxDailyGoal
                                 ? () {
-                                    setState(() => _dailyGoal += 5);
+                                    setState(() => _dailyGoal += dailyGoalStep);
                                     _saveChanges();
                                   }
                                 : null,
@@ -282,12 +217,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             // Section 2: Nhắc nhở thông báo
             _buildSectionHeader('Nhắc nhở ôn tập'),
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.white,
+            // Material (thay vì Container có màu nền) để ListTile vẽ được hiệu ứng bấm
+            Material(
+              color: AppColors.white,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-                border: Border.all(color: AppColors.borderLight),
+                side: const BorderSide(color: AppColors.borderLight),
               ),
+              clipBehavior: Clip.antiAlias,
               child: Column(
                 children: [
                   SwitchListTile(
@@ -301,6 +238,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     onChanged: (val) {
                       setState(() => _isNotifEnabled = val);
                       _saveChanges();
+                      _applyReminder();
+                      AppToast.info(
+                        context,
+                        val ? 'Sẽ nhắc bạn ôn tập lúc $_reminderTime mỗi ngày' : 'Đã tắt nhắc nhở hằng ngày',
+                      );
                     },
                   ),
                   if (_isNotifEnabled) ...[
@@ -329,11 +271,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           context: context,
                           initialTime: initialTime,
                         );
-                        if (picked != null) {
+                        if (picked != null && mounted) {
                           final h = picked.hour.toString().padLeft(2, '0');
                           final m = picked.minute.toString().padLeft(2, '0');
                           setState(() => _reminderTime = '$h:$m');
                           _saveChanges();
+                          await _applyReminder();
+                          if (!context.mounted) return;
+                          AppToast.info(context, 'Đã đặt giờ nhắc học: $_reminderTime');
                         }
                       },
                     ),
@@ -393,12 +338,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             // Section 4: Tài khoản & Bảo mật
             _buildSectionHeader('Tài khoản & Bảo mật'),
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.white,
+            // Material (thay vì Container có màu nền) để ListTile vẽ được hiệu ứng bấm
+            Material(
+              color: AppColors.white,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-                border: Border.all(color: AppColors.borderLight),
+                side: const BorderSide(color: AppColors.borderLight),
               ),
+              clipBehavior: Clip.antiAlias,
               child: Column(
                 children: [
                   ListTile(
@@ -462,6 +409,126 @@ class _SettingsScreenState extends State<SettingsScreen> {
           letterSpacing: 0.8,
         ),
       ),
+    );
+  }
+}
+
+/// Hộp thoại đổi mật khẩu (Màn 23).
+/// Tách thành StatefulWidget riêng để controller được dispose đúng vòng đời
+/// (tránh lỗi dùng controller đã dispose khi dialog đang chạy hiệu ứng đóng).
+/// `pop(true)` khi đổi thành công.
+class ChangePasswordDialog extends StatefulWidget {
+  final AuthRepository authRepository;
+
+  const ChangePasswordDialog({super.key, required this.authRepository});
+
+  @override
+  State<ChangePasswordDialog> createState() => _ChangePasswordDialogState();
+}
+
+class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
+  final _currentController = TextEditingController();
+  final _newController = TextEditingController();
+  final _confirmController = TextEditingController();
+
+  bool _isLoading = false;
+  String? _currentError;
+  String? _newError;
+  String? _confirmError;
+
+  @override
+  void dispose() {
+    _currentController.dispose();
+    _newController.dispose();
+    _confirmController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_isLoading) return;
+    setState(() {
+      _currentError = Validators.required(_currentController.text, 'Vui lòng nhập mật khẩu hiện tại');
+      _newError = Validators.strongPassword(_newController.text);
+      _confirmError = Validators.confirmPassword(_confirmController.text, _newController.text);
+    });
+    if (_currentError != null || _newError != null || _confirmError != null) return;
+
+    setState(() => _isLoading = true);
+    try {
+      await widget.authRepository.changePassword(_currentController.text, _newController.text);
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _currentError = e.message;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppColors.cardBackground,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+      ),
+      title: Text('Đổi mật khẩu', style: AppTypography.headingMedium),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppTextField(
+              label: 'Mật khẩu hiện tại',
+              hintText: 'Nhập mật khẩu cũ',
+              controller: _currentController,
+              isPassword: true,
+              errorText: _currentError,
+            ),
+            const SizedBox(height: AppDimensions.space12),
+            AppTextField(
+              label: 'Mật khẩu mới',
+              hintText: '≥ 8 ký tự, 1 chữ hoa, 1 chữ số',
+              controller: _newController,
+              isPassword: true,
+              errorText: _newError,
+            ),
+            const SizedBox(height: AppDimensions.space12),
+            AppTextField(
+              label: 'Xác nhận mật khẩu mới',
+              hintText: 'Nhập lại mật khẩu mới',
+              controller: _confirmController,
+              isPassword: true,
+              textInputAction: TextInputAction.done,
+              errorText: _confirmError,
+              onSubmitted: (_) => _submit(),
+            ),
+          ],
+        ),
+      ),
+      actionsPadding: const EdgeInsets.all(AppDimensions.space16),
+      actions: [
+        TextButton(
+          onPressed: _isLoading ? null : () => Navigator.of(context).pop(false),
+          style: TextButton.styleFrom(
+            minimumSize: const Size(AppDimensions.minTouchTarget, AppDimensions.minTouchTarget),
+          ),
+          child: Text(
+            'Hủy',
+            style: AppTypography.bodyBold.copyWith(color: AppColors.textSecondary),
+          ),
+        ),
+        SizedBox(
+          width: 132,
+          child: AppButton(
+            text: 'Cập nhật',
+            onPressed: _submit,
+            isLoading: _isLoading,
+            height: AppDimensions.minTouchTarget,
+          ),
+        ),
+      ],
     );
   }
 }

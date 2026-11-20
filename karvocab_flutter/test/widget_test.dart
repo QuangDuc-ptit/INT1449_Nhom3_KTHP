@@ -7,45 +7,56 @@ import 'package:karvocab_flutter/presentation/screens/login_screen.dart';
 
 void main() {
   group('Kiểm thử Giao diện & Luồng chính (Widget Tests - Rubric INT1449)', () {
-    testWidgets('1. SplashScreen hiển thị đúng thương hiệu và slogan KarVocab', (WidgetTester tester) async {
+    testWidgets('1. SplashScreen hiển thị logo + chữ KarVocab rồi tự chuyển màn', (WidgetTester tester) async {
       await tester.pumpWidget(const KarVocabApp());
-      await tester.pump(const Duration(seconds: 2));
+      await tester.pump(const Duration(milliseconds: 1000));
 
-      // Kiểm tra sự xuất hiện của tên thương hiệu và slogan
+      // Trước khi chuyển màn ở 1.5s: logo + chữ thương hiệu, không có nút/loading
+      expect(find.byKey(const Key('splash_logo')), findsOneWidget);
       expect(find.text('KarVocab', findRichText: true), findsOneWidget);
-      expect(find.text('Learn Smart, Remember Longer'), findsOneWidget);
-    });
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(ElevatedButton), findsNothing);
 
-    testWidgets('2. LoginScreen hiển thị đầy đủ các trường nhập liệu và nút Demo', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: LoginScreen(),
-        ),
-      );
-
-      // Kiểm tra tiêu đề và ô nhập liệu
-      expect(find.text('Chào mừng trở lại! 👋'), findsOneWidget);
-      expect(find.text('Địa chỉ Email'), findsOneWidget);
-      expect(find.text('Mật khẩu'), findsOneWidget);
-
-      // Kiểm tra nút Đăng nhập chính và nút Demo Mode
-      expect(find.widgetWithText(AppButton, 'Đăng nhập'), findsOneWidget);
-      expect(find.text('⚡ Chế độ Dùng thử (Demo Offline)'), findsOneWidget);
-    });
-
-    testWidgets('3. LoginScreen báo lỗi validation khi để trống thông tin', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: LoginScreen(),
-        ),
-      );
-
-      // Bấm nút Đăng nhập khi chưa điền form
-      await tester.tap(find.widgetWithText(AppButton, 'Đăng nhập'));
+      // Chưa có phiên đăng nhập → tự chuyển sang Màn 02, splash bị thay thế
+      await tester.pump(const Duration(milliseconds: 600));
       await tester.pumpAndSettle();
+      expect(find.byType(LoginScreen), findsOneWidget);
+      expect(find.byKey(const Key('splash_logo')), findsNothing);
+      // Không còn route nào phía sau để Back quay về splash
+      final navigator = tester.state<NavigatorState>(find.byType(Navigator).first);
+      expect(navigator.canPop(), isFalse);
+    });
 
-      // Kiểm tra thông báo lỗi validation hiển thị
-      expect(find.text('Vui lòng nhập địa chỉ email'), findsOneWidget);
+    testWidgets('2. LoginScreen hiển thị đúng bố cục form Đăng nhập', (WidgetTester tester) async {
+      await tester.pumpWidget(const MaterialApp(home: LoginScreen()));
+
+      expect(find.byKey(const Key('auth_wordmark')), findsOneWidget);
+      expect(find.text('Chào mừng trở lại'), findsOneWidget);
+      expect(find.text('Địa chỉ email'), findsOneWidget);
+      expect(find.text('name@email.com'), findsOneWidget);
+      expect(find.text('Mật khẩu'), findsOneWidget);
+      expect(find.text('Xác nhận mật khẩu'), findsNothing);
+      expect(find.text('Quên mật khẩu?'), findsOneWidget);
+      expect(find.widgetWithText(AppButton, 'Đăng nhập'), findsOneWidget);
+      expect(find.text('Hoặc tiếp tục với'), findsOneWidget);
+      expect(find.text('Google'), findsOneWidget);
+      expect(find.text('Facebook'), findsOneWidget);
+      expect(find.text('Đăng ký ngay.'), findsOneWidget);
+    });
+
+    testWidgets('3. Bấm "Đăng ký ngay." chuyển sang form Đăng ký', (WidgetTester tester) async {
+      await tester.pumpWidget(const MaterialApp(home: LoginScreen()));
+
+      final registerNow = find.byKey(const Key('auth_register_now'));
+      await tester.ensureVisible(registerNow);
+      await tester.tap(registerNow);
+      await tester.pump();
+
+      expect(find.text('Tạo tài khoản\nKarVocab của bạn'), findsOneWidget);
+      expect(find.text('Xác nhận mật khẩu'), findsOneWidget);
+      expect(find.widgetWithText(AppButton, 'Đăng ký'), findsOneWidget);
+      expect(find.text('Quên mật khẩu?'), findsNothing);
+      expect(find.text('Đăng ký ngay.'), findsNothing);
     });
 
     testWidgets('4. AppButton phản hồi đúng sự kiện nhấn và đảm bảo touch target >= 48dp', (WidgetTester tester) async {

@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_typography.dart';
+import '../home/home_sample_data.dart';
+import '../notifications/notification_sample_data.dart';
+import '../notifications/notification_ui_state.dart';
+import '../widgets/notification_popup.dart';
+import '../widgets/app_bottom_nav_bar.dart';
+import 'home_screen.dart';
 import 'library_screen.dart';
 import 'profile_screen.dart';
 
@@ -18,6 +24,11 @@ class MainShellScreen extends StatefulWidget {
 class _MainShellScreenState extends State<MainShellScreen> {
   late int _currentIndex;
 
+  /// Dữ liệu popup thông báo. Chưa có backend: bắt đầu từ dữ liệu mẫu và
+  /// giả lập các thao tác ngay trên bộ nhớ (xem các hàm `_on…` bên dưới).
+  final ValueNotifier<NotificationUiState> _notifications =
+      ValueNotifier(NotificationSampleData.full(DateTime.now()));
+
   @override
   void initState() {
     super.initState();
@@ -25,10 +36,66 @@ class _MainShellScreenState extends State<MainShellScreen> {
   }
 
   @override
+  void dispose() {
+    _notifications.dispose();
+    super.dispose();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Giả lập thao tác thông báo (Sprint 3 thay bằng gọi API, giữ nguyên chữ ký)
+  // ---------------------------------------------------------------------------
+
+  void _setItems(List<NotificationItem> items, {int? totalCount, bool? canLoadMore}) {
+    _notifications.value = _notifications.value.copyWith(
+      items: items,
+      unreadCount: items.where((n) => !n.isRead).length,
+      totalCount: totalCount,
+      canLoadMore: canLoadMore,
+    );
+  }
+
+  void _onNotificationClick(String id) {
+    _setItems([
+      for (final n in _notifications.value.items) n.id == id ? n.copyWith(isRead: true) : n,
+    ]);
+  }
+
+  void _onMarkAllRead() {
+    _setItems([for (final n in _notifications.value.items) n.copyWith(isRead: true)]);
+  }
+
+  Future<void> _onRefresh() async {
+    _notifications.value = _notifications.value.copyWith(isRefreshing: true);
+    await Future<void>.delayed(NotificationSampleData.simulatedLatency);
+    if (!mounted) return;
+    _notifications.value = _notifications.value.copyWith(isRefreshing: false);
+  }
+
+  Future<void> _onLoadMore() async {
+    _notifications.value = _notifications.value.copyWith(isLoadingMore: true);
+    await Future<void>.delayed(NotificationSampleData.simulatedLatency);
+    if (!mounted) return;
+    final items = [..._notifications.value.items, ...NotificationSampleData.nextPage(DateTime.now())];
+    _setItems(items, totalCount: items.length, canLoadMore: false);
+    _notifications.value = _notifications.value.copyWith(isLoadingMore: false);
+  }
+
+  @override
   Widget build(BuildContext context) {
     // 4 Màn hình tương ứng 4 Tab
     final List<Widget> pages = [
-      _buildHomePlaceholder(),
+      // Màn 04 · Trang chủ — dữ liệu mẫu cho tới khi có backend
+      HomeScreen(
+        state: HomeSampleData.full,
+        notifications: _notifications,
+        notificationCallbacks: NotificationPopupCallbacks(
+          onNotificationClick: _onNotificationClick,
+          onMarkAllRead: _onMarkAllRead,
+          onRefresh: _onRefresh,
+          onLoadMore: _onLoadMore,
+        ),
+        onSeeAllCoursesClick: () => _selectTab(_libraryTab),
+      ),
       const LibraryScreen(), // Tab Thư viện do FE1 phát triển
       _buildPracticePlaceholder(), // Tab Luyện tập chờ FE2 cắm Quiz Engine
       const ProfileScreen(), // Tab Hồ sơ cá nhân do FE1 phát triển (Màn 15)
@@ -39,82 +106,16 @@ class _MainShellScreenState extends State<MainShellScreen> {
         index: _currentIndex,
         children: pages,
       ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.white,
-          border: Border(top: BorderSide(color: AppColors.borderLight, width: 1)),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) => setState(() => _currentIndex = index),
-          backgroundColor: AppColors.white,
-          elevation: 0,
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: AppColors.primaryBlue,
-          unselectedItemColor: AppColors.textMuted,
-          selectedLabelStyle: AppTypography.labelSmall.copyWith(
-            color: AppColors.primaryBlue,
-            fontWeight: FontWeight.w700,
-          ),
-          unselectedLabelStyle: AppTypography.labelSmall.copyWith(
-            color: AppColors.textMuted,
-            fontWeight: FontWeight.w600,
-          ),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home_rounded),
-              label: 'Trang chủ',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.local_library_outlined),
-              activeIcon: Icon(Icons.local_library_rounded),
-              label: 'Thư viện',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.psychology_outlined),
-              activeIcon: Icon(Icons.psychology_rounded),
-              label: 'Luyện tập',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline_rounded),
-              activeIcon: Icon(Icons.person_rounded),
-              label: 'Cá nhân',
-            ),
-          ],
-        ),
+      bottomNavigationBar: AppBottomNavBar(
+        currentIndex: _currentIndex,
+        onTabSelected: _selectTab,
       ),
     );
   }
 
-  // Placeholder cho Trang chủ (Màn 04 - do FE2 phụ trách)
-  Widget _buildHomePlaceholder() {
-    return Scaffold(
-      appBar: AppBar(title: Text('Trang chủ', style: AppTypography.headingLarge)),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration(
-                color: AppColors.softBlueSurface,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.local_fire_department_rounded, size: 64, color: AppColors.warningOrange),
-            ),
-            const SizedBox(height: 20),
-            Text('Chào mừng bạn đến với KarVocab!', style: AppTypography.headingMedium),
-            const SizedBox(height: 8),
-            Text(
-              'Chuyển sang tab "Thư viện" để bắt đầu khám phá từ vựng.',
-              style: AppTypography.bodyMedium,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  static const int _libraryTab = 1;
+
+  void _selectTab(int index) => setState(() => _currentIndex = index);
 
   // Placeholder cho Luyện tập (Màn 10 - do FE2 phụ trách)
   Widget _buildPracticePlaceholder() {

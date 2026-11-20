@@ -8,8 +8,52 @@ class AppColors {
   static const Color lightBlue = Color(0xFF4FC3FF);
   static const Color softBlueSurface = Color(0xFFDDF2FF);
 
+  // Thương hiệu "KarVocab": "Kar" và "Vocab" tô 2 màu (Màn 01 · Splash)
+  static const Color brandKar = primaryBlue; // #0095E8
+  static const Color brandVocab = navyBlue; // #0054AC
+
+  // Màn 02/03 · Đăng nhập / Đăng ký
+  /// Nền nút chính "Đăng nhập" / "Đăng ký".
+  static const Color authButton = Color(0xFF0070BE);
+
+  /// Link "Đăng ký ngay."
+  static const Color authLink = Color(0xFF009EEA);
+
+  // Màu thương hiệu của nút đăng nhập mạng xã hội
+  static const Color googleBlue = Color(0xFF4285F4);
+  static const Color googleRed = Color(0xFFEA4335);
+  static const Color googleYellow = Color(0xFFFBBC05);
+  static const Color googleGreen = Color(0xFF34A853);
+  static const Color facebookBlue = Color(0xFF1877F2);
+
+  // Màn 04 · Trang chủ (và thanh điều hướng dưới dùng chung)
+  /// Nền thẻ nhấn mạnh (thẻ "Cần ôn lại", thẻ nhắc ôn tập, ô icon học phần).
+  static const Color homeSurfaceTint = Color(0xFFE3F2FD);
+
+  /// Chữ phụ của Trang chủ — khác [textSecondary] (#64748B) của các màn khác.
+  static const Color homeTextSecondary = Color(0xFF6B7A90);
+
+  /// Đường kẻ, viền thẻ, nền thanh tiến độ; viền trên thanh điều hướng.
+  static const Color homeDivider = Color(0xFFE6EDF5);
+
+  static const Color chartBar = Color(0xFF9FD3F7);
+  static const Color chartBarToday = primaryBlue; // #0095E8
+  static const Color streak = Color(0xFFFF7A1A);
+  static const Color notificationBadge = errorRed; // #EF4444
+  static const Color navInactive = Color(0xFF8A97A8);
+
+  // Popup thông báo (Màn 04)
+  /// Tiêu đề thông báo đã đọc — khác [textPrimary] (#17324D) của các màn khác.
+  static const Color notificationTextPrimary = Color(0xFF1F2A3D);
+
   // Background Surfaces
-  static const Color mainBackground = Color(0xFFF5FAFE);
+  /// Màu nền chung của toàn app (#F5FAFE). Theme dùng màu này làm
+  /// scaffoldBackgroundColor; native splash Android dùng cùng giá trị
+  /// (android/app/src/main/res/values/colors.xml → splash_background).
+  static const Color background = Color(0xFFF5FAFE);
+
+  /// Tên cũ của [background], giữ lại để các màn hiện có không phải sửa.
+  static const Color mainBackground = background;
   static const Color secondaryBackground = Color(0xFFEAF6FD);
   static const Color cardBackground = Color(0xFFFFFFFF);
   static const Color white = Color(0xFFFFFFFF);

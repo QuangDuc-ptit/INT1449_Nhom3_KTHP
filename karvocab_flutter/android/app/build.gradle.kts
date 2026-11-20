@@ -47,3 +47,8 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // Android SplashScreen API (Màn 01 · Splash native), hỗ trợ cả Android < 12
+    implementation("androidx.core:core-splashscreen:1.0.1")
+}
