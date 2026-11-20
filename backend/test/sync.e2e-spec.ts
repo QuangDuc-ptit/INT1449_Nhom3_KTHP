@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { PrismaService } from '../src/infra/prisma/prisma.service';
+import { SYNC_OVERLAP_MS } from '../src/modules/sync/sync.service';
 import { createTestApp } from './utils/app';
 import { RegisteredUser, bearer, registerUser } from './utils/auth';
 import { resetDb, resetRedis } from './utils/db';
@@ -91,6 +92,8 @@ describe('Đồng bộ offline GET /sync/delta (e2e)', () => {
   });
 
   it('có since: chỉ trả phần thay đổi sau mốc đó, kèm tombstone', async () => {
+    // Dữ liệu tạo trong beforeEach phải cũ hơn khoảng lùi SYNC_OVERLAP_MS
+    await sleep(SYNC_OVERLAP_MS + 100);
     const t0: string = (await delta(a).expect(200)).body.data.serverTime;
     await sleep(20);
 
@@ -149,6 +152,20 @@ describe('Đồng bộ offline GET /sync/delta (e2e)', () => {
     const after = (await delta(b, '2000-01-01T00:00:00.000Z').expect(200)).body
       .data;
     expect(after.deleted).toEqual([]);
+  });
+
+  it('không bỏ sót thay đổi được ghi giờ ngay trước mốc since (transaction commit chậm)', async () => {
+    const t0: string = (await delta(a).expect(200)).body.data.serverTime;
+    // Mô phỏng transaction đóng dấu updatedAt trước t0 nhưng commit sau khi FE đã đồng bộ
+    await prisma.$executeRaw`
+      UPDATE "vocabularies"
+      SET "definition_vi" = 'commit chậm',
+          "updated_at" = ${new Date(new Date(t0).getTime() - 1000)}
+      WHERE "id" = ${wordOther}::uuid`;
+    const d = (await delta(a, t0).expect(200)).body.data;
+    expect(d.vocabularies.map((v: { id: string }) => v.id)).toContain(
+      wordOther,
+    );
   });
 
   it('since không hợp lệ trả 400', async () => {

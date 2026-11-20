@@ -87,7 +87,7 @@ Lỗi:
 | 23 | Cài đặt | `PATCH /users/settings`, `PATCH /users/password` |
 | Đăng xuất | | `POST /auth/logout`, `DELETE /users/devices` |
 | Push | Sau khi đăng nhập | `POST /users/devices` với FCM token |
-| Offline | Đồng bộ SQLite/Hive | `GET /sync/delta?since=<serverTime lần trước>` |
+| Offline | Đồng bộ SQLite/Hive | `GET /sync/delta?since=<serverTime lần trước>`. Server lùi mốc 2 giây để không sót dữ liệu, nên có thể trả lại bản ghi đã nhận: FE **upsert theo `id`** |
 
 ## 5. Luyện tập: quy ước quan trọng
 
