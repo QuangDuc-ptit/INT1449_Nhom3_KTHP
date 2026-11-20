@@ -13,6 +13,9 @@ import {
 export const collectionNotFound = () =>
   new AppException(404, 'COLLECTION_NOT_FOUND', 'Không tìm thấy học phần');
 
+/** Prisma không escape ký tự đặc biệt của LIKE; thoát \, %, _ để tìm theo nghĩa đen. */
+export const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
+
 export function toCollectionDto(c: Collection): CollectionDto {
   return {
     id: c.id,
@@ -64,8 +67,15 @@ export class CollectionsService {
       ...(q.search
         ? {
             OR: [
-              { title: { contains: q.search, mode: 'insensitive' } },
-              { description: { contains: q.search, mode: 'insensitive' } },
+              {
+                title: { contains: escapeLike(q.search), mode: 'insensitive' },
+              },
+              {
+                description: {
+                  contains: escapeLike(q.search),
+                  mode: 'insensitive',
+                },
+              },
             ],
           }
         : {}),

@@ -126,6 +126,27 @@ describe('Học phần (e2e)', () => {
         .set(bearer(a.accessToken))
         .expect(400);
     });
+
+    it('ký tự % và _ trong từ khoá được tìm theo nghĩa đen, không phải ký tự đại diện', async () => {
+      await create(a, { title: 'Tiếng Anh 100%' });
+      await create(a, { title: 'Từ_vựng IT' });
+      const percent = await http()
+        .get('/api/v1/collections')
+        .query({ search: '%' })
+        .set(bearer(a.accessToken))
+        .expect(200);
+      expect(
+        percent.body.data.items.map((c: { title: string }) => c.title),
+      ).toEqual(['Tiếng Anh 100%']);
+      const underscore = await http()
+        .get('/api/v1/collections')
+        .query({ search: '_' })
+        .set(bearer(a.accessToken))
+        .expect(200);
+      expect(
+        underscore.body.data.items.map((c: { title: string }) => c.title),
+      ).toEqual(['Từ_vựng IT']);
+    });
   });
 
   describe('Một học phần', () => {
