@@ -4,6 +4,7 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { Queue } from 'bullmq';
 import {
   VOCABULARY_CREATED,
+  VOCABULARY_AUDIO_MISSING,
   VOCABULARY_TERM_CHANGED,
 } from '../vocabularies/vocabularies.service';
 import type { VocabularyCreatedEvent } from '../vocabularies/vocabularies.service';
@@ -42,6 +43,7 @@ export class AudioProducer {
 
   @OnEvent(VOCABULARY_CREATED, { async: true, promisify: true })
   @OnEvent(VOCABULARY_TERM_CHANGED, { async: true, promisify: true })
+  @OnEvent(VOCABULARY_AUDIO_MISSING, { async: true, promisify: true })
   async onVocabularyCreated(event: VocabularyCreatedEvent): Promise<void> {
     try {
       await this.enqueue(event.ids);

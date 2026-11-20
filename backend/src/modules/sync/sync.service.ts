@@ -30,6 +30,9 @@ export interface SyncDeltaDto {
   deleted: { entityType: SyncEntity; entityId: string; deletedAt: Date }[];
 }
 
+/** Khoảng lùi (ms) khi so với since, xem SyncService.delta. */
+export const SYNC_OVERLAP_MS = 2000;
+
 @Injectable()
 export class SyncService {
   constructor(
@@ -41,7 +44,12 @@ export class SyncService {
   async delta(userId: string, since?: Date): Promise<SyncDeltaDto> {
     // Lấy mốc trước khi truy vấn để không bỏ sót thay đổi xảy ra trong lúc đọc
     const serverTime = this.clock.now();
-    const changed = since ? { updatedAt: { gt: since } } : {};
+    // Lùi mốc một chút: transaction đóng dấu updatedAt trước serverTime lần trước nhưng
+    // commit sau đó vẫn được gửi lại. FE upsert theo id nên nhận trùng không sao.
+    const from = since
+      ? new Date(since.getTime() - SYNC_OVERLAP_MS)
+      : undefined;
+    const changed = from ? { updatedAt: { gt: from } } : {};
 
     const [collections, vocabularies, progress, deleted] = await Promise.all([
       this.prisma.collection.findMany({
@@ -59,7 +67,7 @@ export class SyncService {
       }),
       since
         ? this.prisma.deletedRecord.findMany({
-            where: { userId, deletedAt: { gt: since } },
+            where: { userId, deletedAt: { gt: from } },
             orderBy: { deletedAt: 'asc' },
           })
         : Promise.resolve([]),

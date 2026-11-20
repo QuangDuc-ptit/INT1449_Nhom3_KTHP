@@ -7,9 +7,10 @@ import {
 
 /** Xác thực Google ID token (chữ ký, audience, hạn dùng) bằng google-auth-library. */
 export class GoogleVerifier {
-  private readonly client = new OAuth2Client();
-
-  constructor(private readonly clientId: string) {}
+  constructor(
+    private readonly clientId: string,
+    private readonly client: OAuth2Client = new OAuth2Client(),
+  ) {}
 
   async verify(idToken: string): Promise<SocialProfile> {
     let payload;
@@ -23,7 +24,8 @@ export class GoogleVerifier {
       throw socialTokenInvalid();
     }
     if (!payload?.sub) throw socialTokenInvalid();
-    if (!payload.email || payload.email_verified === false) {
+    // Chỉ tin email Google đã xác minh rõ ràng (email_verified === true)
+    if (!payload.email || payload.email_verified !== true) {
       throw socialEmailRequired();
     }
     return {

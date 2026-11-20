@@ -18,9 +18,14 @@ import { termKey, toVocabularyDto } from './vocabulary.mapper';
 export const VOCABULARY_CREATED = 'vocabulary.created';
 /** Phát khi term đổi: audio cũ đọc sai từ, cần sinh lại. */
 export const VOCABULARY_TERM_CHANGED = 'vocabulary.term-changed';
+/** Phát khi cần audio mà từ chưa có (TTS lỗi hoặc đang chờ): sinh lại audio. */
+export const VOCABULARY_AUDIO_MISSING = 'vocabulary.audio-missing';
 export interface VocabularyCreatedEvent {
   ids: string[];
 }
+
+const isUniqueViolation = (err: unknown) =>
+  err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002';
 
 export const vocabularyNotFound = () =>
   new AppException(404, 'VOCABULARY_NOT_FOUND', 'Không tìm thấy từ vựng');
@@ -77,7 +82,11 @@ export class VocabulariesService {
       collectionId,
       [dto],
       'manual',
-    );
+    ).catch((err: unknown) => {
+      // Request song song thêm cùng từ: ràng buộc unique (collection_id, term_key) chặn ở DB
+      if (isUniqueViolation(err)) throw vocabularyExists(dto.term);
+      throw err;
+    });
     if (skippedTerms.length) throw vocabularyExists(dto.term);
     this.emitCreated(saved);
     return this.toDtoWithProgress(userId, saved[0]);
@@ -117,7 +126,13 @@ export class VocabulariesService {
       seen.add(key);
       saved.push(
         await tx.vocabulary.create({
-          data: { ...w, term: w.term.trim(), collectionId, source },
+          data: {
+            ...w,
+            term: w.term.trim(),
+            termKey: key,
+            collectionId,
+            source,
+          },
         }),
       );
     }
@@ -189,11 +204,26 @@ export class VocabulariesService {
         throw vocabularyExists(newTerm);
       }
     }
-    const updated = await this.prisma.vocabulary.update({
-      where: { id },
-      // Đổi term thì bỏ audio cũ ngay để app không phát sai từ trong lúc chờ sinh lại
-      data: termChanged ? { ...dto, audioUkUrl: null, audioUsUrl: null } : dto,
-    });
+    const updated = await this.prisma.vocabulary
+      .update({
+        where: { id },
+        // Đổi term thì bỏ audio cũ ngay để app không phát sai từ trong lúc chờ sinh lại
+        data:
+          newTerm !== null && termChanged
+            ? {
+                ...dto,
+                termKey: termKey(newTerm),
+                audioUkUrl: null,
+                audioUsUrl: null,
+              }
+            : dto,
+      })
+      .catch((err: unknown) => {
+        if (isUniqueViolation(err) && newTerm !== null) {
+          throw vocabularyExists(newTerm);
+        }
+        throw err;
+      });
     if (termChanged) {
       const event: VocabularyCreatedEvent = { ids: [id] };
       this.events.emit(VOCABULARY_TERM_CHANGED, event);

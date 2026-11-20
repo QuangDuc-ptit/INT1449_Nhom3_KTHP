@@ -87,7 +87,7 @@ Lỗi:
 | 23 | Cài đặt | `PATCH /users/settings`, `PATCH /users/password` |
 | Đăng xuất | | `POST /auth/logout`, `DELETE /users/devices` |
 | Push | Sau khi đăng nhập | `POST /users/devices` với FCM token |
-| Offline | Đồng bộ SQLite/Hive | `GET /sync/delta?since=<serverTime lần trước>` |
+| Offline | Đồng bộ SQLite/Hive | `GET /sync/delta?since=<serverTime lần trước>`. Server lùi mốc 2 giây để không sót dữ liệu, nên có thể trả lại bản ghi đã nhận: FE **upsert theo `id`** |
 
 ## 5. Luyện tập: quy ước quan trọng
 
@@ -96,6 +96,9 @@ Lỗi:
   - `listen_type`: `audioUrl`, `ipa` → **gõ từ tiếng Anh**.
   - `choose_meaning`: `term`, `ipa` → chọn đúng **nghĩa tiếng Việt** trong 4 `options`.
   - `type_meaning`: `definitionVi` → **gõ từ tiếng Anh**.
+- Chế độ chọn luôn có 4 `options`. User chưa đủ từ thì server bù phương án từ danh sách mẫu; các phương án này có `vocabularyId: null`. Xác định đáp án đúng bằng `text == answer`.
+- Chế độ nghe: nếu từ chưa có file audio, `prompt` có `speakText` thay cho `audioUrl`; FE dùng TTS của thiết bị đọc chuỗi này. Server tự đẩy job sinh lại audio cho lần sau.
+- **Chống học dồn:** mỗi từ chỉ tính câu trả lời đầu tiên trong một phiên; trả lời đúng chỉ lên level khi từ đã đến hạn ôn hoặc còn là từ mới.
 - `answer` là đáp án đúng để FE phản hồi ngay (Màn 11). **Server tự chấm lại khi nộp bài** và bỏ qua `isCorrect` FE gửi lên. Chế độ gõ chấp nhận sai 1 ký tự với từ từ 3 ký tự trở lên.
 - **Mỗi phiên học, FE sinh một `clientSessionId` (UUID)** và gửi kèm khi nộp. Nếu mạng lỗi, gửi lại đúng request đó; server trả lại kết quả cũ, không tính hai lần.
 - Kết quả nộp bài có `streak` mới và `newBadges` để hiện popup huy hiệu (Màn 12).

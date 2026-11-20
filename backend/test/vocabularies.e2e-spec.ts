@@ -87,6 +87,24 @@ describe('Từ vựng (e2e)', () => {
       expect(await totalWords()).toBe(1);
     });
 
+    it('hai request thêm cùng một từ chạy song song: chỉ một từ được lưu', async () => {
+      const results = await Promise.all(
+        Array.from({ length: 5 }, (_, i) =>
+          addWord(a, { ...COHERENT, term: i % 2 ? 'Coherent' : 'coherent' }),
+        ),
+      );
+      const statuses = results.map((r) => r.status).sort();
+      expect(statuses.filter((s) => s === 201)).toHaveLength(1);
+      expect(statuses.filter((s) => s === 409)).toHaveLength(4);
+      for (const r of results.filter((x) => x.status === 409)) {
+        expect(r.body.errorCode).toBe('VOCABULARY_EXISTS');
+      }
+      expect(await prisma.vocabulary.count({ where: { collectionId } })).toBe(
+        1,
+      );
+      expect(await totalWords()).toBe(1);
+    });
+
     it('thiếu definitionVi hoặc cefrLevel sai trả 400', async () => {
       const noVi: Record<string, unknown> = { ...COHERENT };
       delete noVi.definitionVi;

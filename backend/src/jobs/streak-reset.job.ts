@@ -3,7 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { Clock } from '../common/time/clock';
 import {
   addDays,
-  dateOnlyToString,
+  dateStringToDateOnly,
   localDateString,
 } from '../common/time/tz.util';
 import { PrismaService } from '../infra/prisma/prisma.service';
@@ -29,25 +29,29 @@ export class StreakResetJob {
 
   async run(): Promise<number> {
     const now = this.clock.now();
-    const users = await this.prisma.user.findMany({
+    const timezones = await this.prisma.user.findMany({
       where: { currentStreak: { gt: 0 } },
-      select: { id: true, timezone: true, lastStreakDate: true },
+      distinct: ['timezone'],
+      select: { timezone: true },
     });
-    const yesterdayByTz = new Map<string, string>();
-    const expired = users.filter((u) => {
-      let yesterday = yesterdayByTz.get(u.timezone);
-      if (!yesterday) {
-        yesterday = addDays(localDateString(now, u.timezone), -1);
-        yesterdayByTz.set(u.timezone, yesterday);
-      }
-      const last = dateOnlyToString(u.lastStreakDate);
-      return !last || last < yesterday;
-    });
-    if (!expired.length) return 0;
-    const { count } = await this.prisma.user.updateMany({
-      where: { id: { in: expired.map((u) => u.id) }, currentStreak: { gt: 0 } },
-      data: { currentStreak: 0 },
-    });
-    return count;
+    let total = 0;
+    for (const { timezone } of timezones) {
+      const yesterday = addDays(localDateString(now, timezone), -1);
+      // Điều kiện ngày nằm ngay trong UPDATE nên user vừa nộp bài (đã cập nhật
+      // lastStreakDate) trong lúc job chạy sẽ không bị reset nhầm
+      const { count } = await this.prisma.user.updateMany({
+        where: {
+          timezone,
+          currentStreak: { gt: 0 },
+          OR: [
+            { lastStreakDate: null },
+            { lastStreakDate: { lt: dateStringToDateOnly(yesterday) } },
+          ],
+        },
+        data: { currentStreak: 0 },
+      });
+      total += count;
+    }
+    return total;
   }
 }

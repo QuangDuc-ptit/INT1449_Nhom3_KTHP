@@ -50,9 +50,12 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: npm run lint
+      - run: npm run typecheck
       - run: npm run build
       - run: npm test
       - run: npm run test:e2e
+      # schema.prisma phải khớp DB sau khi áp migration (không lệch index, bảng...)
+      - run: npx dotenv -e .env.test -- npm run db:drift
 
   docker:
     runs-on: ubuntu-latest
