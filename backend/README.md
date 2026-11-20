@@ -34,11 +34,13 @@ Mặc định mọi dịch vụ ngoài đều chạy **mock**, nên backend ho�
 
 ```bash
 npm run lint
+npm run typecheck                 # kiểm tra kiểu cả code lẫn test
 npm run build
 npm test                          # unit test
 npm run test:e2e                  # e2e trên DB karvocab_test và Redis DB 1
 npm test -- sm2                   # chạy riêng một file unit
 npm run test:e2e -- auth          # chạy riêng một file e2e
+npm run db:drift                  # schema.prisma phải khớp DB (exit 0 = không lệch)
 ```
 
 E2E tự áp migration và seed lên DB `karvocab_test` trước khi chạy, rồi xoá dữ liệu giữa các test. Nếu schema của DB test bị lệch (ví dụ khi đổi migration cũ), hãy reset thủ công: `npx dotenv -e .env.test -- npx prisma migrate reset`.
