@@ -1,4 +1,4 @@
-import { INTERVALS, SrsState, applyAnswer } from './sm2';
+import { INTERVALS, SrsState, applyAnswer, applySession } from './sm2';
 
 const NOW = new Date('2026-11-19T10:00:00.000Z');
 const DAY = 24 * 60 * 60 * 1000;
@@ -86,5 +86,51 @@ describe('SM-2 (biến thể theo đặc tả 4.1)', () => {
     const s = fresh();
     applyAnswer(s, true, NOW);
     expect(s).toEqual(fresh());
+  });
+});
+
+describe('applySession (chống học dồn, quyết định bổ sung #16)', () => {
+  const reviewState = (nextReviewAt: Date): SrsState => ({
+    repetitionLevel: 2,
+    easeFactor: 2.5,
+    intervalDays: 3,
+    status: 'review',
+    nextReviewAt,
+  });
+  const notDue = reviewState(new Date(NOW.getTime() + 2 * DAY));
+  const due = reviewState(new Date(NOW.getTime() - 1000));
+
+  it('từ mới trả lời đúng thì lên level 1', () => {
+    expect(applySession(fresh(), [true], NOW).repetitionLevel).toBe(1);
+  });
+
+  it('chỉ tính câu trả lời đầu tiên: đúng nhiều lần trong một phiên vẫn chỉ lên 1 level', () => {
+    expect(applySession(fresh(), [true, true, true], NOW)).toEqual(
+      applyAnswer(fresh(), true, NOW),
+    );
+  });
+
+  it('sai rồi đúng trong cùng phiên thì tính là sai', () => {
+    expect(applySession(due, [false, true], NOW)).toEqual(
+      applyAnswer(due, false, NOW),
+    );
+  });
+
+  it('từ đã đến hạn trả lời đúng thì lên level', () => {
+    expect(applySession(due, [true], NOW).repetitionLevel).toBe(3);
+  });
+
+  it('từ chưa đến hạn trả lời đúng thì giữ nguyên lịch ôn (không học dồn lên mastered)', () => {
+    expect(applySession(notDue, [true], NOW)).toEqual(notDue);
+  });
+
+  it('từ chưa đến hạn trả lời sai thì vẫn reset', () => {
+    expect(applySession(notDue, [false], NOW)).toEqual(
+      applyAnswer(notDue, false, NOW),
+    );
+  });
+
+  it('danh sách rỗng thì giữ nguyên', () => {
+    expect(applySession(due, [], NOW)).toEqual(due);
   });
 });

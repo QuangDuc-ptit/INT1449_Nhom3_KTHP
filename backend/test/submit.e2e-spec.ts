@@ -175,7 +175,42 @@ describe('Nộp bài luyện tập (e2e)', () => {
     expect(user.currentStreak).toBe(0);
   });
 
-  it('cùng một từ trả lời sai rồi đúng: SM-2 chạy theo thứ tự, kết quả level 1', async () => {
+  it('học dồn: nộp 5 phiên liền trong một tối, từ chỉ lên level 1, không thành mastered', async () => {
+    for (let i = 0; i < 5; i++) {
+      clock.set(new Date(NOW.getTime() + i * 60_000));
+      await submit(
+        baseBody([
+          {
+            vocabularyId: ids.coherent,
+            userAnswer: 'coherent',
+            responseTimeMs: 1,
+          },
+        ]),
+      ).expect(200);
+    }
+    const p = await progressOf('coherent');
+    expect(p).toMatchObject({
+      repetitionLevel: 1,
+      status: 'review',
+      intervalDays: 1,
+      reviewCount: 5,
+      correctCount: 5,
+    });
+    expect(p.nextReviewAt).toEqual(new Date('2026-11-20T10:00:00.000Z'));
+  });
+
+  it('ôn đúng hạn qua nhiều ngày thì vẫn lên level bình thường', async () => {
+    const one = baseBody([
+      { vocabularyId: ids.coherent, userAnswer: 'coherent', responseTimeMs: 1 },
+    ]);
+    await submit(one).expect(200); // level 1, hẹn sau 1 ngày
+    clock.set('2026-11-20T10:00:00.000Z');
+    await submit(one).expect(200); // đến hạn: level 2, hẹn sau 3 ngày
+    const p = await progressOf('coherent');
+    expect(p).toMatchObject({ repetitionLevel: 2, intervalDays: 3 });
+  });
+
+  it('cùng một từ trả lời sai rồi đúng trong một phiên: tính theo lần đầu (sai)', async () => {
     await submit(
       baseBody([
         { vocabularyId: ids.coherent, userAnswer: 'xyz', responseTimeMs: 1 },
@@ -188,8 +223,8 @@ describe('Nộp bài luyện tập (e2e)', () => {
     ).expect(200);
     const p = await progressOf('coherent');
     expect(p).toMatchObject({
-      repetitionLevel: 1,
-      status: 'review',
+      repetitionLevel: 0,
+      status: 'learning',
       reviewCount: 2,
       correctCount: 1,
       incorrectCount: 1,
