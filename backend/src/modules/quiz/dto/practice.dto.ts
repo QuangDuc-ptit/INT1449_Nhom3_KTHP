@@ -50,9 +50,17 @@ export interface QuestionDto {
     ipa?: string;
     audioUrl?: string;
     definitionVi?: string;
+    /**
+     * Chế độ nghe khi từ chưa có file audio: FE dùng TTS của thiết bị đọc chuỗi này
+     * (server đồng thời đẩy job sinh audio).
+     */
+    speakText?: string;
   };
-  /** Chỉ có ở chế độ chọn (listen_choose, choose_meaning). */
-  options?: { vocabularyId: string; text: string }[];
+  /**
+   * Chỉ có ở chế độ chọn (listen_choose, choose_meaning). Phương án bù từ danh
+   * sách mẫu (khi user chưa đủ từ) có vocabularyId = null.
+   */
+  options?: { vocabularyId: string | null; text: string }[];
   /** Đáp án đúng để FE phản hồi ngay (Màn 11); server vẫn tự chấm khi nộp bài. */
   answer: string;
 }

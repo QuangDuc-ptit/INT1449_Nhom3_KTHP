@@ -5,6 +5,7 @@ import { TestClock, createTestApp } from './utils/app';
 import { RegisteredUser, bearer, registerUser } from './utils/auth';
 import { resetDb, resetRedis } from './utils/db';
 import { seedCollection } from './utils/fixtures';
+import { waitFor } from './utils/wait';
 
 const NOW = new Date('2026-11-19T10:00:00.000Z');
 const hoursFromNow = (h: number) => new Date(NOW.getTime() + h * 3600_000);
@@ -241,5 +242,78 @@ describe('Luyện tập: câu hỏi, hàng đợi ôn tập (e2e)', () => {
     expect(res.body.data.mode).toBe('listen_choose');
     const got = res.body.data.questions.map((q: Question) => q.vocabularyId);
     expect(got.sort()).toEqual([ids.new1, ids.later1].sort());
+  });
+
+  describe('User mới có ít từ', () => {
+    let solo: RegisteredUser;
+    let soloCollection: string;
+
+    beforeEach(async () => {
+      solo = await registerUser(app);
+      soloCollection = (
+        await seedCollection(prisma, solo.user.id, 'Một từ', [
+          { term: 'coherent', definitionVi: 'mạch lạc' },
+        ])
+      ).collectionId;
+    });
+
+    it.each(['choose_meaning', 'listen_choose'])(
+      '%s: vẫn đủ 4 phương án khác nhau, chỉ một phương án đúng',
+      async (mode) => {
+        const res = await questions(
+          { collectionId: soloCollection, mode },
+          solo.accessToken,
+        ).expect(200);
+        const q: Question = res.body.data.questions[0];
+        expect(q.options).toHaveLength(4);
+        const texts = q.options!.map((o) => o.text);
+        expect(new Set(texts).size).toBe(4);
+        expect(texts.filter((t) => t === q.answer)).toHaveLength(1);
+        const correct = q.options!.filter(
+          (o) => o.vocabularyId === q.vocabularyId,
+        );
+        expect(correct).toHaveLength(1);
+        expect(correct[0].text).toBe(q.answer);
+      },
+    );
+  });
+
+  it('chế độ nghe với từ chưa có audio: có speakText để thiết bị tự đọc và audio được sinh lại', async () => {
+    const col = await prisma.collection.create({
+      data: { userId: u.user.id, title: 'Chưa có audio' },
+    });
+    const v = await prisma.vocabulary.create({
+      data: {
+        collectionId: col.id,
+        term: 'serendipity',
+        termKey: 'serendipity',
+        partOfSpeech: 'noun',
+        definitionVi: 'sự tình cờ may mắn',
+        cefrLevel: 'C1',
+      },
+    });
+    await prisma.userVocabProgress.create({
+      data: { userId: u.user.id, vocabularyId: v.id },
+    });
+    const res = await questions({
+      collectionId: col.id,
+      mode: 'listen_type',
+    }).expect(200);
+    const q = res.body.data.questions[0];
+    expect(q.prompt.audioUrl).toBeUndefined();
+    expect(q.prompt.speakText).toBe('serendipity');
+    await waitFor(async () => {
+      const again = await prisma.vocabulary.findUnique({ where: { id: v.id } });
+      return again?.audioUkUrl ? again : null;
+    });
+  });
+
+  it('từ đã có audio thì không trả speakText (tránh lộ đáp án)', async () => {
+    const res = await questions({ collectionId, mode: 'listen_type' }).expect(
+      200,
+    );
+    for (const q of res.body.data.questions) {
+      expect(q.prompt.speakText).toBeUndefined();
+    }
   });
 });

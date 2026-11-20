@@ -18,6 +18,8 @@ import { termKey, toVocabularyDto } from './vocabulary.mapper';
 export const VOCABULARY_CREATED = 'vocabulary.created';
 /** Phát khi term đổi: audio cũ đọc sai từ, cần sinh lại. */
 export const VOCABULARY_TERM_CHANGED = 'vocabulary.term-changed';
+/** Phát khi cần audio mà từ chưa có (TTS lỗi hoặc đang chờ): sinh lại audio. */
+export const VOCABULARY_AUDIO_MISSING = 'vocabulary.audio-missing';
 export interface VocabularyCreatedEvent {
   ids: string[];
 }

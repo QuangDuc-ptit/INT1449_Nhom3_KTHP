@@ -1,9 +1,20 @@
 import { Injectable } from '@nestjs/common';
-import { QuizMode, UserVocabProgress, Vocabulary } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { SAMPLE_WORDS } from '../../common/data/sample-words';
+import {
+  PartOfSpeech,
+  QuizMode,
+  UserVocabProgress,
+  Vocabulary,
+} from '@prisma/client';
 import { AppException } from '../../common/http/app.exception';
 import { Clock } from '../../common/time/clock';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { CollectionsService } from '../collections/collections.service';
+import {
+  VOCABULARY_AUDIO_MISSING,
+  type VocabularyCreatedEvent,
+} from '../vocabularies/vocabularies.service';
 import { toVocabularyDto } from '../vocabularies/vocabulary.mapper';
 import { DistractorCandidate, pickDistractors, shuffle } from './distractors';
 import {
@@ -12,11 +23,21 @@ import {
   QuestionsDto,
   QuestionsQueryDto,
 } from './dto/practice.dto';
-import { CHOICE_MODES, expectedAnswer } from './grading';
+import { CHOICE_MODES, expectedAnswer, normalizeAnswer } from './grading';
 
 type WordWithProgress = Vocabulary & { progress: UserVocabProgress[] };
 
 const OPTIONS_PER_QUESTION = 4;
+
+const FILLER_PREFIX = 'sample:';
+const FILLERS: DistractorCandidate[] = SAMPLE_WORDS.map(
+  ([term, pos, , , vi], i) => ({
+    id: `${FILLER_PREFIX}${i}`,
+    term,
+    partOfSpeech: pos as PartOfSpeech,
+    definitionVi: vi,
+  }),
+);
 
 export const sessionNotFound = () =>
   new AppException(404, 'SESSION_NOT_FOUND', 'Không tìm thấy phiên luyện tập');
@@ -27,6 +48,7 @@ export class QuestionService {
     private readonly prisma: PrismaService,
     private readonly collections: CollectionsService,
     private readonly clock: Clock,
+    private readonly events: EventEmitter2,
     private readonly rng: () => number = Math.random,
   ) {}
 
@@ -115,6 +137,15 @@ export class QuestionService {
     const choice = CHOICE_MODES.has(mode);
     const pool = choice ? await this.distractorPool(userId) : null;
 
+    // Chế độ nghe mà từ chưa có audio (TTS lỗi hoặc đang chờ): đẩy lại job sinh audio
+    if (mode === 'listen_choose' || mode === 'listen_type') {
+      const missing = words.filter((w) => !w.audioUkUrl && !w.audioUsUrl);
+      if (missing.length) {
+        const event: VocabularyCreatedEvent = { ids: missing.map((w) => w.id) };
+        this.events.emit(VOCABULARY_AUDIO_MISSING, event);
+      }
+    }
+
     return shuffle(words, this.rng).map((v) => {
       const question: QuestionDto = {
         vocabularyId: v.id,
@@ -122,19 +153,40 @@ export class QuestionService {
         answer: expectedAnswer(mode, v),
       };
       if (pool) {
-        const picked = pickDistractors(
-          v,
-          pool,
-          OPTIONS_PER_QUESTION - 1,
-          this.rng,
-        );
+        const need = OPTIONS_PER_QUESTION - 1;
+        const picked = pickDistractors(v, pool, need, this.rng);
+        if (picked.length < need) {
+          picked.push(
+            ...this.fillerDistractors(v, picked, need - picked.length),
+          );
+        }
         question.options = shuffle([v, ...picked], this.rng).map((o) => ({
-          vocabularyId: o.id,
+          vocabularyId: o.id.startsWith(FILLER_PREFIX) ? null : o.id,
           text: expectedAnswer(mode, o),
         }));
       }
       return question;
     });
+  }
+
+  /** Bù phương án từ danh sách mẫu khi user chưa đủ từ để tạo 4 lựa chọn. */
+  private fillerDistractors(
+    target: DistractorCandidate,
+    picked: DistractorCandidate[],
+    count: number,
+  ): DistractorCandidate[] {
+    const used = new Set(
+      [target, ...picked].flatMap((p) => [
+        normalizeAnswer(p.term),
+        normalizeAnswer(p.definitionVi),
+      ]),
+    );
+    const candidates = FILLERS.filter(
+      (f) =>
+        !used.has(normalizeAnswer(f.term)) &&
+        !used.has(normalizeAnswer(f.definitionVi)),
+    );
+    return pickDistractors(target, candidates, count, this.rng);
   }
 
   /** Ứng viên gây nhiễu: mọi từ trong các học phần của user. */
@@ -171,7 +223,11 @@ function promptFor(mode: QuizMode, v: Vocabulary): QuestionDto['prompt'] {
   switch (mode) {
     case 'listen_choose':
     case 'listen_type':
-      return { ...(audioUrl ? { audioUrl } : {}), ...(ipa ? { ipa } : {}) };
+      // Chưa có file audio thì cho thiết bị tự đọc; có audio thì không lộ chữ
+      return {
+        ...(audioUrl ? { audioUrl } : { speakText: v.term }),
+        ...(ipa ? { ipa } : {}),
+      };
     case 'choose_meaning':
       return { term: v.term, ...(ipa ? { ipa } : {}) };
     case 'type_meaning':
