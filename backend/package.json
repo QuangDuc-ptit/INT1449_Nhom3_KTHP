@@ -21,7 +21,8 @@
     "prisma:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "lint:fix": "eslint \"{src,test}/**/*.ts\" --fix",
-    "db:drift": "prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --exit-code"
+    "db:drift": "prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --exit-code",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1172.0",

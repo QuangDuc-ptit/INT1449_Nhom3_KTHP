@@ -13,7 +13,12 @@ export class LocalStorageService extends StorageService {
     super();
   }
 
-  async putObject(key: string, body: Buffer): Promise<string> {
+  /** contentType không cần cho file cục bộ (Express suy ra từ phần mở rộng). */
+  async putObject(
+    key: string,
+    body: Buffer,
+    _contentType?: string,
+  ): Promise<string> {
     assertSafeKey(key);
     const path = join(this.rootDir, ...key.split('/'));
     await mkdir(dirname(path), { recursive: true });
