@@ -29,6 +29,7 @@ export async function seedCollection(
       data: {
         collectionId: col.id,
         term: w.term,
+        termKey: w.term.trim().toLowerCase(),
         partOfSpeech: w.partOfSpeech ?? 'noun',
         definitionVi: w.definitionVi ?? `nghĩa của ${w.term}`,
         cefrLevel: w.cefrLevel ?? 'B1',

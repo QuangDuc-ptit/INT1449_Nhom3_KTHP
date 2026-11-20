@@ -165,6 +165,8 @@ model Vocabulary {
   id              String       @id @default(uuid()) @db.Uuid
   collectionId    String       @map("collection_id") @db.Uuid
   term            String
+  /// term đã chuẩn hoá (trim, gộp khoảng trắng, viết thường) để chặn trùng ở mức DB
+  termKey         String       @map("term_key")
   partOfSpeech    PartOfSpeech @map("part_of_speech")
   ipaUk           String?      @map("ipa_uk")
   ipaUs           String?      @map("ipa_us")
@@ -182,6 +184,7 @@ model Vocabulary {
   progress   UserVocabProgress[]
   answers    QuizAnswer[]
 
+  @@unique([collectionId, termKey])
   @@index([collectionId, term])
   @@map("vocabularies")
 }

@@ -47,6 +47,7 @@ describe('Schema (e2e)', () => {
       data: {
         collectionId: col.id,
         term: 'itinerary',
+        termKey: 'itinerary',
         partOfSpeech: 'noun',
         definitionVi: 'lịch trình',
         cefrLevel: 'B1',

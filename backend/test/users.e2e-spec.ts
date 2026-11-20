@@ -80,6 +80,7 @@ describe('Người dùng: hồ sơ, cài đặt, thiết bị (e2e)', () => {
           data: {
             collectionId: col.id,
             term,
+            termKey: term,
             partOfSpeech: 'noun',
             definitionVi: term,
             cefrLevel: 'A1',

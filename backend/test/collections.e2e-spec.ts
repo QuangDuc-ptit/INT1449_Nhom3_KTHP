@@ -199,6 +199,7 @@ describe('Học phần (e2e)', () => {
         data: {
           collectionId: id,
           term: 'souvenir',
+          termKey: 'souvenir',
           partOfSpeech: 'noun',
           definitionVi: 'quà lưu niệm',
           cefrLevel: 'A2',
