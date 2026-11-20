@@ -16,6 +16,8 @@ import { termKey, toVocabularyDto } from './vocabulary.mapper';
 
 /** Sự kiện phát sau khi từ mới được lưu (worker audio lắng nghe). */
 export const VOCABULARY_CREATED = 'vocabulary.created';
+/** Phát khi term đổi: audio cũ đọc sai từ, cần sinh lại. */
+export const VOCABULARY_TERM_CHANGED = 'vocabulary.term-changed';
 export interface VocabularyCreatedEvent {
   ids: string[];
 }
@@ -175,19 +177,27 @@ export class VocabulariesService {
     dto: UpdateVocabularyDto,
   ): Promise<VocabularyDto> {
     const current = await this.assertOwned(userId, id);
-    if (dto.term !== undefined && termKey(dto.term) !== termKey(current.term)) {
+    const newTerm = typeof dto.term === 'string' ? dto.term : null;
+    const termChanged =
+      newTerm !== null && termKey(newTerm) !== termKey(current.term);
+    if (newTerm !== null && termChanged) {
       const others = await this.prisma.vocabulary.findMany({
         where: { collectionId: current.collectionId, NOT: { id } },
         select: { term: true },
       });
-      if (others.some((o) => termKey(o.term) === termKey(dto.term!))) {
-        throw vocabularyExists(dto.term);
+      if (others.some((o) => termKey(o.term) === termKey(newTerm))) {
+        throw vocabularyExists(newTerm);
       }
     }
     const updated = await this.prisma.vocabulary.update({
       where: { id },
-      data: dto,
+      // Đổi term thì bỏ audio cũ ngay để app không phát sai từ trong lúc chờ sinh lại
+      data: termChanged ? { ...dto, audioUkUrl: null, audioUsUrl: null } : dto,
     });
+    if (termChanged) {
+      const event: VocabularyCreatedEvent = { ids: [id] };
+      this.events.emit(VOCABULARY_TERM_CHANGED, event);
+    }
     return this.toDtoWithProgress(userId, updated);
   }
 

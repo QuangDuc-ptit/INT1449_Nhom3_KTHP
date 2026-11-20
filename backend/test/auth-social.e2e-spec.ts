@@ -53,16 +53,20 @@ describe('Đăng nhập mạng xã hội (e2e, verifier mock)', () => {
     expect(await prisma.user.count()).toBe(1);
   });
 
-  it('email trùng tài khoản local thì liên kết vào tài khoản đó', async () => {
+  it('chế độ mock không được liên kết vào tài khoản có mật khẩu (chống chiếm tài khoản)', async () => {
     const local = await registerUser(app, { email: 'link@example.com' });
     const res = await social('facebook', 'mock:fb-9:link@example.com:L').expect(
-      200,
+      409,
     );
-    expect(res.body.data.user.id).toBe(local.user.id);
-    await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
-      .send({ email: 'link@example.com', password: local.password })
-      .expect(200);
+    expect(res.body.errorCode).toBe('SOCIAL_EMAIL_CONFLICT');
+    expect(res.body.data).toBeNull();
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { id: local.user.id },
+    });
+    expect(user.authProvider).toBe('local');
+    expect(
+      await prisma.refreshToken.count({ where: { userId: user.id } }),
+    ).toBe(1);
   });
 
   it('tài khoản social không có mật khẩu không đăng nhập bằng mật khẩu được', async () => {
