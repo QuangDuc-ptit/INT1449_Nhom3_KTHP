@@ -3,7 +3,7 @@ import { Prisma, UserVocabProgress } from '@prisma/client';
 import { Clock } from '../../common/time/clock';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { CollectionsService } from '../collections/collections.service';
-import { SrsState, applyAnswer } from '../spaced-repetition/sm2';
+import { SrsState, applySession } from '../spaced-repetition/sm2';
 import { StreakService, StreakSummary } from '../streak/streak.service';
 import { vocabularyNotFound } from '../vocabularies/vocabularies.service';
 import { BadgeDto, SessionResultDto, SubmitSessionDto } from './dto/submit.dto';
@@ -144,7 +144,7 @@ export class SubmitService {
     };
   }
 
-  /** Áp SM-2 cho từng câu trả lời theo thứ tự, rồi ghi một lần cho mỗi từ. */
+  /** Áp SM-2 một lần cho mỗi từ trong phiên (xem applySession), rồi ghi vào DB. */
   private async updateProgress(
     tx: Prisma.TransactionClient,
     userId: string,
@@ -172,6 +172,8 @@ export class SubmitService {
         },
       ]),
     );
+    // Gom kết quả theo từ (giữ thứ tự), đếm mọi câu nhưng SM-2 chỉ chạy một lần mỗi từ
+    const answersByWord = new Map<string, boolean[]>();
     for (const g of graded) {
       const cur = acc.get(g.vocabularyId) ?? {
         state: INITIAL,
@@ -180,11 +182,19 @@ export class SubmitService {
         incorrectCount: 0,
       };
       acc.set(g.vocabularyId, {
-        state: applyAnswer(cur.state, g.isCorrect, now),
+        state: cur.state,
         reviewCount: cur.reviewCount + 1,
         correctCount: cur.correctCount + (g.isCorrect ? 1 : 0),
         incorrectCount: cur.incorrectCount + (g.isCorrect ? 0 : 1),
       });
+      answersByWord.set(g.vocabularyId, [
+        ...(answersByWord.get(g.vocabularyId) ?? []),
+        g.isCorrect,
+      ]);
+    }
+    for (const [vocabularyId, answers] of answersByWord) {
+      const a = acc.get(vocabularyId)!;
+      a.state = applySession(a.state, answers, now);
     }
     for (const [vocabularyId, a] of acc) {
       const data = {

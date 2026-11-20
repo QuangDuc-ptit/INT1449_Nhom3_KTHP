@@ -50,7 +50,8 @@ Những điểm đặc tả chưa nói hoặc nói chưa khớp. Đây là quy�
     - `first_100` "Bách Khoa 100 Từ": điều kiện số từ có `status ≠ new` ≥ 100, `required_points = 100`.
     - `explorer_5` "Nhà Thám Hiểm": điều kiện số học phần ≥ 5, `required_points = 5`.
 14. **"Từ đã học hôm nay"** = số `vocabulary_id` khác nhau được trả lời **đúng** trong các phiên hoàn thành hôm nay, tính theo múi giờ của user.
-15. **Ngoài phạm vi:** deploy production, domain/SSL, Sentry/Grafana (SHARED-BE-02); chạy k6 thật với 500 CCU (chỉ viết script); backup tự động lên S3 (chỉ viết script `pg_dump`).
+16. **Chống học dồn (bổ sung sau review, người dùng đồng ý 20/11/2026):** mỗi từ chỉ chạy SM-2 **một lần mỗi phiên**, tính theo **câu trả lời đầu tiên**. Trả lời đúng chỉ lên level khi từ còn mới hoặc đã đến hạn (`nextReviewAt ≤ now`); chưa đến hạn thì giữ nguyên lịch, chỉ cộng số lần ôn. Trả lời sai vẫn reset như đặc tả. Mục đích: luyện dồn nhiều lần trong một tối không biến từ thành `mastered`.
+17. **Ngoài phạm vi:** deploy production, domain/SSL, Sentry/Grafana (SHARED-BE-02); chạy k6 thật với 500 CCU (chỉ viết script); backup tự động lên S3 (chỉ viết script `pg_dump`).
 
 ## Quy trình Git và quy chuẩn commit
 

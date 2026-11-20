@@ -49,3 +49,24 @@ export function applyAnswer(
     nextReviewAt: new Date(now.getTime() + DAY_MS),
   };
 }
+
+/**
+ * Áp kết quả một phiên học cho một từ (quyết định bổ sung #16, chống học dồn):
+ * - Chỉ tính câu trả lời ĐẦU TIÊN của từ trong phiên.
+ * - Trả lời đúng chỉ lên level khi từ còn mới hoặc đã đến hạn ôn; chưa đến hạn thì giữ nguyên lịch.
+ * - Trả lời sai thì luôn reset như đặc tả.
+ */
+export function applySession(
+  state: SrsState,
+  answers: boolean[],
+  now: Date,
+): SrsState {
+  if (!answers.length) return { ...state };
+  const firstCorrect = answers[0];
+  if (!firstCorrect) return applyAnswer(state, false, now);
+  const isDue =
+    state.status === 'new' ||
+    state.nextReviewAt === null ||
+    state.nextReviewAt.getTime() <= now.getTime();
+  return isDue ? applyAnswer(state, true, now) : { ...state };
+}
