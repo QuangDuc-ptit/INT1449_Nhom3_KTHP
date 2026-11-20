@@ -199,6 +199,28 @@ describe('Nộp bài luyện tập (e2e)', () => {
     expect(p.nextReviewAt).toEqual(new Date('2026-11-20T10:00:00.000Z'));
   });
 
+  it('nhiều phiên nộp song song (hai thiết bị) không ghi đè số lần ôn của nhau', async () => {
+    const results = await Promise.all(
+      Array.from({ length: 6 }, () =>
+        submit(
+          baseBody([
+            {
+              vocabularyId: ids.coherent,
+              userAnswer: 'coherent',
+              responseTimeMs: 1,
+            },
+          ]),
+        ),
+      ),
+    );
+    expect(results.map((r) => r.status)).toEqual(Array(6).fill(200));
+    const p = await progressOf('coherent');
+    expect(p.reviewCount).toBe(6);
+    expect(p.correctCount).toBe(6);
+    // Chống học dồn vẫn đúng khi song song: chỉ lên đúng 1 level
+    expect(p.repetitionLevel).toBe(1);
+  });
+
   it('ôn đúng hạn qua nhiều ngày thì vẫn lên level bình thường', async () => {
     const one = baseBody([
       { vocabularyId: ids.coherent, userAnswer: 'coherent', responseTimeMs: 1 },

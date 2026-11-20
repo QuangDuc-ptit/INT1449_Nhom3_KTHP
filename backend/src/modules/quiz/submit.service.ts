@@ -151,7 +151,16 @@ export class SubmitService {
     graded: { vocabularyId: string; isCorrect: boolean }[],
     now: Date,
   ): Promise<void> {
-    const ids = [...new Set(graded.map((g) => g.vocabularyId))];
+    const ids = [...new Set(graded.map((g) => g.vocabularyId))].sort();
+    // Khoá các dòng tiến độ tới hết transaction: hai phiên nộp song song (hai
+    // thiết bị) cho cùng từ sẽ chạy lần lượt thay vì ghi đè số liệu của nhau.
+    // Sắp xếp id để mọi transaction khoá theo cùng thứ tự, tránh deadlock.
+    await tx.$queryRaw`
+      SELECT 1 FROM "user_vocab_progress"
+      WHERE "user_id" = ${userId}::uuid
+        AND "vocabulary_id" = ANY(${ids}::uuid[])
+      ORDER BY "vocabulary_id"
+      FOR UPDATE`;
     const existing = await tx.userVocabProgress.findMany({
       where: { userId, vocabularyId: { in: ids } },
     });
