@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
@@ -19,6 +20,28 @@ class AiGenerateScreen extends StatefulWidget {
   final AiVocabRepository? repository;
 
   const AiGenerateScreen({super.key, this.repository});
+
+  /// Chuyển `errorCode` của BE thành thông báo tiếng Việt cho Màn 13.
+  @visibleForTesting
+  static String aiErrorMessage(AiVocabException e) {
+    switch (e.errorCode) {
+      case 'RATE_LIMITED':
+        final s = e.retryAfterSeconds;
+        return s == null
+            ? 'Bạn thao tác quá nhanh. Vui lòng chờ một lát rồi thử lại.'
+            : 'Bạn thao tác quá nhanh. Vui lòng chờ $s giây rồi thử lại.';
+      case 'AI_TIMEOUT':
+        return 'AI phản hồi quá lâu. Vui lòng thử lại.';
+      case 'AI_BAD_RESPONSE':
+        return 'AI trả về dữ liệu không hợp lệ. Hãy thử lại hoặc đổi chủ đề.';
+      case 'AI_UNAVAILABLE':
+        return 'Dịch vụ AI đang tạm thời không khả dụng. Vui lòng thử lại sau.';
+      case 'UNAUTHORIZED':
+        return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+      default:
+        return e.message ?? 'Không thể tạo từ vựng. Vui lòng thử lại.';
+    }
+  }
 
   @override
   State<AiGenerateScreen> createState() => _AiGenerateScreenState();
@@ -91,7 +114,9 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
         ),
       );
     } on TimeoutException {
-      _fail('AI phản hồi quá lâu (> 15 giây). Vui lòng thử lại.');
+      _fail(AiGenerateScreen.aiErrorMessage(const AiVocabException('AI_TIMEOUT')));
+    } on AiVocabException catch (e) {
+      _fail(AiGenerateScreen.aiErrorMessage(e));
     } catch (_) {
       _fail('Không thể kết nối tới máy chủ AI. Kiểm tra mạng và thử lại.');
     }

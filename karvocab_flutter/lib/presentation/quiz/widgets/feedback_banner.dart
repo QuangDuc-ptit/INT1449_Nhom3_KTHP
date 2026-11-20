@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/vocab_display.dart';
 import '../../../data/models/quiz_models.dart';
 
 /// Banner phản hồi đáp án (Màn 11): xanh = đúng, cam = suýt đúng, đỏ = sai + đáp án đúng + giải thích.
@@ -85,7 +86,7 @@ class FeedbackBanner extends StatelessWidget {
             ],
             const SizedBox(height: AppDimensions.space8),
             Text(
-              '${vocab.term} ${vocab.ipa} — ${vocab.definitionVi}',
+              '${vocab.term} ${vocab.ipaText} — ${vocab.definitionVi}',
               style: AppTypography.bodyMedium,
             ),
             const SizedBox(height: AppDimensions.space16),

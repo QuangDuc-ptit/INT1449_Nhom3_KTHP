@@ -29,13 +29,13 @@ int levenshtein(String a, String b) {
 
 /// Chấm đáp án gõ chữ:
 /// - Khớp tuyệt đối sau chuẩn hoá → correct
-/// - Từ dài > 6 ký tự và sai đúng 1 ký tự → almost ("Suýt đúng!")
+/// - Từ từ 3 ký tự trở lên và sai đúng 1 ký tự → almost ("Suýt đúng!"), khớp quy tắc chấm của BE
 /// - Còn lại → wrong
 AnswerResult evaluateTypedAnswer(String userInput, String correctTerm) {
   final user = normalizeAnswer(userInput);
   final correct = normalizeAnswer(correctTerm);
   if (user == correct) return AnswerResult.correct;
-  if (correct.length > 6 && levenshtein(user, correct) == 1) {
+  if (correct.length >= 3 && levenshtein(user, correct) == 1) {
     return AnswerResult.almost;
   }
   return AnswerResult.wrong;

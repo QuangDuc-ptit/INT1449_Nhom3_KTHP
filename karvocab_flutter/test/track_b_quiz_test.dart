@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:karvocab_flutter/core/utils/fuzzy_match.dart';
+import 'package:karvocab_flutter/core/utils/session_id.dart';
 import 'package:karvocab_flutter/data/mock/mock_vocab_data.dart';
 import 'package:karvocab_flutter/data/models/quiz_models.dart';
 import 'package:karvocab_flutter/data/repositories/ai_vocab_repository.dart';
@@ -53,9 +54,14 @@ void main() {
       expect(evaluateTypedAnswer('coherant', 'coherent'), AnswerResult.almost);
     });
 
-    test('ngưỡng độ dài: > 6 ký tự mới được tha lỗi 1 ký tự', () {
-      expect(evaluateTypedAnswer('explora', 'explore'), AnswerResult.almost);
-      expect(evaluateTypedAnswer('rost', 'roast'), AnswerResult.wrong);
+    test('theo BE: từ ≥ 3 ký tự sai 1 ký tự vẫn được chấp nhận (suýt đúng)', () {
+      expect(evaluateTypedAnswer('rost', 'roast'), AnswerResult.almost);
+      expect(evaluateTypedAnswer('cot', 'cat'), AnswerResult.almost);
+    });
+
+    test('từ 2 ký tự sai 1 ký tự, hoặc sai ≥ 2 ký tự → sai', () {
+      expect(evaluateTypedAnswer('ax', 'at'), AnswerResult.wrong);
+      expect(evaluateTypedAnswer('coharant', 'coherent'), AnswerResult.wrong);
     });
   });
 
@@ -178,11 +184,107 @@ void main() {
             responseTimeMs: 1000,
           ),
       ];
-      store.recordSessionResult(QuizSummary(records: records, durationSeconds: 30));
+      store.recordSessionResult(QuizSummary(
+        records: records,
+        durationSeconds: 30,
+        clientSessionId: 'test-session',
+      ));
 
       expect(store.reviewedToday, reviewedBefore + 5);
       expect(store.streak, streakBefore + 1);
       expect(store.studiedToday, isTrue);
+    });
+  });
+
+  group('Track B — Đối chiếu FE-BE', () {
+    test('apiKey khớp tên chế độ của BE', () {
+      expect(QuizMode.listenChoose.apiKey, 'listen_choose');
+      expect(QuizMode.listenType.apiKey, 'listen_type');
+      expect(QuizMode.meaningChoose.apiKey, 'choose_meaning');
+      expect(QuizMode.recallType.apiKey, 'type_meaning');
+    });
+
+    test('clientSessionId là UUID v4 và khác nhau giữa các phiên', () {
+      final a = generateClientSessionId();
+      final b = generateClientSessionId();
+      final uuid = RegExp(
+        r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+      );
+      expect(uuid.hasMatch(a), isTrue);
+      expect(a, isNot(b));
+    });
+
+    test('mục tiêu ngày bị giới hạn trong 5–30', () {
+      final store = DashboardStore.forTest();
+      store.setDailyGoal(1);
+      expect(store.dailyGoal, 5);
+      store.setDailyGoal(99);
+      expect(store.dailyGoal, 30);
+    });
+
+    test('chống học dồn: chỉ tính câu đầu tiên của mỗi từ và từ chưa đến hạn không lên level', () {
+      final store = DashboardStore.forTest();
+      final due = store.dueVocabularies.first;
+      final dueBefore = store.progressOf(due.id)!;
+      final q = QuizQuestionFactory.build(
+        mode: QuizMode.meaningChoose,
+        pool: [due],
+        count: 1,
+      ).first;
+      QuizAnswerRecord rec(AnswerResult r) => QuizAnswerRecord(
+            question: q,
+            userAnswer: 'x',
+            result: r,
+            responseTimeMs: 500,
+          );
+
+      // Sai trước rồi đúng sau trong cùng phiên → chỉ câu sai được tính
+      store.recordSessionResult(QuizSummary(
+        records: [rec(AnswerResult.wrong), rec(AnswerResult.correct)],
+        durationSeconds: 5,
+        clientSessionId: 's1',
+      ));
+      final afterWrong = store.progressOf(due.id)!;
+      expect(afterWrong.repetitionLevel, 0);
+      expect(afterWrong.intervalDays, 1);
+      expect(dueBefore.nextReviewAt.isAfter(afterWrong.nextReviewAt), isFalse);
+
+      // Từ đã hẹn ôn ngày mai: trả lời đúng ngay hôm nay không được lên level
+      store.recordSessionResult(QuizSummary(
+        records: [rec(AnswerResult.correct)],
+        durationSeconds: 5,
+        clientSessionId: 's2',
+        isRetry: true,
+      ));
+      expect(store.progressOf(due.id)!.repetitionLevel, 0);
+    });
+
+    test('AiVocabDraft đọc ipaUk/ipaUs và mặc định bỏ chọn từ đã có', () {
+      final d = AiVocabDraft.fromJson({
+        'term': 'roast',
+        'partOfSpeech': 'verb',
+        'ipaUs': '/roʊst/',
+        'definitionEn': 'x',
+        'definitionVi': 'Rang',
+        'exampleSentence': 'y',
+        'cefrLevel': 'B1',
+        'existsInCollection': true,
+      });
+      expect(d.ipa, '/roʊst/');
+      expect(d.selected, isFalse);
+    });
+
+    test('map errorCode của BE sang thông báo tiếng Việt cho Màn 13', () {
+      expect(
+        AiGenerateScreen.aiErrorMessage(
+          const AiVocabException('RATE_LIMITED', retryAfterSeconds: 12),
+        ),
+        contains('12 giây'),
+      );
+      expect(
+        AiGenerateScreen.aiErrorMessage(const AiVocabException('AI_TIMEOUT')),
+        contains('quá lâu'),
+      );
     });
   });
 

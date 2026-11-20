@@ -105,7 +105,7 @@ class DashboardStore extends ChangeNotifier {
   void _seed() {
     final profile = UserProfileModel.mockDefault();
     _streak = profile.currentStreak;
-    _dailyGoal = profile.dailyGoalWords;
+    _dailyGoal = profile.dailyGoalWords.clamp(minDailyGoal, maxDailyGoal);
     _reviewedToday = 4;
     _studiedToday = false;
     _progress.clear();
@@ -121,8 +121,12 @@ class DashboardStore extends ChangeNotifier {
     }
   }
 
+  /// BE chỉ nhận mục tiêu ngày trong khoảng 5–30 từ.
+  static const int minDailyGoal = 5;
+  static const int maxDailyGoal = 30;
+
   void setDailyGoal(int value) {
-    _dailyGoal = value;
+    _dailyGoal = value.clamp(minDailyGoal, maxDailyGoal);
     notifyListeners();
   }
 
@@ -130,10 +134,19 @@ class DashboardStore extends ChangeNotifier {
   void recordSessionResult(QuizSummary summary) {
     final now = DateTime.now();
 
+    // Chống học dồn (FE-BE-ALIGNMENT mục 5): mỗi từ chỉ tính câu trả lời ĐẦU TIÊN
+    // trong phiên; trả lời đúng chỉ lên level khi từ đã đến hạn hoặc còn là từ mới.
+    final counted = <String>{};
     for (final r in summary.records) {
-      final old = _progress[r.question.vocab.id] ??
-          Sm2Engine.initial(now);
-      _progress[r.question.vocab.id] = Sm2Engine.apply(old, r.isCorrect, now);
+      final id = r.question.vocab.id;
+      if (!counted.add(id)) continue;
+
+      final old = _progress[id] ?? Sm2Engine.initial(now);
+      final isNew = old.repetitionLevel == 0 && old.intervalDays == 0;
+      final isDue = !old.nextReviewAt.isAfter(now);
+      if (r.isCorrect && !isNew && !isDue) continue;
+
+      _progress[id] = Sm2Engine.apply(old, r.isCorrect, now);
     }
 
     // Phiên "Thử lại câu sai" không cộng lại vào mục tiêu ngày để tránh đếm đôi.

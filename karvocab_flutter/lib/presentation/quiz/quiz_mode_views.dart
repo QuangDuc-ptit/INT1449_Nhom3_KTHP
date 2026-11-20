@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/utils/vocab_display.dart';
 import '../../core/widgets/cefr_badge.dart';
 import '../../data/models/quiz_models.dart';
 import '../../data/services/speech_service.dart';
@@ -122,7 +123,7 @@ class MeaningChooseView extends StatelessWidget {
               const SizedBox(height: AppDimensions.space8),
               Text(v.term, style: AppTypography.displayLarge, textAlign: TextAlign.center),
               const SizedBox(height: AppDimensions.space4),
-              Text(v.ipa, style: AppTypography.bodyMedium),
+              Text(v.ipaText, style: AppTypography.bodyMedium),
               const SizedBox(height: AppDimensions.space8),
               IconButton(
                 tooltip: 'Nghe phát âm',

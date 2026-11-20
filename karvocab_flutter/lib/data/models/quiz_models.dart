@@ -5,6 +5,7 @@ enum QuizMode { listenChoose, listenType, meaningChoose, recallType }
 
 extension QuizModeX on QuizMode {
   /// Giá trị gửi lên `GET /practice/questions?mode=...` & `POST /practice/submit-session`
+  /// (theo FE-BE-ALIGNMENT mục 5: listen_choose | listen_type | choose_meaning | type_meaning)
   String get apiKey {
     switch (this) {
       case QuizMode.listenChoose:
@@ -12,9 +13,9 @@ extension QuizModeX on QuizMode {
       case QuizMode.listenType:
         return 'listen_type';
       case QuizMode.meaningChoose:
-        return 'meaning_choose';
+        return 'choose_meaning';
       case QuizMode.recallType:
-        return 'recall_type';
+        return 'type_meaning';
     }
   }
 
@@ -49,7 +50,7 @@ extension QuizModeX on QuizMode {
 }
 
 /// Kết quả chấm 1 câu trả lời.
-/// `almost` = sai đúng 1 ký tự (Levenshtein = 1, từ dài > 6) → vẫn tính là đúng nhưng nhắc chính tả.
+/// `almost` = sai đúng 1 ký tự (Levenshtein = 1, từ ≥ 3 ký tự, theo BE) → vẫn tính là đúng nhưng nhắc chính tả.
 enum AnswerResult { correct, almost, wrong }
 
 /// 1 câu hỏi trong phiên luyện tập.
@@ -96,9 +97,14 @@ class QuizSummary {
   final int durationSeconds;
   final bool isRetry;
 
+  /// UUID sinh 1 lần cho mỗi phiên; gửi kèm `POST /practice/submit-session`
+  /// để nếu mạng lỗi gửi lại thì server không tính hai lần.
+  final String clientSessionId;
+
   const QuizSummary({
     required this.records,
     required this.durationSeconds,
+    required this.clientSessionId,
     this.isRetry = false,
   });
 

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../core/utils/fuzzy_match.dart';
+import '../../core/utils/session_id.dart';
 import '../../data/models/quiz_models.dart';
 import '../../data/services/feedback_service.dart';
 
@@ -19,6 +20,9 @@ class QuizController extends ChangeNotifier {
   final List<QuizQuestion> questions;
   final bool isRetry;
   final FeedbackService _feedback;
+
+  /// UUID của phiên, gửi kèm khi nộp bài.
+  final String clientSessionId = generateClientSessionId();
 
   final Stopwatch _total = Stopwatch();
   final Stopwatch _question = Stopwatch();
@@ -43,7 +47,7 @@ class QuizController extends ChangeNotifier {
     _commit(option, isRight ? AnswerResult.correct : AnswerResult.wrong);
   }
 
-  /// Chế độ gõ chữ: trim + lowercase + fuzzy matching (Levenshtein = 1 với từ > 6 ký tự).
+  /// Chế độ gõ chữ: trim + lowercase + fuzzy matching (Levenshtein = 1 với từ ≥ 3 ký tự).
   void submitTyped(String text) {
     if (isAnswered || text.trim().isEmpty) return;
     _commit(text.trim(), evaluateTypedAnswer(text, current.correctAnswer));
@@ -85,6 +89,7 @@ class QuizController extends ChangeNotifier {
     return QuizSummary(
       records: List.of(_records),
       durationSeconds: _total.elapsed.inSeconds,
+      clientSessionId: clientSessionId,
       isRetry: isRetry,
     );
   }

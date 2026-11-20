@@ -2,6 +2,21 @@ import 'dart:math';
 
 import '../models/ai_vocab_draft.dart';
 
+/// Lỗi từ API AI, mang `errorCode` của BE (FE-BE-ALIGNMENT mục 2).
+class AiVocabException implements Exception {
+  /// RATE_LIMITED | AI_TIMEOUT | AI_BAD_RESPONSE | AI_UNAVAILABLE | UNAUTHORIZED ...
+  final String errorCode;
+  final String? message;
+
+  /// Số giây chờ (header `Retry-After`) khi bị RATE_LIMITED.
+  final int? retryAfterSeconds;
+
+  const AiVocabException(this.errorCode, {this.message, this.retryAfterSeconds});
+
+  @override
+  String toString() => 'AiVocabException($errorCode)';
+}
+
 /// Hợp đồng gọi `POST /api/v1/ai/generate-vocab`.
 /// Khi BE sẵn sàng, tạo `RemoteAiVocabRepository` implement lớp này (khoá Gemini nằm ở server, KHÔNG nằm trong app).
 abstract class AiVocabRepository {
@@ -58,7 +73,7 @@ class MockAiVocabRepository implements AiVocabRepository {
   }) async {
     await Future<void>.delayed(const Duration(seconds: 2));
     if (simulateFailure) {
-      throw Exception('Không thể kết nối tới máy chủ AI');
+      throw const AiVocabException('AI_UNAVAILABLE');
     }
 
     final lower = topic.toLowerCase();
@@ -81,7 +96,7 @@ class MockAiVocabRepository implements AiVocabRepository {
         AiVocabDraft.fromJson({
           'term': _bank[i]['t'],
           'partOfSpeech': _bank[i]['p'],
-          'ipa': _bank[i]['i'],
+          'ipaUk': _bank[i]['i'],
           'definitionEn': _bank[i]['e'],
           'definitionVi': _bank[i]['v'],
           'exampleSentence': _bank[i]['s'],

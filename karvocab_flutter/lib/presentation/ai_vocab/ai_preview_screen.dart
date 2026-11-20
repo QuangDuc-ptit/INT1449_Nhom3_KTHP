@@ -282,6 +282,13 @@ class _DraftCard extends StatelessWidget {
                     children: [
                       Text(draft.term, style: AppTypography.headingMedium),
                       CefrBadge(level: draft.cefrLevel),
+                      if (draft.existsInCollection)
+                        Text(
+                          'Đã có trong học phần',
+                          style: AppTypography.labelSmall.copyWith(
+                            color: AppColors.warningOrange,
+                          ),
+                        ),
                     ],
                   ),
                   const SizedBox(height: AppDimensions.space4),
