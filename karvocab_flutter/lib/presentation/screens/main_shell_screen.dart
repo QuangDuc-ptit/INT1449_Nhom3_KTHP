@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_dimensions.dart';
 import '../../core/theme/app_typography.dart';
 import '../home/home_sample_data.dart';
 import '../notifications/notification_sample_data.dart';
@@ -126,16 +127,16 @@ class _MainShellScreenState extends State<MainShellScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(AppDimensions.space24),
               decoration: const BoxDecoration(
                 color: AppColors.softBlueSurface,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.school_rounded, size: 64, color: AppColors.primaryBlue),
+              child: const Icon(Icons.school_rounded, size: AppDimensions.iconHero, color: AppColors.primaryBlue),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppDimensions.space20),
             Text('Khu vực Luyện tập (Quiz Engine)', style: AppTypography.headingMedium),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppDimensions.space8),
             Text(
               '4 Chế độ luyện tập đang được FE2 hoàn thiện.',
               style: AppTypography.bodyMedium,

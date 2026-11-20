@@ -7,18 +7,25 @@ import '../../core/constants/app_dimensions.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_text_field.dart';
+import '../../data/repositories/auth_repository.dart';
+import '../forgot_password/forgot_password_ui_state.dart';
+import 'forgot_password_screen.dart';
 import 'main_shell_screen.dart';
 
 /// Màn 02 · Đăng nhập & Màn 03 · Đăng ký — một màn, đổi form bằng thanh tab.
 ///
-/// Hiện chỉ làm giao diện (chưa nối backend):
-/// - "Đăng nhập" → chuyển tới Trang chủ ([MainShellScreen]).
-/// - "Đăng ký", Google, Facebook, "Quên mật khẩu?" → chưa có hành động.
+/// - "Đăng nhập" → kiểm tra qua [AuthRepository.login]. Đúng → Trang chủ
+///   ([MainShellScreen]); email chưa đăng ký / sai mật khẩu → lỗi dưới ô tương ứng.
+/// - "Quên mật khẩu?" → Màn 21 ([ForgotPasswordScreen]).
+/// - "Đăng ký", Google, Facebook → chưa có hành động.
 class LoginScreen extends StatefulWidget {
   /// 0 = Đăng nhập, 1 = Đăng ký.
   final int initialTab;
 
-  const LoginScreen({super.key, this.initialTab = 0});
+  /// Mặc định [AuthRepository.instance]; test truyền bản riêng.
+  final AuthRepository? authRepository;
+
+  const LoginScreen({super.key, this.initialTab = 0, this.authRepository});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -32,6 +39,14 @@ class _LoginScreenState extends State<LoginScreen> {
   final _registerConfirmController = TextEditingController();
 
   late int _tab = widget.initialTab;
+
+  String? _loginEmailError;
+  String? _loginPasswordError;
+
+  /// Chặn bấm "Đăng nhập" nhiều lần khi đang chờ kết quả.
+  bool _isSubmitting = false;
+
+  AuthRepository get _auth => widget.authRepository ?? AuthRepository.instance;
 
   bool get _isLogin => _tab == 0;
 
@@ -51,12 +66,39 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _tab = index);
   }
 
-  void _handleLogin() {
+  Future<void> _handleLogin() async {
+    if (_isSubmitting) return;
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _isSubmitting = true;
+      _loginEmailError = null;
+      _loginPasswordError = null;
+    });
+    try {
+      await _auth.login(_loginEmailController.text, _loginPasswordController.text);
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+        if (e.field == AuthErrorField.email) {
+          _loginEmailError = e.message;
+        } else {
+          _loginPasswordError = e.message;
+        }
+      });
+      return;
+    }
+    if (!mounted) return;
     // Mở tab 0 · Trang chủ (MainShellScreen mặc định mở tab Thư viện).
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const MainShellScreen(initialTabIndex: 0)),
       (route) => false,
     );
+  }
+
+  void _openForgotPassword() {
+    FocusScope.of(context).unfocus();
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const _ForgotPasswordRoute()));
   }
 
   // Chưa làm: chỉ có giao diện.
@@ -134,7 +176,7 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: AppDimensions.space24),
         Row(
           children: [
-            const Expanded(child: Divider(color: AppColors.borderLight, thickness: 1)),
+            const Expanded(child: Divider(color: AppColors.borderLight, thickness: AppDimensions.borderThin)),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space16),
               child: Text(
@@ -142,7 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
               ),
             ),
-            const Expanded(child: Divider(color: AppColors.borderLight, thickness: 1)),
+            const Expanded(child: Divider(color: AppColors.borderLight, thickness: AppDimensions.borderThin)),
           ],
         ),
         const SizedBox(height: AppDimensions.space20),
@@ -155,7 +197,7 @@ class _LoginScreenState extends State<LoginScreen> {
             Expanded(
               child: _SocialButton(
                 label: 'Facebook',
-                icon: const Icon(Icons.facebook, color: AppColors.facebookBlue, size: 22),
+                icon: const Icon(Icons.facebook, color: AppColors.facebookBlue, size: AppDimensions.iconSocial),
                 onPressed: _noAction,
               ),
             ),
@@ -201,6 +243,10 @@ class _LoginScreenState extends State<LoginScreen> {
         controller: _loginEmailController,
         keyboardType: TextInputType.emailAddress,
         borderColor: AppColors.softBlueSurface,
+        errorText: _loginEmailError,
+        onChanged: (_) {
+          if (_loginEmailError != null) setState(() => _loginEmailError = null);
+        },
       ),
       const SizedBox(height: AppDimensions.space16),
       AppTextField(
@@ -211,17 +257,22 @@ class _LoginScreenState extends State<LoginScreen> {
         isPassword: true,
         textInputAction: TextInputAction.done,
         borderColor: AppColors.softBlueSurface,
+        errorText: _loginPasswordError,
+        onChanged: (_) {
+          if (_loginPasswordError != null) setState(() => _loginPasswordError = null);
+        },
       ),
       Align(
         alignment: Alignment.centerRight,
         child: TextButton(
-          onPressed: _noAction,
+          key: const Key('login_forgot_password'),
+          onPressed: _openForgotPassword,
           style: TextButton.styleFrom(
             minimumSize: const Size(AppDimensions.minTouchTarget, AppDimensions.minTouchTarget),
           ),
           child: Text(
             'Quên mật khẩu?',
-            style: AppTypography.bodyBold.copyWith(color: AppColors.navyBlue, fontSize: 14),
+            style: AppTypography.bodyBold.copyWith(color: AppColors.navyBlue, fontSize: AppTypography.fontSize14),
           ),
         ),
       ),
@@ -262,6 +313,29 @@ class _LoginScreenState extends State<LoginScreen> {
       const SizedBox(height: AppDimensions.space24),
       AppButton(text: 'Đăng ký', onPressed: _noAction, backgroundColor: AppColors.authButton),
     ];
+  }
+}
+
+/// Nơi giữ [ForgotPasswordUiState] và nối callback của Màn 21.
+/// Chưa có backend: "Gửi liên kết đặt lại" chỉ gọi callback, chưa làm gì thêm.
+class _ForgotPasswordRoute extends StatefulWidget {
+  const _ForgotPasswordRoute();
+
+  @override
+  State<_ForgotPasswordRoute> createState() => _ForgotPasswordRouteState();
+}
+
+class _ForgotPasswordRouteState extends State<_ForgotPasswordRoute> {
+  ForgotPasswordUiState _state = const ForgotPasswordUiState();
+
+  @override
+  Widget build(BuildContext context) {
+    return ForgotPasswordScreen(
+      state: _state,
+      onEmailChange: (email) => setState(() => _state = _state.copyWith(email: email)),
+      onSendResetLinkClick: () {},
+      onBackClick: () => Navigator.of(context).pop(),
+    );
   }
 }
 
@@ -342,7 +416,7 @@ class _GoogleIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(width: 20, height: 20, child: CustomPaint(painter: _GoogleLogoPainter()));
+    return const SizedBox(width: AppDimensions.iconSmall, height: AppDimensions.iconSmall, child: CustomPaint(painter: _GoogleLogoPainter()));
   }
 }
 

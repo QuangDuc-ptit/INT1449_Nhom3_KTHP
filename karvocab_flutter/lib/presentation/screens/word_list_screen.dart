@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/app_toast.dart';
 import '../../core/widgets/cefr_badge.dart';
@@ -171,7 +172,7 @@ class _WordListScreenState extends State<WordListScreen> {
             prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted),
             suffixIcon: _searchQuery.isNotEmpty
                 ? IconButton(
-                    icon: const Icon(Icons.clear_rounded, size: 18),
+                    icon: const Icon(Icons.clear_rounded, size: AppDimensions.iconCompact),
                     tooltip: 'Xoá tìm kiếm',
                     onPressed: () {
                       _searchController.clear();
@@ -180,7 +181,7 @@ class _WordListScreenState extends State<WordListScreen> {
                   )
                 : null,
             border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(vertical: AppDimensions.space12),
           ),
         ),
       ),
@@ -197,16 +198,10 @@ class _WordListScreenState extends State<WordListScreen> {
         border: Border.all(
           color: isPlaying ? AppColors.lightBlue : AppColors.borderLight,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: AppShadows.cardSoft,
       ),
       child: Material(
-        color: Colors.transparent,
+        color: AppColors.transparent,
         borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
         child: InkWell(
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
@@ -224,7 +219,7 @@ class _WordListScreenState extends State<WordListScreen> {
                           Flexible(
                             child: Text(
                               vocab.term,
-                              style: AppTypography.headingMedium.copyWith(fontSize: 17),
+                              style: AppTypography.headingMedium.copyWith(fontSize: AppTypography.fontSize17),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -253,7 +248,7 @@ class _WordListScreenState extends State<WordListScreen> {
                         vocab.definitionVi,
                         style: AppTypography.bodyMedium.copyWith(
                           color: AppColors.textSecondary,
-                          fontSize: 14,
+                          fontSize: AppTypography.fontSize14,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -270,7 +265,7 @@ class _WordListScreenState extends State<WordListScreen> {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (isPlaying) const SoundWaveIndicator(isActive: true, height: 14),
+                        if (isPlaying) const SoundWaveIndicator(isActive: true, height: AppDimensions.soundWaveInlineHeight),
                         IconButton(
                           icon: Icon(
                             isPlaying ? Icons.volume_up_rounded : Icons.volume_up_outlined,

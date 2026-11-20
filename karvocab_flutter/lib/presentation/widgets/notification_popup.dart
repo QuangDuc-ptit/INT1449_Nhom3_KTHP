@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widget_previews.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_durations.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
 import '../notifications/notification_sample_data.dart';
@@ -61,7 +62,7 @@ class _NotificationPopupRoute extends PopupRoute<void> {
     required this.barrierLabel,
   });
 
-  static const Duration _animationDuration = Duration(milliseconds: 200);
+  static const Duration _animationDuration = AppDurations.fast;
 
   @override
   final String barrierLabel;

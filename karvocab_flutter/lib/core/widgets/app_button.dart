@@ -16,9 +16,25 @@ class AppButton extends StatelessWidget {
   final double? width;
   final double height;
 
-  /// Màu nền khi bấm được (chỉ áp cho [AppButtonVariant.primary]);
-  /// mặc định [AppColors.primaryBlue].
+  /// Màu nền khi bấm được (áp cho [AppButtonVariant.primary] và
+  /// [AppButtonVariant.outline]); mặc định primary = [AppColors.primaryBlue],
+  /// outline = trong suốt.
   final Color? backgroundColor;
+
+  /// Màu chữ khi bấm được (chỉ áp cho [AppButtonVariant.outline]);
+  /// mặc định [AppColors.primaryBlue].
+  final Color? foregroundColor;
+
+  /// Màu viền khi bấm được (chỉ áp cho [AppButtonVariant.outline]);
+  /// mặc định [AppColors.primaryBlue].
+  final Color? borderColor;
+
+  /// Độ dày viền (chỉ áp cho [AppButtonVariant.outline]);
+  /// mặc định [AppDimensions.borderMedium].
+  final double? borderWidth;
+
+  /// Kiểu chữ; mặc định [AppTypography.buttonText]. Màu chữ vẫn do biến thể quyết định.
+  final TextStyle? textStyle;
 
   /// Màu nền khi bị khoá (chỉ áp cho [AppButtonVariant.primary]).
   final Color? disabledBackgroundColor;
@@ -37,6 +53,10 @@ class AppButton extends StatelessWidget {
     this.width,
     this.height = AppDimensions.buttonHeight, // 52.0 dp >= 48 dp
     this.backgroundColor,
+    this.foregroundColor,
+    this.borderColor,
+    this.borderWidth,
+    this.textStyle,
     this.disabledBackgroundColor,
     this.borderRadius,
   });
@@ -51,7 +71,7 @@ class AppButton extends StatelessWidget {
 
     switch (variant) {
       case AppButtonVariant.primary:
-        background = canPress ? (backgroundColor ?? AppColors.primaryBlue) : (disabledBackgroundColor ?? AppColors.textMuted.withValues(alpha: 0.4));
+        background = canPress ? (backgroundColor ?? AppColors.primaryBlue) : (disabledBackgroundColor ?? AppColors.textMuted.withValues(alpha: AppDimensions.disabledOpacity));
         textColor = AppColors.white;
         break;
       case AppButtonVariant.secondary:
@@ -59,11 +79,11 @@ class AppButton extends StatelessWidget {
         textColor = canPress ? AppColors.navyBlue : AppColors.textMuted;
         break;
       case AppButtonVariant.outline:
-        background = Colors.transparent;
-        textColor = canPress ? AppColors.primaryBlue : AppColors.textMuted;
+        background = canPress ? (backgroundColor ?? AppColors.transparent) : AppColors.transparent;
+        textColor = canPress ? (foregroundColor ?? AppColors.primaryBlue) : AppColors.textMuted;
         borderSide = BorderSide(
-          color: canPress ? AppColors.primaryBlue : AppColors.borderLight,
-          width: 1.5,
+          color: canPress ? (borderColor ?? AppColors.primaryBlue) : AppColors.borderLight,
+          width: borderWidth ?? AppDimensions.borderMedium,
         );
         break;
     }
@@ -83,10 +103,10 @@ class AppButton extends StatelessWidget {
           child: Center(
             child: isLoading
                 ? const SizedBox(
-                    width: 24,
-                    height: 24,
+                    width: AppDimensions.buttonLoaderSize,
+                    height: AppDimensions.buttonLoaderSize,
                     child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
+                      strokeWidth: AppDimensions.buttonLoaderStroke,
                       valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
                     ),
                   )
@@ -100,7 +120,7 @@ class AppButton extends StatelessWidget {
                       ],
                       Text(
                         text,
-                        style: AppTypography.buttonText.copyWith(
+                        style: (textStyle ?? AppTypography.buttonText).copyWith(
                           color: textColor,
                         ),
                       ),

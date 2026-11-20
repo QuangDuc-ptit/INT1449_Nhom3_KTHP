@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_durations.dart';
+import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/debouncer.dart';
 import '../../core/widgets/app_toast.dart';
@@ -89,7 +91,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         title: Text('Thư viện học phần', style: AppTypography.headingLarge),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primaryBlue, size: 28),
+            icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primaryBlue, size: AppDimensions.iconLarge),
             onPressed: _openCreateCollection,
             tooltip: 'Tạo học phần mới',
           ),
@@ -191,13 +193,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
             prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted),
             suffixIcon: _searchController.text.isNotEmpty
                 ? IconButton(
-                    icon: const Icon(Icons.clear_rounded, size: 18),
+                    icon: const Icon(Icons.clear_rounded, size: AppDimensions.iconCompact),
                     tooltip: 'Xoá tìm kiếm',
                     onPressed: _clearSearch,
                   )
                 : null,
             border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(vertical: AppDimensions.space12),
           ),
         ),
       ),
@@ -247,16 +249,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
         color: AppColors.white,
         borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
         border: Border.all(color: AppColors.borderLight),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        boxShadow: AppShadows.card,
       ),
       child: Material(
-        color: Colors.transparent,
+        color: AppColors.transparent,
         borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
         child: InkWell(
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
@@ -267,8 +263,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 50,
-                  height: 50,
+                  width: AppDimensions.collectionIconBoxSize,
+                  height: AppDimensions.collectionIconBoxSize,
                   decoration: BoxDecoration(
                     color: AppColors.softBlueSurface,
                     borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
@@ -276,7 +272,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   child: Icon(
                     CollectionCategories.icon(col.iconName),
                     color: AppColors.primaryBlue,
-                    size: 26,
+                    size: AppDimensions.iconFeature,
                   ),
                 ),
                 const SizedBox(width: AppDimensions.space16),
@@ -309,7 +305,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     ],
                   ),
                 ),
-                const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.textMuted),
+                const Icon(Icons.arrow_forward_ios_rounded, size: AppDimensions.iconXSmall, color: AppColors.textMuted),
               ],
             ),
           ),
@@ -320,7 +316,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   Widget _pill(String text, Color bg, Color fg) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.chipPaddingH, vertical: AppDimensions.chipPaddingV),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
@@ -362,7 +358,7 @@ class SkeletonCard extends StatefulWidget {
 class _SkeletonCardState extends State<SkeletonCard> with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 900),
+    duration: AppDurations.pulse,
   )..repeat(reverse: true);
 
   @override
@@ -376,7 +372,7 @@ class _SkeletonCardState extends State<SkeletonCard> with SingleTickerProviderSt
     return Semantics(
       label: 'Đang tải dữ liệu',
       child: FadeTransition(
-        opacity: Tween<double>(begin: 0.45, end: 1).animate(_controller),
+        opacity: Tween<double>(begin: AppDimensions.skeletonMinOpacity, end: 1).animate(_controller),
         child: Container(
           height: widget.height,
           padding: const EdgeInsets.all(AppDimensions.space20),

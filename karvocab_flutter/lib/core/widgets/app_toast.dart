@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
+import '../constants/app_dimensions.dart';
+import '../constants/app_durations.dart';
 
 /// Toast (SnackBar nổi) dùng thống nhất cho các thông báo thành công / lỗi / thông tin.
 class AppToast {
@@ -29,15 +31,15 @@ class AppToast {
         SnackBar(
           content: Row(
             children: [
-              Icon(icon, color: AppColors.white, size: 20),
-              const SizedBox(width: 8),
+              Icon(icon, color: AppColors.white, size: AppDimensions.iconSmall),
+              const SizedBox(width: AppDimensions.space8),
               Expanded(child: Text(message)),
             ],
           ),
           backgroundColor: color,
           behavior: SnackBarBehavior.floating,
           action: action,
-          duration: duration ?? const Duration(seconds: 3),
+          duration: duration ?? AppDurations.toast,
         ),
       );
   }

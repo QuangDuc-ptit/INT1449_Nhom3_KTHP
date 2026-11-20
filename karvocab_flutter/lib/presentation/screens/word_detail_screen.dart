@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_durations.dart';
+import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_toast.dart';
@@ -120,7 +122,7 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
                   icon: Icons.translate_rounded,
                   child: Text(
                     vocab.definitionVi,
-                    style: AppTypography.bodyBold.copyWith(fontSize: 17, color: AppColors.textPrimary),
+                    style: AppTypography.bodyBold.copyWith(fontSize: AppTypography.fontSize17, color: AppColors.textPrimary),
                   ),
                 ),
                 if (vocab.definitionEn.isNotEmpty) ...[
@@ -162,13 +164,7 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: AppShadows.cardRaised,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -176,7 +172,7 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space10, vertical: AppDimensions.space4),
                 decoration: BoxDecoration(
                   color: AppColors.secondaryBackground,
                   borderRadius: BorderRadius.circular(AppDimensions.radiusSmall),
@@ -200,9 +196,9 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
                   customBorder: const CircleBorder(),
                   onTap: () => _audio.play(vocab),
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: 52,
-                    height: 52,
+                    duration: AppDurations.fast,
+                    width: AppDimensions.audioButtonSize,
+                    height: AppDimensions.audioButtonSize,
                     decoration: BoxDecoration(
                       color: isPlaying ? AppColors.navyBlue : AppColors.softBlueSurface,
                       shape: BoxShape.circle,
@@ -210,7 +206,7 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
                     child: Center(
                       child: isPlaying
                           ? const SoundWaveIndicator(isActive: true, color: AppColors.white)
-                          : const Icon(Icons.volume_up_outlined, color: AppColors.primaryBlue, size: 26),
+                          : const Icon(Icons.volume_up_outlined, color: AppColors.primaryBlue, size: AppDimensions.iconFeature),
                     ),
                   ),
                 ),
@@ -220,7 +216,7 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
           const SizedBox(height: AppDimensions.space16),
           Text(
             vocab.term,
-            style: AppTypography.displayLarge.copyWith(color: AppColors.navyBlue, fontSize: 32),
+            style: AppTypography.displayLarge.copyWith(color: AppColors.navyBlue, fontSize: AppTypography.fontSize32),
           ),
           if (vocab.ipa.isNotEmpty) ...[
             const SizedBox(height: AppDimensions.space4),
@@ -272,9 +268,9 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
         children: [
           Row(
             children: [
-              Icon(icon, size: 18, color: AppColors.primaryBlue),
+              Icon(icon, size: AppDimensions.iconCompact, color: AppColors.primaryBlue),
               const SizedBox(width: AppDimensions.space8),
-              Text(title, style: AppTypography.labelSmall.copyWith(fontSize: 13)),
+              Text(title, style: AppTypography.labelSmall.copyWith(fontSize: AppTypography.fontSize13)),
             ],
           ),
           const SizedBox(height: AppDimensions.space12),

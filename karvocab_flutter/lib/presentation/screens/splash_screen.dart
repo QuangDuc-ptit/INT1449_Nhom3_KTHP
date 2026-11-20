@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_durations.dart';
 import '../../core/theme/app_typography.dart';
 import '../../data/repositories/auth_repository.dart';
 import 'login_screen.dart';
@@ -81,7 +82,7 @@ class _SplashScreenState extends State<SplashScreen> {
     final hasSession = results[1] == true;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 400),
+        transitionDuration: AppDurations.pageTransition,
         pageBuilder: (context, animation, secondaryAnimation) =>
             hasSession ? const MainShellScreen() : const LoginScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {

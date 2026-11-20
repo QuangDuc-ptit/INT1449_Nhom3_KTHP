@@ -31,13 +31,13 @@ class EmptyStateWidget extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 80,
-              height: 80,
+              width: AppDimensions.stateIllustrationSize,
+              height: AppDimensions.stateIllustrationSize,
               decoration: const BoxDecoration(
                 color: AppColors.softBlueSurface,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 40, color: AppColors.primaryBlue),
+              child: Icon(icon, size: AppDimensions.iconState, color: AppColors.primaryBlue),
             ),
             const SizedBox(height: AppDimensions.space20),
             Text(
@@ -56,7 +56,7 @@ class EmptyStateWidget extends StatelessWidget {
               AppButton(
                 text: actionText!,
                 onPressed: onAction,
-                width: 220,
+                width: AppDimensions.emptyActionWidth,
               ),
             ],
           ],
@@ -91,15 +91,15 @@ class ErrorStateWidget extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 80,
-              height: 80,
+              width: AppDimensions.stateIllustrationSize,
+              height: AppDimensions.stateIllustrationSize,
               decoration: BoxDecoration(
-                color: AppColors.errorRed.withValues(alpha: 0.12),
+                color: AppColors.errorRed.withValues(alpha: AppDimensions.tintOpacity),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.error_outline_rounded,
-                size: 40,
+                size: AppDimensions.iconState,
                 color: AppColors.errorRed,
               ),
             ),
@@ -120,7 +120,7 @@ class ErrorStateWidget extends StatelessWidget {
               text: retryText,
               onPressed: onRetry,
               variant: AppButtonVariant.primary,
-              width: 200,
+              width: AppDimensions.retryButtonWidth,
             ),
           ],
         ),
@@ -146,10 +146,10 @@ class LoadingStateWidget extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(
-            width: 36,
-            height: 36,
+            width: AppDimensions.stateLoaderSize,
+            height: AppDimensions.stateLoaderSize,
             child: CircularProgressIndicator(
-              strokeWidth: 3,
+              strokeWidth: AppDimensions.stateLoaderStroke,
               valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
             ),
           ),

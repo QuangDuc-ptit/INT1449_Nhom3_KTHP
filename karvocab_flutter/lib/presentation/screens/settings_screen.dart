@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_durations.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_text_field.dart';
@@ -86,7 +87,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         title: Row(
           children: [
-            const Icon(Icons.logout_rounded, color: AppColors.errorRed, size: 24),
+            const Icon(Icons.logout_rounded, color: AppColors.errorRed, size: AppDimensions.iconMedium),
             const SizedBox(width: AppDimensions.space8),
             Text('Đăng xuất tài khoản?', style: AppTypography.headingMedium),
           ],
@@ -159,10 +160,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Số từ cần ôn mỗi ngày', style: AppTypography.bodyBold),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: AppDimensions.space2),
                           Text(
                             'Duy trì mục tiêu để giữ chuỗi Streak',
-                            style: AppTypography.bodyMedium.copyWith(fontSize: 13),
+                            style: AppTypography.bodyMedium.copyWith(fontSize: AppTypography.fontSize13),
                           ),
                         ],
                       ),
@@ -183,13 +184,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 : null,
                           ),
                           Container(
-                            constraints: const BoxConstraints(minWidth: 36),
+                            constraints: const BoxConstraints(minWidth: AppDimensions.dailyGoalValueMinWidth),
                             alignment: Alignment.center,
                             child: Text(
                               '$_dailyGoal',
                               style: AppTypography.headingLarge.copyWith(
                                 color: AppColors.primaryBlue,
-                                fontSize: 20,
+                                fontSize: AppTypography.fontSize20,
                               ),
                             ),
                           ),
@@ -231,7 +232,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: Text('Bật thông báo hằng ngày', style: AppTypography.bodyBold),
                     subtitle: Text(
                       'Nhắc ôn từ vựng theo phương pháp Spaced Repetition',
-                      style: AppTypography.bodyMedium.copyWith(fontSize: 13),
+                      style: AppTypography.bodyMedium.copyWith(fontSize: AppTypography.fontSize13),
                     ),
                     value: _isNotifEnabled,
                     activeTrackColor: AppColors.primaryBlue,
@@ -246,12 +247,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     },
                   ),
                   if (_isNotifEnabled) ...[
-                    const Divider(height: 1, color: AppColors.borderLight),
+                    const Divider(height: AppDimensions.dividerThickness, color: AppColors.borderLight),
                     ListTile(
                       leading: const Icon(Icons.access_time_rounded, color: AppColors.primaryBlue),
                       title: Text('Thời gian nhắc học', style: AppTypography.bodyBold),
                       trailing: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space12, vertical: AppDimensions.space6),
                         decoration: BoxDecoration(
                           color: AppColors.softBlueSurface,
                           borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
@@ -292,7 +293,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // Section 3: Ngôn ngữ & Giao diện (Điểm cộng Rubric +2)
             _buildSectionHeader('Ngôn ngữ giao diện (Localization)'),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space16, vertical: AppDimensions.space8),
               decoration: BoxDecoration(
                 color: AppColors.white,
                 borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
@@ -323,7 +324,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             content: Text(val == 'vi'
                                 ? 'Đã chọn Tiếng Việt'
                                 : 'Switched to English language'),
-                            duration: const Duration(seconds: 1),
+                            duration: AppDurations.snackShort,
                             behavior: SnackBarBehavior.floating,
                           ),
                         );
@@ -351,14 +352,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ListTile(
                     leading: const Icon(Icons.lock_reset_rounded, color: AppColors.primaryBlue),
                     title: Text('Đổi mật khẩu', style: AppTypography.bodyBold),
-                    trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.textMuted),
+                    trailing: const Icon(Icons.arrow_forward_ios_rounded, size: AppDimensions.iconXSmall, color: AppColors.textMuted),
                     onTap: _openChangePasswordDialog,
                   ),
-                  const Divider(height: 1, color: AppColors.borderLight),
+                  const Divider(height: AppDimensions.dividerThickness, color: AppColors.borderLight),
                   ListTile(
                     leading: const Icon(Icons.privacy_tip_outlined, color: AppColors.primaryBlue),
                     title: Text('Điều khoản & Quyền riêng tư', style: AppTypography.bodyBold),
-                    trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.textMuted),
+                    trailing: const Icon(Icons.arrow_forward_ios_rounded, size: AppDimensions.iconXSmall, color: AppColors.textMuted),
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -401,12 +402,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppDimensions.space8, left: 4),
+      padding: const EdgeInsets.only(bottom: AppDimensions.space8, left: AppDimensions.space4),
       child: Text(
         title.toUpperCase(),
         style: AppTypography.labelSmall.copyWith(
           color: AppColors.textMuted,
-          letterSpacing: 0.8,
+          letterSpacing: AppTypography.sectionHeaderLetterSpacing,
         ),
       ),
     );
@@ -520,7 +521,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
           ),
         ),
         SizedBox(
-          width: 132,
+          width: AppDimensions.dialogActionWidth,
           child: AppButton(
             text: 'Cập nhật',
             onPressed: _submit,

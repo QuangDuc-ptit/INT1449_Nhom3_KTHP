@@ -357,7 +357,7 @@ class _StartReviewButton extends StatelessWidget {
       onPressed: onPressed ?? () {},
       isEnabled: hasWords,
       backgroundColor: AppColors.navyBlue,
-      disabledBackgroundColor: AppColors.navyBlue.withValues(alpha: 0.4),
+      disabledBackgroundColor: AppColors.navyBlue.withValues(alpha: AppDimensions.disabledOpacity),
       borderRadius: AppDimensions.reviewButtonRadius,
     );
   }

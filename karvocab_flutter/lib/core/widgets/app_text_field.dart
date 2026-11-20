@@ -23,6 +23,15 @@ class AppTextField extends StatefulWidget {
   /// Màu viền khi không có lỗi; mặc định [AppColors.borderLight].
   final Color? borderColor;
 
+  /// Kiểu chữ nhãn; mặc định [AppTypography.bodyBold] cỡ 14. Khi có lỗi vẫn đổi sang màu đỏ.
+  final TextStyle? labelStyle;
+
+  /// Kiểu chữ placeholder; mặc định [AppTypography.bodyMedium] màu [AppColors.textMuted].
+  final TextStyle? hintStyle;
+
+  /// Bo góc ô; mặc định [AppDimensions.radiusButton].
+  final double? borderRadius;
+
   const AppTextField({
     super.key,
     required this.label,
@@ -40,6 +49,9 @@ class AppTextField extends StatefulWidget {
     this.onSubmitted,
     this.autofocus = false,
     this.borderColor,
+    this.labelStyle,
+    this.hintStyle,
+    this.borderRadius,
   });
 
   @override
@@ -67,10 +79,14 @@ class _AppTextFieldState extends State<AppTextField> {
         // Label
         Text(
           widget.label,
-          style: AppTypography.bodyBold.copyWith(
-            fontSize: 14.0,
-            color: hasError ? AppColors.errorRed : AppColors.textPrimary,
-          ),
+          style: hasError
+              ? (widget.labelStyle ?? AppTypography.bodyBold.copyWith(fontSize: AppTypography.fontSize14))
+                  .copyWith(color: AppColors.errorRed)
+              : widget.labelStyle ??
+                  AppTypography.bodyBold.copyWith(
+                    fontSize: AppTypography.fontSize14,
+                    color: AppColors.textPrimary,
+                  ),
         ),
         const SizedBox(height: AppDimensions.space8),
 
@@ -83,12 +99,12 @@ class _AppTextFieldState extends State<AppTextField> {
               : null,
           decoration: BoxDecoration(
             color: AppColors.white,
-            borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+            borderRadius: BorderRadius.circular(widget.borderRadius ?? AppDimensions.radiusButton),
             border: Border.all(
               color: hasError
                   ? AppColors.errorRed
                   : widget.borderColor ?? AppColors.borderLight,
-              width: hasError ? 1.5 : 1.0,
+              width: hasError ? AppDimensions.borderMedium : AppDimensions.borderThin,
             ),
           ),
           child: Row(
@@ -116,9 +132,10 @@ class _AppTextFieldState extends State<AppTextField> {
                   decoration: InputDecoration(
                     counterText: '',
                     hintText: widget.hintText,
-                    hintStyle: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.textMuted,
-                    ),
+                    hintStyle: widget.hintStyle ??
+                        AppTypography.bodyMedium.copyWith(
+                          color: AppColors.textMuted,
+                        ),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: AppDimensions.space16,
                       vertical: AppDimensions.space12,
@@ -133,7 +150,7 @@ class _AppTextFieldState extends State<AppTextField> {
                   icon: Icon(
                     _obscureText ? Icons.visibility_outlined : Icons.visibility_off_outlined,
                     color: AppColors.textMuted,
-                    size: 20,
+                    size: AppDimensions.iconSmall,
                   ),
                   onPressed: () {
                     setState(() {
@@ -151,7 +168,7 @@ class _AppTextFieldState extends State<AppTextField> {
           const SizedBox(height: AppDimensions.space4),
           Row(
             children: [
-              const Icon(Icons.error_outline, size: 14, color: AppColors.errorRed),
+              const Icon(Icons.error_outline, size: AppDimensions.iconTiny, color: AppColors.errorRed),
               const SizedBox(width: AppDimensions.space4),
               Expanded(
                 child: Text(

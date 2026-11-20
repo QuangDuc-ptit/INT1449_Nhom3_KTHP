@@ -41,7 +41,7 @@ Future<CollectionModel?> showCollectionFormSheet(BuildContext context, {Collecti
   return showModalBottomSheet<CollectionModel>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent,
+    backgroundColor: AppColors.transparent,
     builder: (_) => CollectionFormSheet(store: store ?? CollectionStore.instance),
   );
 }
@@ -140,7 +140,7 @@ class _CollectionFormSheetState extends State<CollectionFormSheet> {
                 keyboardType: TextInputType.multiline,
               ),
               const SizedBox(height: AppDimensions.space16),
-              Text('Chủ đề', style: AppTypography.bodyBold.copyWith(fontSize: 14)),
+              Text('Chủ đề', style: AppTypography.bodyBold.copyWith(fontSize: AppTypography.fontSize14)),
               const SizedBox(height: AppDimensions.space8),
               Wrap(
                 spacing: AppDimensions.space8,
@@ -150,7 +150,7 @@ class _CollectionFormSheetState extends State<CollectionFormSheet> {
                   return ChoiceChip(
                     avatar: Icon(
                       CollectionCategories.icon(CollectionStore.iconForCategory(entry.key)),
-                      size: 18,
+                      size: AppDimensions.iconCompact,
                       color: isSelected ? AppColors.white : AppColors.primaryBlue,
                     ),
                     label: Text(entry.value),

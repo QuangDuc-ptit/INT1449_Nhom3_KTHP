@@ -139,3 +139,37 @@
 - `NotificationPopup` + `showNotificationPopup` (PopupRoute: mờ dần + trượt nhẹ, đóng khi bấm ra ngoài/bấm lại chuông/Back), 3 `@Preview`.
 - Trang chủ: badge lấy `unreadCount` của thông báo (bỏ `HomeUiState.unreadNotifications` để chỉ có một nguồn số liệu), badge dạng viên thuốc để vừa "99+".
 - Thêm `test/notification_popup_test.dart` (13 test) và cập nhật test badge ở `test/home_screen_test.dart`.
+
+---
+
+### Phiên làm việc ngày 20/11/2026 (Phiên 5): Loại bỏ giá trị hardcode trên giao diện
+
+> Công cụ: Claude Code (Anthropic).
+
+#### 1. Yêu cầu đầu vào (Prompts):
+- "Chỉnh lại hết đi, không được dùng hardcode" — thay toàn bộ màu, cỡ chữ, kích thước, khoảng cách viết thẳng trong widget bằng design token.
+
+#### 2. Kết quả & Đóng góp của AI:
+- Bổ sung token: `AppColors.transparent`, `AppColors.shadow`; `AppDimensions` thêm khoảng cách (2/3/6/10), bo góc nhỏ, thang icon (14–64), độ dày viền, kích thước vòng tải, ô icon/avatar, độ mờ (alpha) dùng chung; `AppTypography` thêm thang cỡ chữ `fontSize11`…`fontSize32` và `sectionHeaderLetterSpacing`.
+- File mới: `core/theme/app_shadows.dart` (`AppShadows.card` / `cardSoft` / `cardRaised`) và `core/constants/app_durations.dart` (thời lượng hiệu ứng, toast, chuyển màn).
+- Thay ~150 chỗ hardcode ở 22 file trong `core/widgets`, `presentation/screens`, `presentation/widgets`; giá trị hiển thị giữ nguyên nên giao diện không đổi.
+- Giữ nguyên (không phải token giao diện): độ trễ giả lập mạng, debounce tìm kiếm, đếm ngược OTP, dữ liệu mẫu, hình học logo Google và công thức sóng âm.
+- `flutter analyze`: 0 error, 0 warning. `flutter test`: 56 pass, 2 fail — 2 test Màn 05 (Thư viện) đã fail từ trước khi sửa.
+
+---
+
+### Phiên làm việc ngày 20/11/2026 (Phiên 6): Báo lỗi đăng nhập sai & màn Quên mật khẩu (Màn 02, 21)
+
+> Công cụ: Claude Code (Anthropic).
+
+#### 1. Yêu cầu đầu vào (Prompts):
+- Màn Đăng nhập: bổ sung xử lý khi đăng nhập sai / sai mật khẩu.
+- Màn Quên mật khẩu theo mô tả chi tiết của nhóm (thanh tiêu đề có nút "<", mô tả, ô email, ghi chú, nút "Gửi liên kết đặt lại" khoá khi email trống, nút viền "Quay lại đăng nhập"). Chỉ frontend; cấm tự thêm thành phần; không hardcode; màn nhận `ForgotPasswordUiState(email)` và đưa thao tác ra callback `onEmailChange`, `onSendResetLinkClick`, `onBackClick`; 2 Preview.
+- Nhóm chốt (AI hỏi lại trước khi làm): lỗi hiện dưới ô nhập; tách 2 lỗi "Email chưa được đăng ký" / "Mật khẩu không đúng"; thay luồng OTP 3 bước cũ bằng màn mới; "Gửi liên kết đặt lại" hiện chỉ gọi callback.
+
+#### 2. Kết quả & Đóng góp của AI:
+- `AuthRepository.login`: `AuthException` thêm `field` (`AuthErrorField.email/password`) để biết lỗi thuộc ô nào; chữ ký hàm giữ nguyên.
+- `LoginScreen`: nhận `authRepository` (inject được), gọi `login()`, lỗi hiện dưới ô tương ứng và tự mất khi gõ lại; "Quên mật khẩu?" mở Màn 21.
+- Viết lại `ForgotPasswordScreen` + `ForgotPasswordUiState`, 2 `@Preview`. Dùng lại `AppTextField`/`AppButton` (thêm tham số `labelStyle`, `hintStyle`, `borderRadius`, `textStyle`, màu nền/viền/chữ cho nút viền) thay vì tạo component mới.
+- Token mới: chuỗi trong `AppStrings`, màu `authTextPrimary/authTextSecondary/authDivider` (trỏ tới màu đã có), `space40`, `authControlRadius`, style `authScreenTitle`, `authBody`, `authFieldLabel`, `buttonTextLarge`.
+- Thêm `test/login_forgot_password_test.dart` (11 test). `flutter analyze` 0 error / 0 warning; `flutter test` 67 pass, 2 fail (2 test Màn 05 đã fail từ trước).

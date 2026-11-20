@@ -238,7 +238,7 @@ class _WordFormScreenState extends State<WordFormScreen> {
 
   Widget _buildLabel(String text) => Padding(
         padding: const EdgeInsets.only(bottom: AppDimensions.space8),
-        child: Text(text, style: AppTypography.bodyBold.copyWith(fontSize: 14)),
+        child: Text(text, style: AppTypography.bodyBold.copyWith(fontSize: AppTypography.fontSize14)),
       );
 
   Widget _buildChoiceWrap({

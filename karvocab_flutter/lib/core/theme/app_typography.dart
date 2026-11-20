@@ -5,6 +5,20 @@ import '../constants/app_colors.dart';
 class AppTypography {
   static const String fontFamily = 'Nunito';
 
+  // Thang cỡ chữ — dùng khi cần `copyWith(fontSize: ...)` trên một style có sẵn.
+  static const double fontSize11 = 11.0;
+  static const double fontSize12 = 12.0;
+  static const double fontSize13 = 13.0;
+  static const double fontSize14 = 14.0;
+  static const double fontSize15 = 15.0;
+  static const double fontSize16 = 16.0;
+  static const double fontSize17 = 17.0;
+  static const double fontSize20 = 20.0;
+  static const double fontSize32 = 32.0;
+
+  /// Giãn chữ của tiêu đề nhóm viết hoa (Màn 23 · Cài đặt).
+  static const double sectionHeaderLetterSpacing = 0.8;
+
   /// Chữ thương hiệu "KarVocab" ở Màn 01 · Splash (Nunito Bold 28).
   /// Màu tô riêng cho "Kar" / "Vocab" qua TextSpan.
   static const TextStyle brandWordmark = TextStyle(
@@ -236,6 +250,45 @@ class AppTypography {
     fontSize: 12.0,
     fontWeight: FontWeight.w400,
     height: 1.2,
+  );
+
+  // ---------------------------------------------------------------------------
+  // Màn 21 · Quên mật khẩu
+  // ---------------------------------------------------------------------------
+
+  /// Tiêu đề màn — 24 ExtraBold, BrandDark.
+  static const TextStyle authScreenTitle = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 24.0,
+    fontWeight: FontWeight.w800,
+    color: AppColors.navyBlue,
+    height: 1.25,
+  );
+
+  /// Mô tả, ghi chú, placeholder — 14 Regular, TextSecondary.
+  static const TextStyle authBody = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14.0,
+    fontWeight: FontWeight.w400,
+    color: AppColors.authTextSecondary,
+    height: 1.4,
+  );
+
+  /// Nhãn ô nhập — 14 Bold, TextPrimary.
+  static const TextStyle authFieldLabel = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14.0,
+    fontWeight: FontWeight.w700,
+    color: AppColors.authTextPrimary,
+    height: 1.4,
+  );
+
+  /// Chữ nút chính cỡ lớn — 18 Bold trắng.
+  static const TextStyle buttonTextLarge = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 18.0,
+    fontWeight: FontWeight.w700,
+    color: AppColors.white,
   );
 
   static const TextStyle buttonText = TextStyle(

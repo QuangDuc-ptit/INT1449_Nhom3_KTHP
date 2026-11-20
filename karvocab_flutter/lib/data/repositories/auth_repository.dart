@@ -1,11 +1,17 @@
 import 'dart:math';
 import 'package:flutter/foundation.dart';
+import '../../core/constants/app_strings.dart';
 import '../models/user_profile_model.dart';
 
+/// Ô nhập mà lỗi xác thực gắn vào (để hiển thị lỗi ngay dưới ô đó).
+enum AuthErrorField { email, password }
+
 /// Lỗi nghiệp vụ xác thực, [message] hiển thị trực tiếp cho người dùng.
+/// [field] = ô nhập gây lỗi; `null` nếu lỗi không thuộc ô nào.
 class AuthException implements Exception {
   final String message;
-  const AuthException(this.message);
+  final AuthErrorField? field;
+  const AuthException(this.message, {this.field});
 
   @override
   String toString() => message;
@@ -72,8 +78,11 @@ class AuthRepository extends ChangeNotifier {
     await Future<void>.delayed(latency);
     final key = _normalize(email);
     final account = _accounts[key];
-    if (account == null || account.password != password) {
-      throw const AuthException('Email hoặc mật khẩu không đúng');
+    if (account == null) {
+      throw const AuthException(AppStrings.loginEmailNotRegistered, field: AuthErrorField.email);
+    }
+    if (account.password != password) {
+      throw const AuthException(AppStrings.loginWrongPassword, field: AuthErrorField.password);
     }
     return _startSession(_profileFor(key, account.fullName, isNew: false));
   }

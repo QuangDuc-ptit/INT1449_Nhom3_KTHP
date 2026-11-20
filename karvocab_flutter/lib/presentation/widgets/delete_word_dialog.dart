@@ -14,13 +14,13 @@ Future<bool> showDeleteWordDialog(BuildContext context, String term) async {
         borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
       ),
       icon: Container(
-        width: 56,
-        height: 56,
+        width: AppDimensions.dialogIconBoxSize,
+        height: AppDimensions.dialogIconBoxSize,
         decoration: BoxDecoration(
-          color: AppColors.errorRed.withValues(alpha: 0.12),
+          color: AppColors.errorRed.withValues(alpha: AppDimensions.tintOpacity),
           shape: BoxShape.circle,
         ),
-        child: const Icon(Icons.delete_forever_rounded, color: AppColors.errorRed, size: 30),
+        child: const Icon(Icons.delete_forever_rounded, color: AppColors.errorRed, size: AppDimensions.iconDialog),
       ),
       title: Text('Xoá từ vựng này?', style: AppTypography.headingMedium, textAlign: TextAlign.center),
       content: Text(

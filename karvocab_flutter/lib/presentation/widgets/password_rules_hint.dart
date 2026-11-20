@@ -26,14 +26,14 @@ class PasswordRulesHint extends StatelessWidget {
           children: [
             Icon(
               ok ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-              size: 14,
+              size: AppDimensions.iconTiny,
               color: ok ? AppColors.successGreen : AppColors.textMuted,
             ),
             const SizedBox(width: AppDimensions.space4),
             Text(
               rule.key,
               style: AppTypography.labelSmall.copyWith(
-                fontSize: 11,
+                fontSize: AppTypography.fontSize11,
                 color: ok ? AppColors.successGreen : AppColors.textMuted,
               ),
             ),

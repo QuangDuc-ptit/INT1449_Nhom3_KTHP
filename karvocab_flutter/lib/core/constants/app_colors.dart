@@ -46,6 +46,14 @@ class AppColors {
   /// Tiêu đề thông báo đã đọc — khác [textPrimary] (#17324D) của các màn khác.
   static const Color notificationTextPrimary = Color(0xFF1F2A3D);
 
+  // Màn 21 · Quên mật khẩu (dùng lại màu đã có, đặt tên theo bảng màu của màn)
+  /// TextPrimary #1F2A3D.
+  static const Color authTextPrimary = notificationTextPrimary;
+  /// TextSecondary #6B7A90.
+  static const Color authTextSecondary = homeTextSecondary;
+  /// Divider #E6EDF5.
+  static const Color authDivider = homeDivider;
+
   // Background Surfaces
   /// Màu nền chung của toàn app (#F5FAFE). Theme dùng màu này làm
   /// scaffoldBackgroundColor; native splash Android dùng cùng giá trị
@@ -57,6 +65,10 @@ class AppColors {
   static const Color secondaryBackground = Color(0xFFEAF6FD);
   static const Color cardBackground = Color(0xFFFFFFFF);
   static const Color white = Color(0xFFFFFFFF);
+  static const Color transparent = Color(0x00000000);
+
+  /// Màu gốc của bóng đổ (đen); độ mờ áp dụng trong [AppShadows].
+  static const Color shadow = Color(0xFF000000);
 
   // Text Colors
   static const Color textPrimary = Color(0xFF17324D);

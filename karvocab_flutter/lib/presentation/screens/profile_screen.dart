@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_typography.dart';
 import '../../data/models/user_profile_model.dart';
 import '../../data/repositories/auth_repository.dart';
@@ -86,29 +87,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: AppColors.white,
                 borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
                 border: Border.all(color: AppColors.borderLight),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
+                boxShadow: AppShadows.card,
               ),
               child: Row(
                 children: [
                   // Avatar Axolotl
                   Container(
-                    width: 72,
-                    height: 72,
+                    width: AppDimensions.avatarSize,
+                    height: AppDimensions.avatarSize,
                     decoration: BoxDecoration(
                       color: AppColors.softBlueSurface,
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.primaryBlue, width: 2),
+                      border: Border.all(color: AppColors.primaryBlue, width: AppDimensions.borderThick),
                     ),
                     child: const Center(
                       child: Icon(
                         Icons.pets_rounded, // Mascot Axolotl
-                        size: 40,
+                        size: AppDimensions.iconState,
                         color: AppColors.primaryBlue,
                       ),
                     ),
@@ -122,18 +117,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         Text(
                           profile.fullName,
-                          style: AppTypography.headingLarge.copyWith(fontSize: 20),
+                          style: AppTypography.headingLarge.copyWith(fontSize: AppTypography.fontSize20),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: AppDimensions.space2),
                         Text(
                           profile.email,
-                          style: AppTypography.bodyMedium.copyWith(fontSize: 13),
+                          style: AppTypography.bodyMedium.copyWith(fontSize: AppTypography.fontSize13),
                         ),
                         const SizedBox(height: AppDimensions.space8),
 
                         // Pill mục tiêu ngày
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                          padding: const EdgeInsets.symmetric(horizontal: AppDimensions.chipPaddingH, vertical: AppDimensions.chipPaddingV),
                           decoration: BoxDecoration(
                             color: AppColors.secondaryBackground,
                             borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
@@ -234,14 +229,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ListTile(
                     leading: const Icon(Icons.settings_outlined, color: AppColors.primaryBlue),
                     title: Text('Cài đặt tài khoản & Mục tiêu', style: AppTypography.bodyBold),
-                    trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.textMuted),
+                    trailing: const Icon(Icons.arrow_forward_ios_rounded, size: AppDimensions.iconXSmall, color: AppColors.textMuted),
                     onTap: _openSettings,
                   ),
-                  const Divider(height: 1, color: AppColors.borderLight),
+                  const Divider(height: AppDimensions.dividerThickness, color: AppColors.borderLight),
                   ListTile(
                     leading: const Icon(Icons.help_outline_rounded, color: AppColors.primaryBlue),
                     title: Text('Hướng dẫn & Trợ giúp (Rubric INT1449)', style: AppTypography.bodyBold),
-                    trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.textMuted),
+                    trailing: const Icon(Icons.arrow_forward_ios_rounded, size: AppDimensions.iconXSmall, color: AppColors.textMuted),
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -271,51 +266,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required Color iconColor,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      padding: const EdgeInsets.symmetric(vertical: AppDimensions.space16, horizontal: AppDimensions.space12),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
         border: Border.all(color: AppColors.borderLight),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: AppShadows.cardSoft,
       ),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(AppDimensions.space8),
             decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.12),
+              color: iconColor.withValues(alpha: AppDimensions.tintOpacity),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: iconColor, size: 22),
+            child: Icon(icon, color: iconColor, size: AppDimensions.iconSocial),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppDimensions.space8),
           RichText(
             text: TextSpan(
               children: [
                 TextSpan(
                   text: value,
-                  style: AppTypography.headingLarge.copyWith(fontSize: 20),
+                  style: AppTypography.headingLarge.copyWith(fontSize: AppTypography.fontSize20),
                 ),
                 if (unit != null)
                   TextSpan(
                     text: ' $unit',
-                    style: AppTypography.labelSmall.copyWith(fontSize: 11),
+                    style: AppTypography.labelSmall.copyWith(fontSize: AppTypography.fontSize11),
                   ),
               ],
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: AppDimensions.space2),
           Text(
             title,
             style: AppTypography.labelSmall.copyWith(
               color: AppColors.textSecondary,
-              fontSize: 11,
+              fontSize: AppTypography.fontSize11,
               fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
@@ -332,35 +321,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final card = Container(
       padding: const EdgeInsets.all(AppDimensions.space16),
       decoration: BoxDecoration(
-        color: isLocked ? AppColors.white.withValues(alpha: 0.6) : AppColors.white,
+        color: isLocked ? AppColors.white.withValues(alpha: AppDimensions.lockedSurfaceOpacity) : AppColors.white,
         borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
         border: Border.all(
-          color: isLocked ? AppColors.borderLight : AppColors.primaryBlue.withValues(alpha: 0.3),
+          color: isLocked ? AppColors.borderLight : AppColors.primaryBlue.withValues(alpha: AppDimensions.accentBorderOpacity),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: AppShadows.cardSoft,
       ),
       child: Row(
         children: [
           // Icon Huy hiệu
           Container(
-            width: 48,
-            height: 48,
+            width: AppDimensions.badgeIconBoxSize,
+            height: AppDimensions.badgeIconBoxSize,
             decoration: BoxDecoration(
               color: isLocked
-                  ? AppColors.borderLight.withValues(alpha: 0.5)
+                  ? AppColors.borderLight.withValues(alpha: AppDimensions.halfOpacity)
                   : AppColors.softBlueSurface,
               shape: BoxShape.circle,
             ),
             child: Icon(
               _getBadgeIcon(badge.iconName),
               color: isLocked ? AppColors.textMuted : AppColors.primaryBlue,
-              size: 26,
+              size: AppDimensions.iconFeature,
             ),
           ),
           const SizedBox(width: AppDimensions.space16),
@@ -381,36 +364,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     if (isLocked)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space8, vertical: AppDimensions.space2),
                         decoration: BoxDecoration(
                           color: AppColors.borderLight,
                           borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
                         ),
                         child: Text(
                           '${badge.currentProgress}/${badge.maxProgress}',
-                          style: AppTypography.labelSmall.copyWith(fontSize: 11),
+                          style: AppTypography.labelSmall.copyWith(fontSize: AppTypography.fontSize11),
                         ),
                       )
                     else
-                      const Icon(Icons.check_circle_rounded, color: AppColors.successGreen, size: 20),
+                      const Icon(Icons.check_circle_rounded, color: AppColors.successGreen, size: AppDimensions.iconSmall),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppDimensions.space4),
                 Text(
                   badge.description,
                   style: AppTypography.bodyMedium.copyWith(
-                    fontSize: 13,
+                    fontSize: AppTypography.fontSize13,
                     color: AppColors.textMuted,
                   ),
                 ),
                 if (isLocked) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppDimensions.space8),
                   LinearProgressIndicator(
                     value: badge.currentProgress / badge.maxProgress,
                     backgroundColor: AppColors.secondaryBackground,
                     valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
-                    borderRadius: BorderRadius.circular(4),
-                    minHeight: 5,
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusXSmall),
+                    minHeight: AppDimensions.badgeProgressHeight,
                   ),
                 ],
               ],

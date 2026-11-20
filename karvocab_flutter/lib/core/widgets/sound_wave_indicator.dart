@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
+import '../constants/app_dimensions.dart';
+import '../constants/app_durations.dart';
 
 /// Hiệu ứng sóng âm nhỏ hiển thị khi đang phát phát âm (DEV1-S2-04).
 /// Khi [isActive] = false, các cột đứng yên ở độ cao thấp nhất.
@@ -31,7 +33,7 @@ class _SoundWaveIndicatorState extends State<SoundWaveIndicator>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: AppDurations.pulse,
     );
     if (widget.isActive) _controller.repeat();
   }
@@ -68,12 +70,12 @@ class _SoundWaveIndicatorState extends State<SoundWaveIndicator>
               final phase = (_controller.value * 2 * math.pi) + i * 0.9;
               final factor = widget.isActive ? 0.35 + 0.65 * (0.5 + 0.5 * math.sin(phase)) : 0.3;
               return Container(
-                width: 3,
+                width: AppDimensions.soundWaveBarWidth,
                 height: widget.height * factor,
-                margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                margin: const EdgeInsets.symmetric(horizontal: AppDimensions.soundWaveBarGap),
                 decoration: BoxDecoration(
                   color: widget.color,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
                 ),
               );
             }),

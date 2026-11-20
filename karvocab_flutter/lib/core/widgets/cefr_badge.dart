@@ -27,7 +27,7 @@ class CefrBadge extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.chipPaddingH, vertical: AppDimensions.chipPaddingV),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
@@ -36,7 +36,7 @@ class CefrBadge extends StatelessWidget {
         upper,
         style: AppTypography.labelSmall.copyWith(
           color: text,
-          fontSize: 11,
+          fontSize: AppTypography.fontSize11,
           fontWeight: FontWeight.w800,
         ),
       ),

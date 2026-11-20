@@ -3,6 +3,22 @@
 class AppStrings {
   AppStrings._();
 
+  // Màn 02 · Đăng nhập — lỗi hiển thị dưới ô nhập
+  static const String loginEmailNotRegistered = 'Email chưa được đăng ký';
+  static const String loginWrongPassword = 'Mật khẩu không đúng';
+
+  // Màn 21 · Quên mật khẩu
+  static const String forgotPasswordTitle = 'Quên mật khẩu';
+  static const String forgotPasswordDescription = 'Tôi sẽ giúp bạn lấy lại quyền truy cập tài khoản.';
+  static const String forgotPasswordEmailLabel = 'Địa chỉ email';
+  static const String forgotPasswordEmailHint = 'name@email.com';
+  static const String forgotPasswordNote =
+      'Liên kết đặt lại mật khẩu sẽ được gửi đến địa chỉ email bạn đã đăng ký.';
+  static const String forgotPasswordSend = 'Gửi liên kết đặt lại';
+  static const String forgotPasswordBackToLogin = 'Quay lại đăng nhập';
+  /// Nhãn đọc cho trình đọc màn hình của nút "<" (không hiển thị).
+  static const String backButtonSemantics = 'Quay lại';
+
   // Thanh điều hướng dưới
   static const String navHome = 'Trang chủ';
   static const String navLibrary = 'Thư viện';

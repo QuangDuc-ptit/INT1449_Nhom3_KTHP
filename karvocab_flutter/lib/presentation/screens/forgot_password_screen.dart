@@ -1,353 +1,187 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/widget_previews.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
-import '../../core/utils/validators.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_text_field.dart';
-import '../../core/widgets/app_toast.dart';
-import '../../data/repositories/auth_repository.dart';
-import '../widgets/password_rules_hint.dart';
+import '../forgot_password/forgot_password_ui_state.dart';
 
-enum _ResetStep { email, otp, newPassword }
-
-/// Màn 21 · Quên mật khẩu
-/// Luồng: Nhập Email → Nhận mã OTP 6 số (đếm ngược 60s để gửi lại) → Đặt mật khẩu mới.
-/// Khi hoàn tất, `pop` trả về email để Màn 02 điền sẵn.
+/// Màn 21 · Quên mật khẩu — chỉ giao diện.
+///
+/// Màn hình đọc [state] và đưa mọi thao tác ra callback; không tự điều hướng,
+/// không gọi API. Nơi mở màn giữ [ForgotPasswordUiState] và quyết định làm gì
+/// khi bấm "Gửi liên kết đặt lại" / quay lại.
 class ForgotPasswordScreen extends StatefulWidget {
-  final String initialEmail;
-  final AuthRepository? authRepository;
+  final ForgotPasswordUiState state;
+  final ValueChanged<String> onEmailChange;
+  final VoidCallback onSendResetLinkClick;
+  final VoidCallback onBackClick;
 
-  const ForgotPasswordScreen({super.key, this.initialEmail = '', this.authRepository});
+  const ForgotPasswordScreen({
+    super.key,
+    required this.state,
+    required this.onEmailChange,
+    required this.onSendResetLinkClick,
+    required this.onBackClick,
+  });
 
   @override
   State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  static const int resendSeconds = 60;
+  /// Nút "<" có vùng chạm 48dp nhưng icon chỉ 24dp: lùi hàng tiêu đề sang trái
+  /// phần đệm này để icon vẫn thẳng lề 20dp và cách tiêu đề đúng 12dp.
+  static const double _backButtonInset = (AppDimensions.minTouchTarget - AppDimensions.iconMedium) / 2;
 
-  late final TextEditingController _emailController;
-  final _otpController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmController = TextEditingController();
-
-  AuthRepository get _auth => widget.authRepository ?? AuthRepository.instance;
-
-  _ResetStep _step = _ResetStep.email;
-  bool _isLoading = false;
-  String? _error;
-  String? _confirmError;
-  int _secondsLeft = 0;
-  Timer? _countdown;
+  late final TextEditingController _emailController = TextEditingController(text: widget.state.email);
 
   @override
-  void initState() {
-    super.initState();
-    _emailController = TextEditingController(text: widget.initialEmail);
+  void didUpdateWidget(covariant ForgotPasswordScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // State đổi từ bên ngoài (không phải do gõ phím) → đồng bộ lại ô nhập.
+    if (_emailController.text != widget.state.email) {
+      _emailController.value = TextEditingValue(
+        text: widget.state.email,
+        selection: TextSelection.collapsed(offset: widget.state.email.length),
+      );
+    }
   }
 
   @override
   void dispose() {
-    _countdown?.cancel();
     _emailController.dispose();
-    _otpController.dispose();
-    _passwordController.dispose();
-    _confirmController.dispose();
     super.dispose();
-  }
-
-  void _startCountdown() {
-    _countdown?.cancel();
-    setState(() => _secondsLeft = resendSeconds);
-    _countdown = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) return;
-      if (_secondsLeft <= 1) {
-        timer.cancel();
-        setState(() => _secondsLeft = 0);
-      } else {
-        setState(() => _secondsLeft--);
-      }
-    });
-  }
-
-  Future<void> _run(Future<void> Function() action) async {
-    if (_isLoading) return;
-    FocusScope.of(context).unfocus();
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-    try {
-      await action();
-    } on AuthException catch (e) {
-      if (mounted) setState(() => _error = e.message);
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _sendOtp() async {
-    final emailError = Validators.email(_emailController.text);
-    if (emailError != null) {
-      setState(() => _error = emailError);
-      return;
-    }
-    await _run(() async {
-      final code = await _auth.requestPasswordReset(_emailController.text);
-      if (!mounted) return;
-      _otpController.clear();
-      setState(() => _step = _ResetStep.otp);
-      _startCountdown();
-      // Chế độ offline: hiển thị mã thay cho email thật.
-      AppToast.info(
-        context,
-        'Mã OTP (Demo) đã gửi tới ${_emailController.text.trim()}: $code',
-        duration: const Duration(seconds: 8),
-      );
-    });
-  }
-
-  Future<void> _verifyOtp() async {
-    final otpError = Validators.otp(_otpController.text);
-    if (otpError != null) {
-      setState(() => _error = otpError);
-      return;
-    }
-    await _run(() async {
-      await _auth.verifyOtp(_emailController.text, _otpController.text);
-      if (!mounted) return;
-      _countdown?.cancel();
-      setState(() => _step = _ResetStep.newPassword);
-    });
-  }
-
-  Future<void> _resetPassword() async {
-    final passwordError = Validators.strongPassword(_passwordController.text);
-    final confirmError = Validators.confirmPassword(_confirmController.text, _passwordController.text);
-    setState(() {
-      _error = passwordError;
-      _confirmError = confirmError;
-    });
-    if (passwordError != null || confirmError != null) return;
-
-    await _run(() async {
-      await _auth.resetPassword(_emailController.text, _passwordController.text);
-      if (!mounted) return;
-      Navigator.of(context).pop(_emailController.text.trim());
-    });
-  }
-
-  void _handleBack() {
-    switch (_step) {
-      case _ResetStep.email:
-        Navigator.of(context).pop();
-        break;
-      case _ResetStep.otp:
-        _countdown?.cancel();
-        setState(() {
-          _step = _ResetStep.email;
-          _error = null;
-        });
-        break;
-      case _ResetStep.newPassword:
-        setState(() {
-          _step = _ResetStep.otp;
-          _error = null;
-        });
-        break;
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: _step == _ResetStep.email,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _handleBack();
-      },
-      child: Scaffold(
-        backgroundColor: AppColors.mainBackground,
-        appBar: AppBar(
-          title: Text('Quên mật khẩu', style: AppTypography.headingMedium),
-          centerTitle: true,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded),
-            tooltip: 'Quay lại',
-            onPressed: _handleBack,
-          ),
-        ),
-        body: SafeArea(
-          top: false,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppDimensions.screenMargin),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _StepIndicator(current: _step.index),
-                const SizedBox(height: AppDimensions.space24),
-                ..._buildStepContent(),
-              ],
-            ),
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        // Bàn phím bật lên: Scaffold thu nhỏ vùng body, nội dung cuộn được.
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppDimensions.authHorizontalPadding),
+                child: _buildBody(),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  List<Widget> _buildStepContent() {
-    switch (_step) {
-      case _ResetStep.email:
-        return [
-          Text('Đặt lại mật khẩu', style: AppTypography.headingLarge),
-          const SizedBox(height: AppDimensions.space8),
-          Text(
-            'Nhập email đã đăng ký, KarVocab sẽ gửi cho bạn mã xác thực gồm 6 chữ số.',
-            style: AppTypography.bodyMedium,
-          ),
-          const SizedBox(height: AppDimensions.space24),
-          AppTextField(
-            label: 'Địa chỉ Email',
-            hintText: 'name@example.com',
-            controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
-            textInputAction: TextInputAction.done,
-            prefixIcon: const Icon(Icons.email_outlined, color: AppColors.textMuted, size: 20),
-            errorText: _error,
-            onChanged: (_) => setState(() => _error = null),
-            onSubmitted: (_) => _sendOtp(),
-          ),
-          const SizedBox(height: AppDimensions.space24),
-          AppButton(text: 'Gửi mã OTP', onPressed: _sendOtp, isLoading: _isLoading),
-        ];
-
-      case _ResetStep.otp:
-        return [
-          Text('Nhập mã xác thực', style: AppTypography.headingLarge),
-          const SizedBox(height: AppDimensions.space8),
-          Text(
-            'Mã OTP đã được gửi tới ${_emailController.text.trim()}. Mã có hiệu lực trong 5 phút.',
-            style: AppTypography.bodyMedium,
-          ),
-          const SizedBox(height: AppDimensions.space24),
-          AppTextField(
-            label: 'Mã OTP (6 chữ số)',
-            hintText: '••••••',
-            controller: _otpController,
-            keyboardType: TextInputType.number,
-            textInputAction: TextInputAction.done,
-            maxLength: 6,
-            autofocus: true,
-            prefixIcon: const Icon(Icons.pin_outlined, color: AppColors.textMuted, size: 20),
-            errorText: _error,
-            onChanged: (_) => setState(() => _error = null),
-            onSubmitted: (_) => _verifyOtp(),
-          ),
-          const SizedBox(height: AppDimensions.space12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                _secondsLeft > 0 ? 'Gửi lại mã sau ${_secondsLeft}s' : 'Chưa nhận được mã?',
-                style: AppTypography.bodyMedium.copyWith(fontSize: 13),
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.only(left: AppDimensions.authHorizontalPadding - _backButtonInset),
+      child: Row(
+        children: [
+          Semantics(
+            label: AppStrings.backButtonSemantics,
+            button: true,
+            excludeSemantics: true,
+            child: IconButton(
+              key: const Key('forgot_back_icon'),
+              onPressed: widget.onBackClick,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(
+                minWidth: AppDimensions.minTouchTarget,
+                minHeight: AppDimensions.minTouchTarget,
               ),
-              TextButton(
-                onPressed: _secondsLeft > 0 || _isLoading ? null : _sendOtp,
-                style: TextButton.styleFrom(
-                  minimumSize: const Size(AppDimensions.minTouchTarget, AppDimensions.minTouchTarget),
-                ),
-                child: Text(
-                  'Gửi lại mã',
-                  style: AppTypography.bodyBold.copyWith(
-                    fontSize: 14,
-                    color: _secondsLeft > 0 ? AppColors.textMuted : AppColors.primaryBlue,
-                  ),
-                ),
+              icon: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                size: AppDimensions.iconMedium,
+                color: AppColors.navyBlue,
               ),
-            ],
-          ),
-          const SizedBox(height: AppDimensions.space16),
-          AppButton(text: 'Xác nhận mã', onPressed: _verifyOtp, isLoading: _isLoading),
-        ];
-
-      case _ResetStep.newPassword:
-        return [
-          Text('Tạo mật khẩu mới', style: AppTypography.headingLarge),
-          const SizedBox(height: AppDimensions.space8),
-          Text(
-            'Mật khẩu mới cần khác mật khẩu cũ và đủ mạnh để bảo vệ tài khoản.',
-            style: AppTypography.bodyMedium,
-          ),
-          const SizedBox(height: AppDimensions.space24),
-          AppTextField(
-            label: 'Mật khẩu mới',
-            hintText: 'Tối thiểu 8 ký tự',
-            controller: _passwordController,
-            isPassword: true,
-            prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.textMuted, size: 20),
-            errorText: _error,
-            onChanged: (_) => setState(() => _error = null),
-          ),
-          const SizedBox(height: AppDimensions.space8),
-          PasswordRulesHint(password: _passwordController.text),
-          const SizedBox(height: AppDimensions.space16),
-          AppTextField(
-            label: 'Xác nhận mật khẩu mới',
-            hintText: 'Nhập lại mật khẩu mới',
-            controller: _confirmController,
-            isPassword: true,
-            textInputAction: TextInputAction.done,
-            prefixIcon: const Icon(Icons.lock_reset_rounded, color: AppColors.textMuted, size: 20),
-            errorText: _confirmError,
-            onChanged: (_) => setState(() => _confirmError = null),
-          ),
-          const SizedBox(height: AppDimensions.space24),
-          AppButton(text: 'Đặt lại mật khẩu', onPressed: _resetPassword, isLoading: _isLoading),
-        ];
-    }
-  }
-}
-
-class _StepIndicator extends StatelessWidget {
-  final int current;
-
-  const _StepIndicator({required this.current});
-
-  @override
-  Widget build(BuildContext context) {
-    const labels = ['Email', 'Mã OTP', 'Mật khẩu mới'];
-    return Row(
-      children: List.generate(labels.length, (i) {
-        final isDone = i < current;
-        final isActive = i == current;
-        final color = isDone || isActive ? AppColors.primaryBlue : AppColors.borderLight;
-        return Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(right: i == labels.length - 1 ? 0 : AppDimensions.space8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
-                  ),
-                ),
-                const SizedBox(height: AppDimensions.space4),
-                Text(
-                  labels[i],
-                  style: AppTypography.labelSmall.copyWith(
-                    fontSize: 11,
-                    color: isActive ? AppColors.primaryBlue : AppColors.textMuted,
-                  ),
-                ),
-              ],
             ),
           ),
-        );
-      }),
+          const SizedBox(width: AppDimensions.space12 - _backButtonInset),
+          Expanded(
+            child: Text(AppStrings.forgotPasswordTitle, style: AppTypography.authScreenTitle),
+          ),
+          const SizedBox(width: AppDimensions.authHorizontalPadding),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: AppDimensions.space16),
+        const Text(AppStrings.forgotPasswordDescription, style: AppTypography.authBody),
+        const SizedBox(height: AppDimensions.space40),
+        AppTextField(
+          key: const Key('forgot_email'),
+          label: AppStrings.forgotPasswordEmailLabel,
+          hintText: AppStrings.forgotPasswordEmailHint,
+          controller: _emailController,
+          onChanged: widget.onEmailChange,
+          keyboardType: TextInputType.emailAddress,
+          // Done: Flutter tự đóng bàn phím khi bấm.
+          textInputAction: TextInputAction.done,
+          labelStyle: AppTypography.authFieldLabel,
+          hintStyle: AppTypography.authBody,
+          borderColor: AppColors.authDivider,
+          borderRadius: AppDimensions.authControlRadius,
+        ),
+        const SizedBox(height: AppDimensions.space24),
+        const Text(AppStrings.forgotPasswordNote, style: AppTypography.authBody),
+        const SizedBox(height: AppDimensions.space40),
+        AppButton(
+          key: const Key('forgot_send'),
+          text: AppStrings.forgotPasswordSend,
+          onPressed: widget.onSendResetLinkClick,
+          isEnabled: widget.state.canSendResetLink,
+          backgroundColor: AppColors.authButton,
+          borderRadius: AppDimensions.authControlRadius,
+          textStyle: AppTypography.buttonTextLarge,
+        ),
+        const SizedBox(height: AppDimensions.space12),
+        AppButton(
+          key: const Key('forgot_back_to_login'),
+          text: AppStrings.forgotPasswordBackToLogin,
+          onPressed: widget.onBackClick,
+          variant: AppButtonVariant.outline,
+          backgroundColor: AppColors.white,
+          foregroundColor: AppColors.navyBlue,
+          borderColor: AppColors.primaryBlue,
+          borderWidth: AppDimensions.borderThin,
+          borderRadius: AppDimensions.authControlRadius,
+        ),
+        const SizedBox(height: AppDimensions.space24),
+      ],
     );
   }
 }
+
+// -----------------------------------------------------------------------------
+// Preview (Flutter Widget Previewer)
+// -----------------------------------------------------------------------------
+
+Widget _previewFrame(ForgotPasswordUiState state) {
+  return MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: ForgotPasswordScreen(
+      state: state,
+      onEmailChange: (_) {},
+      onSendResetLinkClick: () {},
+      onBackClick: () {},
+    ),
+  );
+}
+
+@Preview(name: 'Quên mật khẩu · email trống (nút khoá)', size: Size(390, 844))
+Widget forgotPasswordEmptyPreview() => _previewFrame(const ForgotPasswordUiState());
+
+@Preview(name: 'Quên mật khẩu · đã nhập email', size: Size(390, 844))
+Widget forgotPasswordFilledPreview() => _previewFrame(const ForgotPasswordUiState(email: 'learner@karvocab.com'));
