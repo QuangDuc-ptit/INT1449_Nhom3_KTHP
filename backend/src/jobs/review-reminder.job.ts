@@ -66,8 +66,9 @@ export class ReviewReminderJob {
       // Khoá theo ngày bắt đầu khung nhắc (khung 23:50 kéo sang 00:05 vẫn là ngày cũ)
       const today = localDateString(now, u.timezone);
       const windowDate = nowMin >= startMin ? today : addDays(today, -1);
+      const key = `notified:${u.id}:${windowDate}`;
       const firstTime = await this.redis.client.set(
-        `notified:${u.id}:${windowDate}`,
+        key,
         '1',
         'EX',
         NOTIFIED_TTL_SEC,
@@ -75,13 +76,21 @@ export class ReviewReminderJob {
       );
       if (firstTime !== 'OK') continue;
 
-      await this.push.sendPushNotification(
-        u.id,
-        'KarVocab - Đến giờ ôn tập',
-        `Bạn có ${dueCount} từ cần ôn tập hôm nay`,
-        { screen: 'review', dueCount: String(dueCount) },
-      );
-      notified++;
+      try {
+        await this.push.sendPushNotification(
+          u.id,
+          'KarVocab - Đến giờ ôn tập',
+          `Bạn có ${dueCount} từ cần ôn tập hôm nay`,
+          { screen: 'review', dueCount: String(dueCount) },
+        );
+        notified++;
+      } catch (err) {
+        // Lỗi của một user không được chặn những user sau; bỏ khoá để lượt quét sau gửi lại
+        await this.redis.client.del(key);
+        this.logger.warn(
+          `Gửi nhắc ôn tập cho ${u.id} thất bại: ${(err as Error).message}`,
+        );
+      }
     }
     return notified;
   }

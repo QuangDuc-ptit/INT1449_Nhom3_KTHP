@@ -4,6 +4,7 @@ import { ReviewReminderJob } from '../src/jobs/review-reminder.job';
 import { StreakResetJob } from '../src/jobs/streak-reset.job';
 import { MockPushProvider } from '../src/modules/notifications/mock-push.provider';
 import { PushProvider } from '../src/modules/notifications/push.provider';
+import { PushService } from '../src/modules/notifications/push.service';
 import { TestClock, createTestApp } from './utils/app';
 import { registerUser } from './utils/auth';
 import { resetDb, resetRedis } from './utils/db';
@@ -154,6 +155,31 @@ describe('Cron jobs (e2e)', () => {
       const u = await userWithDue({ reminderTime: '23:50' });
       expect(await app.get(ReviewReminderJob).run()).toBe(1);
       expect(sentTo(u.user.id)).toHaveLength(1);
+    });
+
+    it('gửi push lỗi cho một user không làm dừng lượt nhắc và lần sau được gửi lại', async () => {
+      clock.set('2026-11-19T13:05:00.000Z'); // 20:05 giờ VN
+      const failing = await userWithDue();
+      const ok = await userWithDue();
+      const push = app.get(PushService);
+      const original = push.sendPushNotification.bind(push);
+      const spy = jest
+        .spyOn(push, 'sendPushNotification')
+        .mockImplementation((userId, ...rest) =>
+          userId === failing.user.id
+            ? Promise.reject(new Error('FCM tạm thời lỗi'))
+            : original(userId, ...rest),
+        );
+      const job = app.get(ReviewReminderJob);
+
+      expect(await job.run()).toBe(1);
+      expect(sentTo(ok.user.id)).toHaveLength(1);
+      expect(sentTo(failing.user.id)).toHaveLength(0);
+
+      spy.mockRestore();
+      clock.set('2026-11-19T13:10:00.000Z');
+      expect(await job.run()).toBe(1);
+      expect(sentTo(failing.user.id)).toHaveLength(1);
     });
   });
 });
