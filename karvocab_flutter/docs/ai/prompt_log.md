@@ -173,3 +173,17 @@
 - Viết lại `ForgotPasswordScreen` + `ForgotPasswordUiState`, 2 `@Preview`. Dùng lại `AppTextField`/`AppButton` (thêm tham số `labelStyle`, `hintStyle`, `borderRadius`, `textStyle`, màu nền/viền/chữ cho nút viền) thay vì tạo component mới.
 - Token mới: chuỗi trong `AppStrings`, màu `authTextPrimary/authTextSecondary/authDivider` (trỏ tới màu đã có), `space40`, `authControlRadius`, style `authScreenTitle`, `authBody`, `authFieldLabel`, `buttonTextLarge`.
 - Thêm `test/login_forgot_password_test.dart` (11 test). `flutter analyze` 0 error / 0 warning; `flutter test` 67 pass, 2 fail (2 test Màn 05 đã fail từ trước).
+
+---
+
+### Phiên làm việc ngày 19/11/2026: FE2 — Track B (Dashboard, Quiz Engine, AI Vocab Generator)
+
+#### 1. Yêu cầu đầu vào (Prompts):
+- Tôi là FE2 (Track B). Đọc FE-SPECIFICATION (phần Track B), `core/constants`, `core/widgets`, `vocabulary_model.dart`; không sửa màn hình Track A; nút trắc nghiệm ≥ 48dp; hỗ trợ Demo offline.
+- Dựng: Quiz Engine Controller; 4 chế độ Màn 08/19/20/25; Phản hồi đáp án (Màn 11); Kết quả (Màn 12) & Thử lại câu sai (Màn 26); Chọn chế độ (Màn 10); Trang chủ Streak & Daily Goal (Màn 04); Ôn tập hôm nay SM-2 (Màn 16); AI Vocab Generator (Màn 13/14).
+
+#### 2. Kết quả & Đóng góp của AI:
+- `lib/data/models/quiz_models.dart`, `ai_vocab_draft.dart`; `lib/core/utils/fuzzy_match.dart` (Levenshtein = 1 cho từ > 6 ký tự).
+- `lib/data/repositories/`: `quiz_question_factory`, `dashboard_store` (SM-2 theo BE-SPEC 4.1), `ai_vocab_repository` (mock + công tắc giả lập lỗi), `collection_bridge`.
+- `lib/presentation/quiz/`, `dashboard/`, `ai_vocab/`; `test/track_b_quiz_test.dart` (14 test).
+- Sửa duy nhất 1 file chung: `main_shell_screen.dart` (thay 2 placeholder bằng `HomeScreen` và `PracticeModeScreen`).

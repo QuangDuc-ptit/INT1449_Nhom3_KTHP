@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_colors.dart';
-import '../../core/constants/app_dimensions.dart';
-import '../../core/theme/app_typography.dart';
 import '../home/home_sample_data.dart';
 import '../notifications/notification_sample_data.dart';
 import '../notifications/notification_ui_state.dart';
+import '../quiz/practice_mode_screen.dart';
 import '../widgets/notification_popup.dart';
 import '../widgets/app_bottom_nav_bar.dart';
 import 'home_screen.dart';
@@ -98,7 +96,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
         onSeeAllCoursesClick: () => _selectTab(_libraryTab),
       ),
       const LibraryScreen(), // Tab Thư viện do FE1 phát triển
-      _buildPracticePlaceholder(), // Tab Luyện tập chờ FE2 cắm Quiz Engine
+      const PracticeModeScreen(), // Tab Luyện tập do FE2 phát triển (Màn 10)
       const ProfileScreen(), // Tab Hồ sơ cá nhân do FE1 phát triển (Màn 15)
     ];
 
@@ -117,33 +115,4 @@ class _MainShellScreenState extends State<MainShellScreen> {
   static const int _libraryTab = 1;
 
   void _selectTab(int index) => setState(() => _currentIndex = index);
-
-  // Placeholder cho Luyện tập (Màn 10 - do FE2 phụ trách)
-  Widget _buildPracticePlaceholder() {
-    return Scaffold(
-      appBar: AppBar(title: Text('Luyện tập & Quiz', style: AppTypography.headingLarge)),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppDimensions.space24),
-              decoration: const BoxDecoration(
-                color: AppColors.softBlueSurface,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.school_rounded, size: AppDimensions.iconHero, color: AppColors.primaryBlue),
-            ),
-            const SizedBox(height: AppDimensions.space20),
-            Text('Khu vực Luyện tập (Quiz Engine)', style: AppTypography.headingMedium),
-            const SizedBox(height: AppDimensions.space8),
-            Text(
-              '4 Chế độ luyện tập đang được FE2 hoàn thiện.',
-              style: AppTypography.bodyMedium,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
