@@ -1,0 +1,291 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pg_trgm]
+}
+
+enum Role {
+  user
+  admin
+}
+
+enum AuthProvider {
+  local
+  google
+  facebook
+}
+
+enum Platform {
+  ios
+  android
+}
+
+enum Category {
+  academic
+  career
+  life
+  travel
+  other
+}
+
+enum PartOfSpeech {
+  noun
+  verb
+  adj
+  adv
+  idiom
+}
+
+enum CefrLevel {
+  A1
+  A2
+  B1
+  B2
+  C1
+  C2
+}
+
+enum VocabSource {
+  manual
+  ai_generated
+}
+
+enum ProgressStatus {
+  new
+  learning
+  review
+  mastered
+}
+
+enum QuizMode {
+  listen_choose
+  listen_type
+  choose_meaning
+  type_meaning
+}
+
+enum Language {
+  vi
+  en
+}
+
+enum SyncEntity {
+  collection
+  vocabulary
+}
+
+model User {
+  id                    String       @id @default(uuid()) @db.Uuid
+  email                 String       @unique
+  passwordHash          String?      @map("password_hash")
+  fullName              String       @map("full_name")
+  avatarUrl             String?      @map("avatar_url")
+  authProvider          AuthProvider @default(local) @map("auth_provider")
+  providerId            String?      @map("provider_id")
+  currentStreak         Int          @default(0) @map("current_streak")
+  highestStreak         Int          @default(0) @map("highest_streak")
+  lastStreakDate        DateTime?    @map("last_streak_date") @db.Date
+  dailyGoalWords        Int          @default(10) @map("daily_goal_words")
+  reminderTime          String       @default("20:00") @map("reminder_time")
+  isNotificationEnabled Boolean      @default(true) @map("is_notification_enabled")
+  timezone              String       @default("Asia/Ho_Chi_Minh")
+  language              Language     @default(vi)
+  role                  Role         @default(user)
+  createdAt             DateTime     @default(now()) @map("created_at")
+  updatedAt             DateTime     @updatedAt @map("updated_at")
+
+  devices        UserDevice[]
+  refreshTokens  RefreshToken[]
+  collections    Collection[]
+  progress       UserVocabProgress[]
+  quizSessions   QuizSession[]
+  badges         UserBadge[]
+  deletedRecords DeletedRecord[]
+
+  @@unique([authProvider, providerId])
+  @@map("users")
+}
+
+model UserDevice {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  fcmToken  String   @unique @map("fcm_token")
+  platform  Platform
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_devices")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  isRevoked Boolean  @default(false) @map("is_revoked")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Collection {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  title       String
+  description String?
+  category    Category @default(other)
+  iconName    String   @default("book") @map("icon_name")
+  isPublic    Boolean  @default(false) @map("is_public")
+  totalWords  Int      @default(0) @map("total_words")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vocabularies Vocabulary[]
+  quizSessions QuizSession[]
+
+  @@index([userId, category])
+  // Tìm kiếm ILIKE theo tiêu đề và mô tả (migration search_indexes)
+  @@index([title(ops: raw("gin_trgm_ops"))], type: Gin, map: "collections_title_trgm_idx")
+  @@index([description(ops: raw("gin_trgm_ops"))], type: Gin, map: "collections_description_trgm_idx")
+  @@map("collections")
+}
+
+model Vocabulary {
+  id              String       @id @default(uuid()) @db.Uuid
+  collectionId    String       @map("collection_id") @db.Uuid
+  term            String
+  /// term đã chuẩn hoá (trim, gộp khoảng trắng, viết thường) để chặn trùng ở mức DB
+  termKey         String       @map("term_key")
+  partOfSpeech    PartOfSpeech @map("part_of_speech")
+  ipaUk           String?      @map("ipa_uk")
+  ipaUs           String?      @map("ipa_us")
+  audioUkUrl      String?      @map("audio_uk_url")
+  audioUsUrl      String?      @map("audio_us_url")
+  definitionEn    String?      @map("definition_en")
+  definitionVi    String       @map("definition_vi")
+  exampleSentence String?      @map("example_sentence")
+  cefrLevel       CefrLevel    @map("cefr_level")
+  source          VocabSource  @default(manual)
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  collection Collection          @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  progress   UserVocabProgress[]
+  answers    QuizAnswer[]
+
+  @@unique([collectionId, termKey])
+  @@index([collectionId, term])
+  @@map("vocabularies")
+}
+
+model UserVocabProgress {
+  id              String         @id @default(uuid()) @db.Uuid
+  userId          String         @map("user_id") @db.Uuid
+  vocabularyId    String         @map("vocabulary_id") @db.Uuid
+  repetitionLevel Int            @default(0) @map("repetition_level")
+  easeFactor      Float          @default(2.5) @map("ease_factor")
+  intervalDays    Int            @default(0) @map("interval_days")
+  nextReviewAt    DateTime?      @map("next_review_at")
+  lastReviewedAt  DateTime?      @map("last_reviewed_at")
+  reviewCount     Int            @default(0) @map("review_count")
+  correctCount    Int            @default(0) @map("correct_count")
+  incorrectCount  Int            @default(0) @map("incorrect_count")
+  status          ProgressStatus @default(new)
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vocabulary Vocabulary @relation(fields: [vocabularyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, vocabularyId])
+  @@index([userId, nextReviewAt, status])
+  @@map("user_vocab_progress")
+}
+
+model QuizSession {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  collectionId    String?  @map("collection_id") @db.Uuid
+  clientSessionId String?  @map("client_session_id") @db.Uuid
+  mode            QuizMode
+  totalQuestions  Int      @map("total_questions")
+  correctCount    Int      @map("correct_count")
+  incorrectCount  Int      @map("incorrect_count")
+  scorePercentage Int      @map("score_percentage")
+  durationSeconds Int      @map("duration_seconds")
+  completedAt     DateTime @default(now()) @map("completed_at")
+
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  collection Collection?  @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  answers    QuizAnswer[]
+
+  @@unique([userId, clientSessionId])
+  @@index([userId, completedAt])
+  @@map("quiz_sessions")
+}
+
+model QuizAnswer {
+  id             String   @id @default(uuid()) @db.Uuid
+  sessionId      String   @map("session_id") @db.Uuid
+  vocabularyId   String   @map("vocabulary_id") @db.Uuid
+  userAnswer     String   @map("user_answer")
+  isCorrect      Boolean  @map("is_correct")
+  responseTimeMs Int      @map("response_time_ms")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  session    QuizSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  vocabulary Vocabulary  @relation(fields: [vocabularyId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([vocabularyId])
+  @@map("quiz_answers")
+}
+
+model Badge {
+  id             String  @id @default(uuid()) @db.Uuid
+  code           String  @unique
+  title          String
+  description    String
+  iconUrl        String? @map("icon_url")
+  requiredPoints Int     @map("required_points")
+
+  users UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  badgeId    String   @map("badge_id") @db.Uuid
+  unlockedAt DateTime @default(now()) @map("unlocked_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
+
+model DeletedRecord {
+  id         String     @id @default(uuid()) @db.Uuid
+  userId     String     @map("user_id") @db.Uuid
+  entityType SyncEntity @map("entity_type")
+  entityId   String     @map("entity_id") @db.Uuid
+  deletedAt  DateTime   @default(now()) @map("deleted_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, deletedAt])
+  @@map("deleted_records")
+}
