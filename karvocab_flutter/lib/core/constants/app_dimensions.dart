@@ -270,7 +270,6 @@ class AppDimensions {
   static const double profileAvatarSize = 88.0;
   static const double profileAvatarBorder = 3.0;
   static const double profileRowMinHeight = 56.0;
-  static const double profileUsageBarHeight = 6.0;
   static const double profileStatIconBox = 36.0;
 
   // ---------------------------------------------------------------------------

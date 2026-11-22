@@ -7,15 +7,14 @@ import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/date_format.dart';
-import '../../data/models/account_plan.dart';
 import '../../data/models/user_profile_model.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/collection_store.dart';
-import '../widgets/account_widgets.dart';
+import '../widgets/birth_date_picker.dart';
 import 'settings_screen.dart';
 
 /// Màn 15 · Hồ sơ cá nhân: ảnh đại diện, thông tin tài khoản (mã ID, email,
-/// ngày sinh, loại tài khoản), quyền lợi gói đang dùng và thành tựu học tập.
+/// ngày sinh) và thành tựu học tập.
 /// Mã ID và email chỉ xem, không sửa được; ngày sinh sửa được.
 class ProfileScreen extends StatefulWidget {
   final AuthRepository? authRepository;
@@ -32,9 +31,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   CollectionStore get _store => widget.store ?? CollectionStore.instance;
 
   void _openSettings() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => SettingsScreen(authRepository: widget.authRepository)),
-    );
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => SettingsScreen(authRepository: widget.authRepository)));
   }
 
   void _showMessage(String message) {
@@ -78,30 +76,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ],
           ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(0, AppDimensions.space8, 0, AppDimensions.space32),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: AppDimensions.profileMaxWidth),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppDimensions.quizHorizontalPadding),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _IdentityCard(profile: profile, plan: _auth.activePlan ?? profile.plan),
-                      const SizedBox(height: AppDimensions.space24),
-                      const _SectionTitle(AppStrings.profileAccountInfo),
-                      _buildAccountInfo(profile),
-                      const SizedBox(height: AppDimensions.space24),
-                      const _SectionTitle(AppStrings.profilePlanBenefits),
-                      _buildBenefits(),
-                      const SizedBox(height: AppDimensions.space24),
-                      const _SectionTitle(AppStrings.profileAchievements),
-                      _buildAchievements(profile),
-                      const SizedBox(height: AppDimensions.space24),
-                      const _SectionTitle(AppStrings.profileMore),
-                      _buildMoreOptions(),
-                    ],
+          body: SafeArea(
+            bottom: false,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(0, AppDimensions.space8, 0, AppDimensions.space32),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: AppDimensions.profileMaxWidth),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppDimensions.quizHorizontalPadding),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _IdentityCard(profile: profile),
+                        const SizedBox(height: AppDimensions.space24),
+                        const _SectionTitle(AppStrings.profileAccountInfo),
+                        _buildAccountInfo(profile),
+                        const SizedBox(height: AppDimensions.space24),
+                        const _SectionTitle(AppStrings.profileAchievements),
+                        _buildAchievements(profile),
+                        const SizedBox(height: AppDimensions.space24),
+                        const _SectionTitle(AppStrings.profileMore),
+                        _buildMoreOptions(),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -115,8 +113,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildAccountInfo(UserProfileModel profile) {
     final memberId = profile.memberId;
     final birthDate = profile.birthDate;
-    final plan = _auth.activePlan ?? profile.plan;
-    final expires = profile.planExpiresAt;
 
     return _Card(
       child: Column(
@@ -154,48 +150,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             trailing: const Icon(Icons.edit_outlined, size: AppDimensions.iconSmall, color: AppColors.practicePrimary),
             onTap: () => _editBirthDate(birthDate),
             semanticsHint: AppStrings.profileEditBirthDate,
-          ),
-          const _RowDivider(),
-          _InfoRow(
-            key: const Key('profile_plan'),
-            icon: Icons.workspace_premium_outlined,
-            label: AppStrings.profilePlan,
-            valueWidget: Align(alignment: Alignment.centerLeft, child: PlanChip(plan: plan)),
-            // Chỉ gói dùng thử mới cần dòng phụ: ngày hết hạn.
-            caption: plan == AccountPlan.plus && expires != null
-                ? AppStrings.profilePlanExpires(formatDmy(expires), _daysLeft(expires))
-                : null,
-          ),
-        ],
-      ),
-    );
-  }
-
-  int _daysLeft(DateTime expires) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    return expires.difference(today).inDays.clamp(0, 365);
-  }
-
-  Widget _buildBenefits() {
-    final aiLimit = _auth.activePlan?.aiDailyLimit;
-    final wordLimit = _auth.wordLimit;
-    return _Card(
-      padding: const EdgeInsets.all(AppDimensions.space16),
-      child: Column(
-        children: [
-          _UsageRow(
-            icon: Icons.auto_awesome_rounded,
-            label: AppStrings.profileAiToday,
-            used: _auth.aiUsedToday,
-            limit: aiLimit,
-          ),
-          const SizedBox(height: AppDimensions.space16),
-          _UsageRow(
-            icon: Icons.bookmark_outline_rounded,
-            label: AppStrings.profileSavedWords,
-            used: _store.totalWordCount,
-            limit: wordLimit,
           ),
         ],
       ),
@@ -272,12 +226,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-/// Ảnh đại diện + tên + loại tài khoản.
+/// Ảnh đại diện + tên.
 class _IdentityCard extends StatelessWidget {
   final UserProfileModel profile;
-  final AccountPlan plan;
 
-  const _IdentityCard({required this.profile, required this.plan});
+  const _IdentityCard({required this.profile});
 
   @override
   Widget build(BuildContext context) {
@@ -292,7 +245,7 @@ class _IdentityCard extends StatelessWidget {
             padding: const EdgeInsets.all(AppDimensions.profileAvatarBorder),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: plan.color, width: AppDimensions.profileAvatarBorder),
+              border: Border.all(color: AppColors.practicePrimary, width: AppDimensions.profileAvatarBorder),
             ),
             child: ClipOval(
               child: ColoredBox(
@@ -310,8 +263,6 @@ class _IdentityCard extends StatelessWidget {
           ),
           const SizedBox(height: AppDimensions.space12),
           Text(profile.fullName, style: AppTypography.profileName, textAlign: TextAlign.center),
-          const SizedBox(height: AppDimensions.space8),
-          PlanChip(plan: plan),
         ],
       ),
     );
@@ -356,11 +307,11 @@ class _RowDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Divider(
-        height: 1,
-        indent: AppDimensions.space16,
-        endIndent: AppDimensions.space16,
-        color: AppColors.practiceCardBorder,
-      );
+    height: 1,
+    indent: AppDimensions.space16,
+    endIndent: AppDimensions.space16,
+    color: AppColors.practiceCardBorder,
+  );
 }
 
 class _LockIcon extends StatelessWidget {
@@ -368,24 +319,22 @@ class _LockIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Padding(
-        padding: EdgeInsets.all(AppDimensions.space12),
-        child: Icon(
-          Icons.lock_outline_rounded,
-          size: AppDimensions.iconSmall,
-          color: AppColors.practiceTextSecondary,
-          semanticLabel: AppStrings.profileLocked,
-        ),
-      );
+    padding: EdgeInsets.all(AppDimensions.space12),
+    child: Icon(
+      Icons.lock_outline_rounded,
+      size: AppDimensions.iconSmall,
+      color: AppColors.practiceTextSecondary,
+      semanticLabel: AppStrings.profileLocked,
+    ),
+  );
 }
 
-/// Một dòng thông tin: icon, nhãn nhỏ, giá trị, chú thích và nút bên phải.
+/// Một dòng thông tin: icon, nhãn nhỏ, giá trị và nút bên phải.
 class _InfoRow extends StatelessWidget {
   final IconData icon;
   final String label;
-  final String? value;
+  final String value;
   final TextStyle? valueStyle;
-  final Widget? valueWidget;
-  final String? caption;
   final Widget? trailing;
   final VoidCallback? onTap;
   final String? semanticsHint;
@@ -394,10 +343,8 @@ class _InfoRow extends StatelessWidget {
     super.key,
     required this.icon,
     required this.label,
-    this.value,
+    required this.value,
     this.valueStyle,
-    this.valueWidget,
-    this.caption,
     this.trailing,
     this.onTap,
     this.semanticsHint,
@@ -428,11 +375,7 @@ class _InfoRow extends StatelessWidget {
                     children: [
                       Text(label, style: AppTypography.quizCaption),
                       const SizedBox(height: AppDimensions.space2),
-                      valueWidget ?? Text(value ?? '', style: valueStyle ?? AppTypography.quizOption),
-                      if (caption != null) ...[
-                        const SizedBox(height: AppDimensions.space4),
-                        Text(caption!, style: AppTypography.quizCaption),
-                      ],
+                      Text(value, style: valueStyle ?? AppTypography.quizOption),
                     ],
                   ),
                 ),
@@ -442,51 +385,6 @@ class _InfoRow extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Hạn mức đã dùng: "1/3" kèm thanh tiến độ, hoặc "Không giới hạn".
-class _UsageRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final int used;
-  final int? limit;
-
-  const _UsageRow({required this.icon, required this.label, required this.used, required this.limit});
-
-  @override
-  Widget build(BuildContext context) {
-    final max = limit;
-    final full = max != null && used >= max;
-    final color = full ? AppColors.errorRed : AppColors.practicePrimary;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: AppDimensions.iconSmall, color: AppColors.practicePrimary),
-            const SizedBox(width: AppDimensions.space8),
-            Expanded(child: Text(label, style: AppTypography.quizOption)),
-            Text(
-              max == null ? AppStrings.profileUnlimited : AppStrings.profileUsage(used, max),
-              style: AppTypography.quizChip.copyWith(color: max == null ? AppColors.successGreen : color),
-            ),
-          ],
-        ),
-        if (max != null) ...[
-          const SizedBox(height: AppDimensions.space8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
-            child: LinearProgressIndicator(
-              value: max == 0 ? 1 : (used / max).clamp(0.0, 1.0),
-              minHeight: AppDimensions.profileUsageBarHeight,
-              backgroundColor: AppColors.practiceSelectedFill,
-              valueColor: AlwaysStoppedAnimation<Color>(color),
-            ),
-          ),
-        ],
-      ],
     );
   }
 }
@@ -522,10 +420,12 @@ class _StatTile extends StatelessWidget {
           ),
           const SizedBox(height: AppDimensions.space8),
           Text.rich(
-            TextSpan(children: [
-              TextSpan(text: value, style: AppTypography.quizStatValue),
-              if (unit != null) TextSpan(text: ' $unit', style: AppTypography.quizCaption),
-            ]),
+            TextSpan(
+              children: [
+                TextSpan(text: value, style: AppTypography.quizStatValue),
+                if (unit != null) TextSpan(text: ' $unit', style: AppTypography.quizCaption),
+              ],
+            ),
           ),
           const SizedBox(height: AppDimensions.space2),
           Text(label, style: AppTypography.quizCaption, textAlign: TextAlign.center),

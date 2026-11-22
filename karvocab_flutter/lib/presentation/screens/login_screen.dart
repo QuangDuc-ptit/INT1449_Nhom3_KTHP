@@ -12,7 +12,7 @@ import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../forgot_password/forgot_password_ui_state.dart';
-import '../widgets/account_widgets.dart';
+import '../widgets/birth_date_picker.dart';
 import 'forgot_password_screen.dart';
 import 'main_shell_screen.dart';
 

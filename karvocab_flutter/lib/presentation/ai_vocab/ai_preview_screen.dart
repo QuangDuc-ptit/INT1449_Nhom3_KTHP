@@ -9,7 +9,6 @@ import '../../core/widgets/app_text_field.dart';
 import '../../core/widgets/cefr_badge.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../data/models/ai_vocab_draft.dart';
-import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/collection_bridge.dart';
 import '../../data/services/speech_service.dart';
 
@@ -21,15 +20,11 @@ class AiPreviewScreen extends StatefulWidget {
   /// Học phần đích chọn sẵn (nếu còn tồn tại); `null` = tạo học phần mới.
   final String? initialCollectionId;
 
-  /// Tài khoản đang dùng, để áp hạn mức tổng số từ theo loại tài khoản (Màn 15).
-  final AuthRepository? authRepository;
-
   const AiPreviewScreen({
     super.key,
     required this.drafts,
     required this.topic,
     this.initialCollectionId,
-    this.authRepository,
   });
 
   @override
@@ -100,22 +95,6 @@ class _AiPreviewScreenState extends State<AiPreviewScreen> {
   void _save() {
     final chosen = _drafts.where((d) => d.selected).toList();
     if (chosen.isEmpty) return;
-
-    final auth = widget.authRepository ?? AuthRepository.instance;
-    final limitError = auth.wordLimitError(
-      currentTotal: CollectionBridge.store.totalWordCount,
-      adding: chosen.length,
-    );
-    if (limitError != null) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(
-          backgroundColor: AppColors.errorRed,
-          behavior: SnackBarBehavior.floating,
-          content: Text(limitError),
-        ));
-      return;
-    }
 
     final collectionId =
         _destinationId ?? CollectionBridge.createCollection(_newCollectionName);

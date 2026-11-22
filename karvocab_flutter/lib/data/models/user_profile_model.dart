@@ -1,5 +1,3 @@
-import 'account_plan.dart';
-
 /// Model Thông tin người học & Thống kê cá nhân
 class UserProfileModel {
   final String fullName;
@@ -16,10 +14,6 @@ class UserProfileModel {
   /// `null` = tài khoản Google / Facebook chưa bổ sung ngày sinh.
   final String? memberId;
   final DateTime? birthDate;
-  final AccountPlan plan;
-
-  /// Ngày hết hạn gói Plus (gói trải nghiệm); `null` với Thường và Vip.
-  final DateTime? planExpiresAt;
 
   const UserProfileModel({
     required this.fullName,
@@ -33,16 +27,7 @@ class UserProfileModel {
     required this.isNotificationEnabled,
     this.memberId,
     this.birthDate,
-    this.plan = AccountPlan.standard,
-    this.planExpiresAt,
   });
-
-  /// Gói đang có hiệu lực: Plus quá hạn thì quay về Thường.
-  AccountPlan effectivePlan(DateTime now) {
-    final expires = planExpiresAt;
-    if (expires != null && !now.isBefore(expires)) return AccountPlan.standard;
-    return plan;
-  }
 
   UserProfileModel copyWith({
     String? fullName,
@@ -56,8 +41,6 @@ class UserProfileModel {
     bool? isNotificationEnabled,
     String? memberId,
     DateTime? birthDate,
-    AccountPlan? plan,
-    DateTime? planExpiresAt,
   }) {
     return UserProfileModel(
       fullName: fullName ?? this.fullName,
@@ -71,8 +54,6 @@ class UserProfileModel {
       isNotificationEnabled: isNotificationEnabled ?? this.isNotificationEnabled,
       memberId: memberId ?? this.memberId,
       birthDate: birthDate ?? this.birthDate,
-      plan: plan ?? this.plan,
-      planExpiresAt: planExpiresAt ?? this.planExpiresAt,
     );
   }
 

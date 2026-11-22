@@ -13,7 +13,7 @@ import '../../core/widgets/app_toast.dart';
 import '../../data/models/user_profile_model.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/services/reminder_service.dart';
-import '../widgets/account_widgets.dart';
+import '../widgets/birth_date_picker.dart';
 import 'login_screen.dart';
 
 /// Màn 23 · Cài đặt tài khoản (Account Settings Screen)

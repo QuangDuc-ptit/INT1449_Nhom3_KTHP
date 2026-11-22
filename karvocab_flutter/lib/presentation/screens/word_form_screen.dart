@@ -8,7 +8,6 @@ import '../../core/theme/app_typography.dart';
 import '../../core/utils/validators.dart';
 import '../../core/widgets/app_button.dart';
 import '../../data/models/vocabulary_model.dart';
-import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/collection_store.dart';
 import '../../data/services/speech_service.dart';
 import '../widgets/tag_input_field.dart';
@@ -25,10 +24,7 @@ class WordFormScreen extends StatefulWidget {
   final VocabularyModel? initialWord;
   final CollectionStore? store;
 
-  /// Tài khoản đang dùng, để áp hạn mức tổng số từ theo loại tài khoản (Màn 15).
-  final AuthRepository? authRepository;
-
-  const WordFormScreen({super.key, required this.collectionId, this.initialWord, this.store, this.authRepository});
+  const WordFormScreen({super.key, required this.collectionId, this.initialWord, this.store});
 
   bool get isEditing => initialWord != null;
 
@@ -107,17 +103,6 @@ class _WordFormScreenState extends State<WordFormScreen> {
       _defViError = defViError;
     });
     if (termError != null || defViError != null) return;
-
-    if (!widget.isEditing) {
-      final auth = widget.authRepository ?? AuthRepository.instance;
-      final limitError = auth.wordLimitError(currentTotal: _store.totalWordCount, adding: 1);
-      if (limitError != null) {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(behavior: SnackBarBehavior.floating, content: Text(limitError)));
-        return;
-      }
-    }
 
     // Chữ còn gõ dở trong ô đồng nghĩa / trái nghĩa vẫn được lưu thành thẻ.
     _synonyms = TagInputField.commitPending(_synonyms, _synonymInput);

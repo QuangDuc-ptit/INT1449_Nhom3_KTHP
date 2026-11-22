@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 
 import '../../core/constants/app_strings.dart';
 import '../../core/utils/member_id.dart';
-import '../models/account_plan.dart';
 import '../models/user_profile_model.dart';
 
 /// Ô nhập mà lỗi xác thực gắn vào (để hiển thị lỗi ngay dưới ô đó).
@@ -28,24 +27,13 @@ class _Account {
   String password;
   DateTime? birthDate;
   String? memberId;
-  AccountPlan plan;
-  DateTime? planExpiresAt;
 
   _Account({
     required this.fullName,
     required this.password,
     this.birthDate,
     this.memberId,
-    this.plan = AccountPlan.standard,
-    this.planExpiresAt,
   });
-}
-
-/// Số lần tạo từ bằng AI trong một ngày của một tài khoản.
-class _AiUsage {
-  final DateTime day;
-  int count;
-  _AiUsage(this.day, this.count);
 }
 
 class _OtpTicket {
@@ -62,12 +50,8 @@ class _OtpTicket {
 /// `/auth/forgot-password`, `/auth/reset-password` của backend (`be/develop`)
 /// và lưu refresh token vào Secure Storage — chữ ký hàm giữ nguyên.
 class AuthRepository extends ChangeNotifier {
-  AuthRepository({
-    this.latency = const Duration(milliseconds: 600),
-    Random? random,
-    DateTime Function()? clock,
-  })  : _random = random ?? Random(),
-        _clock = clock ?? DateTime.now {
+  AuthRepository({this.latency = const Duration(milliseconds: 600), Random? random})
+      : _random = random ?? Random() {
     _seedAccounts();
   }
 
@@ -86,11 +70,9 @@ class AuthRepository extends ChangeNotifier {
 
   final Duration latency;
   final Random _random;
-  final DateTime Function() _clock;
 
   final Map<String, _Account> _accounts = {};
   final Map<String, _OtpTicket> _otpTickets = {};
-  final Map<String, _AiUsage> _aiUsage = {};
 
   UserProfileModel? _currentUser;
   bool _isDemo = false;
@@ -137,7 +119,7 @@ class AuthRepository extends ChangeNotifier {
     return _startSession(_profileFor(demoEmail, account, isNew: false), demo: true);
   }
 
-  /// Màn 03: đăng ký tài khoản mới (gói Thường) rồi tự đăng nhập.
+  /// Màn 03: đăng ký tài khoản mới rồi tự đăng nhập.
   /// Có [birthDate] thì cấp mã ID ngay.
   Future<UserProfileModel> register({
     required String fullName,
@@ -166,56 +148,6 @@ class AuthRepository extends ChangeNotifier {
     _assignBirthDate(account, birthDate);
     _currentUser = user.copyWith(birthDate: account.birthDate, memberId: account.memberId);
     notifyListeners();
-  }
-
-  // ---------------------------------------------------------------------------
-  // Loại tài khoản & hạn mức
-  // ---------------------------------------------------------------------------
-
-  /// Gói đang có hiệu lực của người đang đăng nhập (Plus quá hạn → Thường).
-  AccountPlan? get activePlan => _currentUser?.effectivePlan(_clock());
-
-  /// Số lần đã tạo từ bằng AI hôm nay.
-  int get aiUsedToday {
-    final user = _currentUser;
-    if (user == null) return 0;
-    final usage = _aiUsage[_normalize(user.email)];
-    return usage != null && usage.day == _today() ? usage.count : 0;
-  }
-
-  /// Số lần tạo từ bằng AI còn lại hôm nay; `null` = không giới hạn
-  /// (gói Vip / Plus hoặc chưa đăng nhập).
-  int? get aiRemainingToday {
-    final limit = activePlan?.aiDailyLimit;
-    if (limit == null) return null;
-    return max(0, limit - aiUsedToday);
-  }
-
-  /// Ghi nhận một lần tạo từ bằng AI thành công.
-  void recordAiGeneration() {
-    final user = _currentUser;
-    if (user == null) return;
-    final key = _normalize(user.email);
-    final today = _today();
-    final usage = _aiUsage[key];
-    if (usage == null || usage.day != today) {
-      _aiUsage[key] = _AiUsage(today, 1);
-    } else {
-      usage.count++;
-    }
-    notifyListeners();
-  }
-
-  /// Tổng số từ được lưu; `null` = không giới hạn.
-  int? get wordLimit => activePlan?.wordLimit;
-
-  /// Thông báo lỗi nếu lưu thêm [adding] từ (đang có [currentTotal]) vượt hạn mức gói;
-  /// `null` = được lưu.
-  String? wordLimitError({required int currentTotal, required int adding}) {
-    final limit = wordLimit;
-    if (limit == null || currentTotal + adding <= limit) return null;
-    final remaining = max(0, limit - currentTotal);
-    return remaining == 0 ? AppStrings.wordLimitReached(limit) : AppStrings.wordLimitExceeded(remaining, limit);
   }
 
   /// Màn 23: đăng xuất — xoá phiên hiện tại.
@@ -295,7 +227,6 @@ class AuthRepository extends ChangeNotifier {
     _accounts.clear();
     _seedAccounts();
     _otpTickets.clear();
-    _aiUsage.clear();
     _currentUser = null;
     _isDemo = false;
     notifyListeners();
@@ -307,27 +238,19 @@ class AuthRepository extends ChangeNotifier {
 
   String _normalize(String email) => email.trim().toLowerCase();
 
-  DateTime _today() {
-    final now = _clock();
-    return DateTime(now.year, now.month, now.day);
-  }
-
-  /// Tài khoản mẫu: tài khoản demo dùng thử gói Plus (còn 30 ngày), tài khoản test là Vip.
+  /// Tài khoản mẫu: tài khoản demo và tài khoản test nội bộ.
   void _seedAccounts() {
     _accounts[demoEmail] = _Account(
       fullName: 'Nguyễn Văn A',
       password: demoPassword,
       birthDate: DateTime(2005, 9, 20),
       memberId: 'KM05092000',
-      plan: AccountPlan.plus,
-      planExpiresAt: _today().add(Duration(days: AccountPlan.plus.trialDays!)),
     );
     _accounts[testEmail] = _Account(
       fullName: 'Admin',
       password: testPassword,
       birthDate: DateTime(2000, 1, 1),
       memberId: 'KM00010100',
-      plan: AccountPlan.vip,
     );
   }
 
@@ -350,7 +273,7 @@ class AuthRepository extends ChangeNotifier {
 
   UserProfileModel _profileFor(String email, _Account account, {required bool isNew}) {
     final mock = UserProfileModel.mockDefault();
-    // Dựng lại để các trường có thể rỗng (mã ID, ngày sinh, hạn gói) lấy đúng của tài khoản.
+    // Dựng lại để các trường có thể rỗng (mã ID, ngày sinh) lấy đúng của tài khoản.
     return UserProfileModel(
       fullName: account.fullName,
       email: email,
@@ -364,8 +287,6 @@ class AuthRepository extends ChangeNotifier {
       isNotificationEnabled: mock.isNotificationEnabled,
       memberId: account.memberId,
       birthDate: account.birthDate,
-      plan: account.plan,
-      planExpiresAt: account.planExpiresAt,
     );
   }
 }

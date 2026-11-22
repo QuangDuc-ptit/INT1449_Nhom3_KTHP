@@ -125,7 +125,6 @@ class AppStrings {
   static const String profileMemberId = 'Mã ID';
   static const String profileEmail = 'Email';
   static const String profileBirthDate = 'Ngày sinh';
-  static const String profilePlan = 'Loại tài khoản';
   static const String profileLocked = 'Không thể thay đổi';
   static const String profileCopyId = 'Sao chép mã ID';
   static const String profileIdCopied = 'Đã sao chép mã ID';
@@ -134,12 +133,6 @@ class AppStrings {
   static const String profileEditBirthDate = 'Sửa ngày sinh';
   static const String profileBirthDateSaved = 'Đã cập nhật ngày sinh';
   static const String profileBirthDateHelp = 'Chọn ngày sinh';
-  static const String profilePlanBenefits = 'Quyền lợi gói';
-  static const String profileAiToday = 'Tạo từ bằng AI hôm nay';
-  static const String profileSavedWords = 'Từ vựng đã lưu';
-  static const String profileUnlimited = 'Không giới hạn';
-  static String profileUsage(int used, int limit) => '$used/$limit';
-  static String profilePlanExpires(String date, int days) => 'Dùng thử đến $date · còn $days ngày';
   static const String profileAchievements = 'Thành tựu';
   static const String profileWordsLearned = 'Từ đã học';
   static const String profileStreak = 'Chuỗi ngày';
@@ -149,18 +142,6 @@ class AppStrings {
   static const String profileOpenSettings = 'Cài đặt tài khoản & Mục tiêu';
   static const String profileHelp = 'Hướng dẫn & Trợ giúp';
   static const String profileHelpMessage = 'Hệ thống học từ vựng Spaced Repetition (SM-2) KarVocab.';
-
-  // Loại tài khoản
-  static const String planStandard = 'Thường';
-  static const String planPlus = 'Plus';
-  static const String planVip = 'Vip';
-  static String aiQuotaRemaining(int remaining, int limit) => 'Còn $remaining/$limit lượt tạo từ bằng AI hôm nay';
-  static String aiQuotaExceeded(int limit) =>
-      'Bạn đã dùng hết $limit lượt tạo từ bằng AI hôm nay. Hãy quay lại vào ngày mai.';
-  static String wordLimitReached(int limit) =>
-      'Gói Thường chỉ lưu tối đa $limit từ. Hãy xoá bớt từ cũ để thêm từ mới.';
-  static String wordLimitExceeded(int remaining, int limit) =>
-      'Gói Thường chỉ lưu tối đa $limit từ, bạn còn lưu được $remaining từ.';
 
   // Màn 03 · Đăng ký
   static const String registerBirthDate = 'Ngày sinh';

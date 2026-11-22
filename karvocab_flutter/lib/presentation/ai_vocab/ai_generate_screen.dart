@@ -12,7 +12,6 @@ import '../../core/widgets/app_button.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../data/models/ai_vocab_draft.dart';
 import '../../data/repositories/ai_vocab_repository.dart';
-import '../../data/repositories/auth_repository.dart';
 import 'ai_preview_screen.dart';
 
 enum _GenState { idle, loading, error }
@@ -25,10 +24,7 @@ class AiGenerateScreen extends StatefulWidget {
   /// Học phần đích chọn sẵn ở Màn 14 (mở từ Màn 06 của FE1). `null` = tạo học phần mới.
   final String? initialCollectionId;
 
-  /// Tài khoản đang dùng, để áp hạn mức lượt AI theo loại tài khoản (Màn 15).
-  final AuthRepository? authRepository;
-
-  const AiGenerateScreen({super.key, this.repository, this.initialCollectionId, this.authRepository});
+  const AiGenerateScreen({super.key, this.repository, this.initialCollectionId});
 
   /// Chuyển `errorCode` của BE thành thông báo tiếng Việt cho Màn 13.
   @visibleForTesting
@@ -83,21 +79,11 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> with SingleTickerPr
     super.dispose();
   }
 
-  AuthRepository get _auth => widget.authRepository ?? AuthRepository.instance;
-
   bool get _canGenerate => _topicController.text.trim().isNotEmpty;
 
   Future<void> _generate() async {
     if (!_canGenerate) return;
     FocusScope.of(context).unfocus();
-    final limit = _auth.activePlan?.aiDailyLimit;
-    if (limit != null && _auth.aiRemainingToday == 0) {
-      setState(() {
-        _state = _GenState.error;
-        _errorMessage = AppStrings.aiQuotaExceeded(limit);
-      });
-      return;
-    }
     setState(() => _state = _GenState.loading);
     _shimmer.repeat(reverse: true);
 
@@ -105,8 +91,6 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> with SingleTickerPr
       final List<AiVocabDraft> drafts = await _repo
           .generate(topic: _topicController.text.trim(), cefrLevel: _level, wordCount: _count)
           .timeout(const Duration(seconds: 15));
-      // Chỉ tính lượt khi AI trả kết quả thành công.
-      _auth.recordAiGeneration();
       if (!mounted) return;
       _shimmer.stop();
       setState(() => _state = _GenState.idle);
@@ -325,45 +309,14 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> with SingleTickerPr
             AppDimensions.screenMargin,
             AppDimensions.space16,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AppButton(
-                text: AppStrings.aiGenerateButton,
-                icon: const Icon(Icons.auto_awesome_rounded, color: AppColors.white, size: 20),
-                isEnabled: _canGenerate,
-                onPressed: _generate,
-              ),
-              _AiQuotaLabel(auth: _auth),
-            ],
+          child: AppButton(
+            text: AppStrings.aiGenerateButton,
+            icon: const Icon(Icons.auto_awesome_rounded, color: AppColors.white, size: 20),
+            isEnabled: _canGenerate,
+            onPressed: _generate,
           ),
         ),
       ],
-    );
-  }
-}
-
-/// Dòng "Còn x/y lượt tạo từ bằng AI hôm nay" (ẩn với gói không giới hạn).
-class _AiQuotaLabel extends StatelessWidget {
-  final AuthRepository auth;
-
-  const _AiQuotaLabel({required this.auth});
-
-  @override
-  Widget build(BuildContext context) {
-    final limit = auth.activePlan?.aiDailyLimit;
-    final remaining = auth.aiRemainingToday;
-    if (limit == null || remaining == null) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(top: AppDimensions.space8),
-      child: Text(
-        AppStrings.aiQuotaRemaining(remaining, limit),
-        key: const Key('ai_quota'),
-        style: AppTypography.quizCaption.copyWith(
-          color: remaining == 0 ? AppColors.errorRed : AppColors.practiceTextSecondary,
-        ),
-        textAlign: TextAlign.center,
-      ),
     );
   }
 }
