@@ -377,20 +377,4 @@ class AppStrings {
   static String reviewOverdueHours(int h) => 'Quá hạn $h giờ';
   static String reviewOverdueDays(int d) => 'Quá hạn $d ngày';
   static String reviewStart(int count) => 'Bắt đầu ôn $count từ';
-
-  // Token cũ còn được màn hình chưa cập nhật dùng; xoá ở commit dọn dẹp.
-  static String homeGreeting(String userName) => 'Xin chào, $userName!';
-  static const String wordDetailNote = 'Ghi chú';
-  static const String gamePronunciationDesc = 'Luyện phát âm bằng AI';
-  static const String gameListenTypeDesc = 'Nghe và viết lại từ';
-  static const String gameListenChooseDesc = 'Nghe và chọn đáp án';
-  static const String gameChooseMeaningDesc = modeMeaningChoose;
-  static const String gameSynonymAntonymDesc = 'Phân biệt đồng nghĩa và trái nghĩa';
-  static const String gameRecallTypeDesc = 'Xem nghĩa và viết lại từ';
-  static const String modeListenChooseDesc = 'Nghe phát âm rồi chọn từ đúng trong 4 đáp án.';
-  static const String modeListenTypeDesc = 'Nghe phát âm và gõ chính xác chính tả của từ.';
-  static const String modeMeaningChooseDesc = 'Xem từ tiếng Anh, chọn nghĩa tiếng Việt chính xác.';
-  static const String modeRecallTypeDesc = 'Đọc nghĩa tiếng Việt, gõ lại từ tiếng Anh tương ứng.';
-  static const String quizRetryBanner = 'Luyện lại các từ đã làm sai';
-  static const String feedbackYouSaid = 'Bạn đã nói:';
 }

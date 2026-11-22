@@ -796,21 +796,4 @@ class AppTypography {
     height: 1.2,
   );
 
-  // Token cũ còn được màn hình chưa cập nhật dùng; xoá ở commit dọn dẹp.
-  /// Mô tả trò chơi — 12, chữ phụ.
-  static const TextStyle practiceGameDescription = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 12.0,
-    fontWeight: FontWeight.w400,
-    color: AppColors.practiceTextSecondary,
-    height: 1.35,
-  );
-  /// Tên học phần dưới tiêu đề — 13 SemiBold, xanh nhấn.
-  static const TextStyle wordFormSubtitle = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 13.0,
-    fontWeight: FontWeight.w600,
-    color: AppColors.practicePrimary,
-    height: 1.3,
-  );
 }

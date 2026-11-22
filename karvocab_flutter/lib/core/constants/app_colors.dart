@@ -142,10 +142,4 @@ class AppColors {
   static const Color planPlusTint = Color(0xFFF1EAFE);
   static const Color planVip = Color(0xFFD97706);
   static const Color planVipTint = Color(0xFFFEF3E2);
-
-  // Token cũ còn được màn hình chưa cập nhật dùng; xoá ở commit dọn dẹp.
-  /// Nền nút chính "Đăng nhập" / "Đăng ký".
-  static const Color authButton = Color(0xFF0070BE);
-  /// Nút "Lưu thay đổi".
-  static const Color wordFormSave = Color(0xFF0077BD);
 }

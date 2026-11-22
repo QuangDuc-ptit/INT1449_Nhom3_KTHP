@@ -290,18 +290,4 @@ class AppDimensions {
   static const double tagHeight = 32.0;
   static const double tagCloseIcon = 16.0;
   static const double tagInputMinWidth = 80.0;
-
-  // Token cũ còn được màn hình chưa cập nhật dùng; xoá ở commit dọn dẹp.
-  static const double radiusXSmall = 4.0;
-  static const double iconFeature = 26.0;
-  static const double badgeIconBoxSize = 48.0;
-  static const double avatarSize = 72.0;
-  static const double audioButtonSize = 52.0;
-  static const double badgeProgressHeight = 5.0;
-  /// Viền nhấn mạnh nhạt (thẻ huy hiệu đã mở khoá).
-  static const double accentBorderOpacity = 0.3;
-  /// Nền ô icon huy hiệu chưa mở khoá.
-  static const double halfOpacity = 0.5;
-  /// Nền thẻ huy hiệu chưa mở khoá.
-  static const double lockedSurfaceOpacity = 0.6;
 }
