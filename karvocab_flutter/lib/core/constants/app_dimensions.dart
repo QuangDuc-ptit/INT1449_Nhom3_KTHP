@@ -42,7 +42,6 @@ class AppDimensions {
   static const double iconLarge = 28.0;
   static const double iconDialog = 30.0;
   static const double iconState = 40.0;
-  static const double iconHero = 64.0;
 
   // Viền
   static const double borderThin = 1.0;
@@ -65,14 +64,12 @@ class AppDimensions {
   static const double chipPaddingV = space3;
 
   // Ô icon / avatar
-  static const double collectionIconBoxSize = 50.0;
   static const double badgeIconBoxSize = 48.0;
   static const double dialogIconBoxSize = 56.0;
   static const double avatarSize = 72.0;
   static const double audioButtonSize = 52.0;
 
   // Thanh tiến độ / độ mạnh mật khẩu
-  static const double passwordStrengthBarHeight = 4.0;
   static const double badgeProgressHeight = 5.0;
 
   // Sóng âm (SoundWaveIndicator)
@@ -172,48 +169,109 @@ class AppDimensions {
   static const double sheetRadius = 24.0;
   /// Bề rộng tối thiểu nút chữ trong hộp thoại (cao = [minTouchTarget]).
   static const double dialogTextButtonMinWidth = 88.0;
-  /// Nền nhạt của thẻ đang chọn / đúng / sai.
-  static const double selectedTintOpacity = 0.10;
 
   // ===========================================================================
   // TRACK B (FE2)
   // ===========================================================================
 
   // Màn 08 / 19 · Nút loa lớn
-  static const double quizAudioButtonSize = 96.0;
+  static const double quizAudioButtonSize = 88.0;
+  /// Vòng sáng quanh nút loa (lan ra khi đang phát).
+  static const double quizAudioHaloSize = 128.0;
   /// Icon chiếm 45% đường kính nút.
   static const double quizAudioIconFactor = 0.45;
-  /// Nút phóng to thêm tối đa 8% khi đang phát.
-  static const double quizAudioPulseScale = 0.08;
-  static const double quizAudioElevation = 4.0;
-  static const double quizAudioShadowOpacity = 0.4;
+  /// Vòng sáng phóng to thêm tối đa 12% khi đang phát.
+  static const double quizAudioPulseScale = 0.12;
 
   // Thẻ đáp án A/B/C/D
   static const double quizOptionMinHeight = 60.0;
   static const double quizOptionLetterSize = 32.0;
 
   // Thanh tiến độ phiên làm bài
-  static const double quizProgressHeight = 10.0;
+  static const double quizProgressHeight = 8.0;
 
-  // Màn 10 · Chọn chế độ
-  static const double practiceEmptyHeight = 280.0;
-  static const double practiceModeIconBoxSize = 52.0;
+  // ---------------------------------------------------------------------------
+  // Màn 10 · Luyện tập
+  // ---------------------------------------------------------------------------
+  /// Responsive: < 600 điện thoại (1 cột), 600–1023 tablet (1 cột, lưới 3 thẻ),
+  /// ≥ 1024 máy tính (2 cột: thiết lập bên trái, trò chơi bên phải).
+  static const double practiceTabletBreakpoint = 600.0;
+  static const double practiceDesktopBreakpoint = 1024.0;
+  static const double practiceMaxWidthTablet = 720.0;
+  static const double practiceMaxWidthDesktop = 1100.0;
+  static const double practiceSettingsPanelWidth = 400.0;
+  static const double practiceColumnGap = 24.0;
+  static const double practiceHorizontalPadding = 22.0;
+  static const double practiceHorizontalPaddingWide = 32.0;
+  static const double practicePanelRadius = 20.0;
+  static const double practicePanelPadding = 16.0;
+  /// Ô chọn: ảnh thiết kế ~44px, nâng lên 48dp theo quy tắc vùng chạm của rubric.
+  static const double practiceFieldHeight = 48.0;
+  static const double practiceFieldRadius = 8.0;
+  static const double practiceOrderButtonHeight = 40.0;
+  static const double practiceOrderButtonRadius = 8.0;
+  /// Nút "Theo thứ tự (A-Z)" rộng hơn nút "Ngẫu nhiên".
+  static const int practiceOrderPrimaryFlex = 3;
+  static const int practiceOrderSecondaryFlex = 2;
+  static const double practiceGridGap = 12.0;
+  static const double practiceGameCardRadius = 14.0;
+  static const double practiceGameCardPadding = 12.0;
+  static const double practiceGameIconBox = 40.0;
+  static const double practiceGameIconRadius = 12.0;
+  static const int practiceMaxCollections = 3;
+  static const double practiceSheetHandleWidth = 40.0;
 
-  // Màn 12 · Vòng tròn tỉ lệ đúng
-  static const double resultRingSize = 150.0;
-  static const double resultRingStroke = 12.0;
+  // Thanh điều hướng dưới: viên thuốc bao icon của mục đang chọn.
+  static const double navActivePillWidth = 56.0;
+  static const double navActivePillHeight = 30.0;
 
-  // Màn 13 · Sinh từ AI
-  static const int aiSkeletonRowCount = 4;
-  static const double aiSkeletonRowHeight = 72.0;
-  static const double stepperValueWidth = 80.0;
-  static const int aiTopicMaxLines = 2;
+  /// Chiều cao tối đa của menu thả xuống (vd chọn Loại từ ở Màn 24).
+  static const double dropdownMenuMaxHeight = 360.0;
 
-  // Màn 04 · Trang chủ bản FE2
-  static const double streakIconBoxSize = 64.0;
-  static const double dailyGoalBarHeight = 12.0;
-  static const double shortcutIconBoxSize = 48.0;
-  /// Nền / chữ trắng mờ trên nền gradient xanh.
-  static const double onDarkTintOpacity = 0.18;
-  static const double onDarkTextOpacity = 0.9;
+  /// Linh vật Axolotl minh hoạ (Màn 12 kết quả quiz, Màn 13 AI đang tạo từ).
+  static const double mascotIllustrationSize = 96.0;
+
+  // ---------------------------------------------------------------------------
+  // Màn chơi (08 / 19 / 20 / 25), phản hồi (11) và kết quả (12)
+  // ---------------------------------------------------------------------------
+  /// Nội dung màn chơi rộng tối đa 600 và căn giữa trên tablet / web.
+  static const double quizMaxContentWidth = 600.0;
+  static const double quizHorizontalPadding = 20.0;
+  /// Nút đóng: hình tròn 40 nhưng vùng chạm 48dp.
+  static const double quizCloseButtonSize = 40.0;
+  static const double quizCardRadius = 20.0;
+  static const double quizCardPadding = 20.0;
+  static const double quizOptionRadius = 14.0;
+  static const double quizOptionLetterRadius = 10.0;
+  static const double quizOptionGap = 10.0;
+  static const double quizDimmedOpacity = 0.5;
+  static const double quizFieldHeight = 56.0;
+  static const double quizFieldRadius = 14.0;
+  static const double quizChipHeight = 28.0;
+  static const double quizChipIconSize = 14.0;
+  static const double quizFeedbackIconBox = 36.0;
+  static const double quizResultRingSize = 120.0;
+  static const double quizResultRingStroke = 10.0;
+  static const double quizStatIconBox = 32.0;
+  /// Bóng rất nhẹ của bảng phản hồi / thanh nút dưới đáy.
+  static const double quizSheetShadowBlur = 24.0;
+  static const double quizSheetShadowOpacity = 0.06;
+
+  // ---------------------------------------------------------------------------
+  // Màn 09 · Sửa từ vựng / Màn 24 · Thêm từ vựng (thiết kế gốc 393 × 852)
+  // ---------------------------------------------------------------------------
+  /// Trên màn rộng, form căn giữa với bề rộng tối đa bằng khung thiết kế.
+  static const double wordFormMaxWidth = 393.0;
+  static const double wordFormHorizontalPadding = 22.0;
+  static const double wordFormFieldHeight = 52.0;
+  static const double wordFormFieldRadius = 14.0;
+  static const double wordFormFieldPaddingH = 15.0;
+  static const double wordFormSelectPaddingV = 14.5;
+  static const double wordFormLabelGap = 7.0;
+  static const double wordFormGroupGap = 12.0;
+  /// Khoảng cách từ ô "Ghi chú" tới nút lưu.
+  static const double wordFormSaveGap = 44.0;
+  static const double wordFormSaveRadius = 16.0;
+  /// Khoảng trống dưới nút lưu.
+  static const double wordFormBottomSpace = 32.0;
 }

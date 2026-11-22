@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+
 import '../mock/mock_vocab_data.dart';
 import '../models/collection_model.dart';
 import '../models/vocabulary_model.dart';
@@ -15,11 +16,10 @@ enum LoadStatus { initial, loading, ready, error }
 ///   Sprint 3 sẽ thay phần `load()` bằng API backend thật.
 class CollectionStore extends ChangeNotifier {
   CollectionStore({
-    required List<CollectionModel> collections,
-    required List<VocabularyModel> vocabularies,
+    required this._collections,
+    required this._vocabularies,
     this.latency = const Duration(milliseconds: 400),
-  })  : _collections = collections,
-        _vocabularies = vocabularies;
+  });
 
   /// Instance dùng chung toàn app (Demo Mode dùng dữ liệu mock).
   static final CollectionStore instance = CollectionStore(

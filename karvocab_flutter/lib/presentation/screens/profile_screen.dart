@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/theme/app_shadows.dart';
@@ -133,12 +134,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             color: AppColors.secondaryBackground,
                             borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
                           ),
-                          child: Text(
-                            '🎯 Mục tiêu: ${profile.dailyGoalWords} từ/ngày',
-                            style: AppTypography.labelSmall.copyWith(
-                              color: AppColors.navyBlue,
-                              fontWeight: FontWeight.w700,
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.flag_rounded, size: AppDimensions.iconTiny, color: AppColors.navyBlue),
+                              const SizedBox(width: AppDimensions.space4),
+                              Text(
+                                'Mục tiêu: ${profile.dailyGoalWords} từ/ngày',
+                                style: AppTypography.labelSmall.copyWith(
+                                  color: AppColors.navyBlue,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],

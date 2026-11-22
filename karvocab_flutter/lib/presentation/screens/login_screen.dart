@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_text_field.dart';
@@ -238,8 +239,8 @@ class _LoginScreenState extends State<LoginScreen> {
     return [
       AppTextField(
         key: const ValueKey('login_email'),
-        label: 'Địa chỉ email',
-        hintText: 'name@email.com',
+        label: AppStrings.emailLabel,
+        hintText: AppStrings.emailHint,
         controller: _loginEmailController,
         keyboardType: TextInputType.emailAddress,
         borderColor: AppColors.softBlueSurface,
@@ -285,8 +286,8 @@ class _LoginScreenState extends State<LoginScreen> {
     return [
       AppTextField(
         key: const ValueKey('register_email'),
-        label: 'Địa chỉ email',
-        hintText: 'name@email.com',
+        label: AppStrings.emailLabel,
+        hintText: AppStrings.emailHint,
         controller: _registerEmailController,
         keyboardType: TextInputType.emailAddress,
         borderColor: AppColors.softBlueSurface,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../constants/app_colors.dart';
 
 /// Design Tokens: Typography Scale theo chuẩn Figma KarVocab
@@ -19,12 +20,12 @@ class AppTypography {
   /// Giãn chữ của tiêu đề nhóm viết hoa (Màn 23 · Cài đặt).
   static const double sectionHeaderLetterSpacing = 0.8;
 
-  /// Chữ thương hiệu "KarVocab" ở Màn 01 · Splash (Nunito Bold 28).
+  /// Chữ thương hiệu "KarVocab" ở Màn 01 · Splash (Nunito ExtraBold 28).
   /// Màu tô riêng cho "Kar" / "Vocab" qua TextSpan.
   static const TextStyle brandWordmark = TextStyle(
     fontFamily: fontFamily,
     fontSize: 28.0,
-    fontWeight: FontWeight.w700,
+    fontWeight: FontWeight.w800,
     height: 1.2,
   );
 
@@ -364,9 +365,284 @@ class AppTypography {
     color: AppColors.white,
   );
 
-  /// Emoji minh hoạ lớn (Màn 12 kết quả).
-  static const TextStyle emojiHero = TextStyle(fontSize: 64.0);
 
-  /// Emoji Axolotl khi AI đang sinh từ (Màn 13).
-  static const TextStyle emojiLoading = TextStyle(fontSize: 72.0);
+
+  // ---------------------------------------------------------------------------
+  // Màn 10 · Luyện tập
+  // ---------------------------------------------------------------------------
+
+  /// Tiêu đề "Luyện tập" — 28 ExtraBold, xanh chính.
+  static const TextStyle practiceTitle = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 28.0,
+    fontWeight: FontWeight.w800,
+    color: AppColors.practicePrimary,
+    height: 1.2,
+  );
+
+  /// Nhãn trong khối thiết lập — 14 SemiBold.
+  static const TextStyle practiceLabel = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14.0,
+    fontWeight: FontWeight.w600,
+    color: AppColors.practiceTextPrimary,
+    height: 1.3,
+  );
+
+  /// Giá trị trong ô chọn — 15 Medium.
+  static const TextStyle practiceFieldValue = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 15.0,
+    fontWeight: FontWeight.w500,
+    color: AppColors.practiceTextPrimary,
+    height: 1.3,
+  );
+
+  /// Dòng phụ "Chọn tối đa 3 bộ" — 12, chữ phụ.
+  static const TextStyle practiceHint = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 12.0,
+    fontWeight: FontWeight.w400,
+    color: AppColors.practiceTextSecondary,
+    height: 1.3,
+  );
+
+  /// Chữ nút thứ tự hiển thị — 14 SemiBold (màu theo trạng thái chọn).
+  static const TextStyle practiceOrderOption = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14.0,
+    fontWeight: FontWeight.w600,
+    height: 1.2,
+  );
+
+  /// Tiêu đề "Danh sách trò chơi" — 20 Bold.
+  static const TextStyle practiceSectionTitle = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 20.0,
+    fontWeight: FontWeight.w700,
+    color: AppColors.practiceTextPrimary,
+    height: 1.3,
+  );
+
+  /// Tên trò chơi — 15 Bold.
+  static const TextStyle practiceGameTitle = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 15.0,
+    fontWeight: FontWeight.w700,
+    color: AppColors.practiceTextPrimary,
+    height: 1.3,
+  );
+
+  /// Mô tả trò chơi — 12, chữ phụ.
+  static const TextStyle practiceGameDescription = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 12.0,
+    fontWeight: FontWeight.w400,
+    color: AppColors.practiceTextSecondary,
+    height: 1.35,
+  );
+
+  // ---------------------------------------------------------------------------
+  // Màn chơi (08 / 19 / 20 / 25), phản hồi (11) và kết quả (12)
+  // ---------------------------------------------------------------------------
+
+  /// Bộ đếm câu "1/10" — 14 Bold.
+  static const TextStyle quizCounter = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14.0,
+    fontWeight: FontWeight.w700,
+    color: AppColors.practiceTextPrimary,
+    height: 1.2,
+  );
+
+  /// Nhãn chế độ chơi trên chip — 12 Bold, xanh chính.
+  static const TextStyle quizChip = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 12.0,
+    fontWeight: FontWeight.w700,
+    color: AppColors.practicePrimary,
+    height: 1.2,
+  );
+
+  /// Lời nhắc đầu thẻ câu hỏi — 14 SemiBold, chữ phụ.
+  static const TextStyle quizPrompt = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14.0,
+    fontWeight: FontWeight.w600,
+    color: AppColors.practiceTextSecondary,
+    height: 1.4,
+  );
+
+  /// Từ tiếng Anh lớn ở giữa thẻ — 32 ExtraBold.
+  static const TextStyle quizTerm = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 32.0,
+    fontWeight: FontWeight.w800,
+    color: AppColors.practiceTextPrimary,
+    height: 1.2,
+  );
+
+  /// Phiên âm IPA — 16, chữ phụ.
+  static const TextStyle quizIpa = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 16.0,
+    fontWeight: FontWeight.w500,
+    color: AppColors.practiceTextSecondary,
+    height: 1.3,
+  );
+
+  /// Nghĩa tiếng Việt (Màn 20) — 20 Bold.
+  static const TextStyle quizDefinition = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 20.0,
+    fontWeight: FontWeight.w700,
+    color: AppColors.practiceTextPrimary,
+    height: 1.35,
+  );
+
+  /// Câu ví dụ — 15 nghiêng, chữ phụ.
+  static const TextStyle quizExample = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 15.0,
+    fontWeight: FontWeight.w400,
+    fontStyle: FontStyle.italic,
+    color: AppColors.practiceTextSecondary,
+    height: 1.5,
+  );
+
+  /// Nội dung đáp án — 16 SemiBold.
+  static const TextStyle quizOption = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 16.0,
+    fontWeight: FontWeight.w600,
+    color: AppColors.practiceTextPrimary,
+    height: 1.35,
+  );
+
+  /// Chữ A/B/C/D — 14 ExtraBold.
+  static const TextStyle quizOptionLetter = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14.0,
+    fontWeight: FontWeight.w800,
+    height: 1.0,
+  );
+
+  /// Chữ gõ trong ô trả lời — 18 SemiBold.
+  static const TextStyle quizInput = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 18.0,
+    fontWeight: FontWeight.w600,
+    color: AppColors.practiceTextPrimary,
+    height: 1.3,
+  );
+
+  /// Tiêu đề phản hồi "Chính xác!" — 18 ExtraBold (màu theo kết quả).
+  static const TextStyle quizFeedbackTitle = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 18.0,
+    fontWeight: FontWeight.w800,
+    height: 1.3,
+  );
+
+  /// Chữ nhỏ trong bảng phản hồi / kết quả — 13, chữ phụ.
+  static const TextStyle quizCaption = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 13.0,
+    fontWeight: FontWeight.w500,
+    color: AppColors.practiceTextSecondary,
+    height: 1.4,
+  );
+
+  /// Tiêu đề màn kết quả — 24 ExtraBold.
+  static const TextStyle quizResultTitle = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 24.0,
+    fontWeight: FontWeight.w800,
+    color: AppColors.practiceTextPrimary,
+    height: 1.25,
+  );
+
+  /// % chính xác trong vòng tròn — 28 ExtraBold (màu theo mức điểm).
+  static const TextStyle quizResultPercent = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 28.0,
+    fontWeight: FontWeight.w800,
+    height: 1.1,
+  );
+
+  /// Số liệu thống kê — 16 ExtraBold.
+  static const TextStyle quizStatValue = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 16.0,
+    fontWeight: FontWeight.w800,
+    color: AppColors.practiceTextPrimary,
+    height: 1.2,
+  );
+
+  // ---------------------------------------------------------------------------
+  // Màn 09 · Sửa từ vựng / Màn 24 · Thêm từ vựng
+  // ---------------------------------------------------------------------------
+
+  /// Tiêu đề "Sửa từ vựng" — 20 Bold, navy.
+  static const TextStyle wordFormTitle = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 20.0,
+    fontWeight: FontWeight.w700,
+    color: AppColors.practiceTextPrimary,
+    height: 1.25,
+  );
+
+  /// Tên học phần dưới tiêu đề — 13 SemiBold, xanh nhấn.
+  static const TextStyle wordFormSubtitle = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 13.0,
+    fontWeight: FontWeight.w600,
+    color: AppColors.practicePrimary,
+    height: 1.3,
+  );
+
+  /// Nhãn trên ô nhập — 12 SemiBold, navy.
+  static const TextStyle wordFormLabel = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 12.0,
+    fontWeight: FontWeight.w600,
+    color: AppColors.practiceTextPrimary,
+    height: 1.3,
+  );
+
+  /// Nội dung ô nhập — 14 Medium, xanh xám đậm.
+  static const TextStyle wordFormInput = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14.0,
+    fontWeight: FontWeight.w500,
+    color: AppColors.wordFormInputText,
+    height: 1.4,
+  );
+
+  /// Gợi ý trong ô trống (Màn 24) — 14, chữ phụ.
+  static const TextStyle wordFormHint = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14.0,
+    fontWeight: FontWeight.w500,
+    color: AppColors.practiceTextSecondary,
+    height: 1.4,
+  );
+
+  /// Lỗi dưới ô nhập — 12, đỏ.
+  static const TextStyle wordFormError = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 12.0,
+    fontWeight: FontWeight.w500,
+    color: AppColors.errorRed,
+    height: 1.3,
+  );
+
+  /// Chữ nút "Lưu thay đổi" — 18 Bold, trắng.
+  static const TextStyle wordFormSave = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 18.0,
+    fontWeight: FontWeight.w700,
+    color: AppColors.white,
+    height: 1.2,
+  );
 }

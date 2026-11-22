@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_durations.dart';
+import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/utils/validators.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../../core/widgets/app_toast.dart';
-import '../../core/utils/validators.dart';
 import '../../data/models/user_profile_model.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/services/reminder_service.dart';
@@ -314,8 +316,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     value: _selectedLanguage,
                     underline: const SizedBox(),
                     items: const [
-                      DropdownMenuItem(value: 'vi', child: Text('Tiếng Việt 🇻🇳')),
-                      DropdownMenuItem(value: 'en', child: Text('English 🇬🇧')),
+                      DropdownMenuItem(value: 'vi', child: Text('Tiếng Việt')),
+                      DropdownMenuItem(value: 'en', child: Text('English')),
                     ],
                     onChanged: (val) {
                       if (val != null) {
@@ -517,14 +519,14 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
             minimumSize: const Size(AppDimensions.minTouchTarget, AppDimensions.minTouchTarget),
           ),
           child: Text(
-            'Hủy',
+            AppStrings.cancel,
             style: AppTypography.bodyBold.copyWith(color: AppColors.textSecondary),
           ),
         ),
         SizedBox(
           width: AppDimensions.dialogActionWidth,
           child: AppButton(
-            text: 'Cập nhật',
+            text: AppStrings.update,
             onPressed: _submit,
             isLoading: _isLoading,
             height: AppDimensions.minTouchTarget,

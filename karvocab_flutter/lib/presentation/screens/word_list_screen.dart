@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/app_toast.dart';
@@ -87,14 +89,14 @@ class _WordListScreenState extends State<WordListScreen> {
                 key: const Key('add_word_manual'),
                 minTileHeight: AppDimensions.minTouchTarget,
                 leading: const Icon(Icons.edit_note_rounded, color: AppColors.primaryBlue),
-                title: Text('Thêm thủ công', style: AppTypography.bodyBold),
+                title: Text(AppStrings.addWordManual, style: AppTypography.bodyBold),
                 onTap: () => Navigator.of(sheetContext).pop(_AddWordChoice.manual),
               ),
               ListTile(
                 key: const Key('add_word_ai'),
                 minTileHeight: AppDimensions.minTouchTarget,
                 leading: const Icon(Icons.auto_awesome_rounded, color: AppColors.primaryBlue),
-                title: Text('Tạo bằng AI', style: AppTypography.bodyBold),
+                title: Text(AppStrings.addWordWithAi, style: AppTypography.bodyBold),
                 onTap: () => Navigator.of(sheetContext).pop(_AddWordChoice.ai),
               ),
             ],
@@ -185,7 +187,7 @@ class _WordListScreenState extends State<WordListScreen> {
         icon: Icons.search_off_rounded,
         title: 'Không tìm thấy từ nào',
         message: 'Không có từ nào khớp với "$_searchQuery".',
-        actionText: 'Xoá tìm kiếm',
+        actionText: AppStrings.libraryClearSearch,
         onAction: () {
           _searchController.clear();
           setState(() => _searchQuery = '');
@@ -230,7 +232,7 @@ class _WordListScreenState extends State<WordListScreen> {
             suffixIcon: _searchQuery.isNotEmpty
                 ? IconButton(
                     icon: const Icon(Icons.clear_rounded, size: AppDimensions.iconCompact),
-                    tooltip: 'Xoá tìm kiếm',
+                    tooltip: AppStrings.libraryClearSearch,
                     onPressed: () {
                       _searchController.clear();
                       setState(() => _searchQuery = '');

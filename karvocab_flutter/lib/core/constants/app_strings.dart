@@ -1,3 +1,5 @@
+import 'part_of_speech.dart';
+
 /// Chuỗi hiển thị dùng chung (tương đương strings.xml).
 /// Chuỗi có số viết thành hàm nhận tham số.
 class AppStrings {
@@ -10,8 +12,10 @@ class AppStrings {
   // Màn 21 · Quên mật khẩu
   static const String forgotPasswordTitle = 'Quên mật khẩu';
   static const String forgotPasswordDescription = 'Tôi sẽ giúp bạn lấy lại quyền truy cập tài khoản.';
-  static const String forgotPasswordEmailLabel = 'Địa chỉ email';
-  static const String forgotPasswordEmailHint = 'name@email.com';
+  static const String emailLabel = 'Địa chỉ email';
+  static const String emailHint = 'name@email.com';
+  static const String forgotPasswordEmailLabel = emailLabel;
+  static const String forgotPasswordEmailHint = emailHint;
   static const String forgotPasswordNote =
       'Liên kết đặt lại mật khẩu sẽ được gửi đến địa chỉ email bạn đã đăng ký.';
   static const String forgotPasswordSend = 'Gửi liên kết đặt lại';
@@ -87,8 +91,9 @@ class AppStrings {
   // Dùng chung
   static const String back = 'Quay lại';
   static const String cancel = 'Hủy';
+  static const String update = 'Cập nhật';
   static String wordCount(int words) => '$words từ';
-  static String partOfSpeech(String pos) => '[$pos.]';
+  static String partOfSpeech(String pos) => PartOfSpeech.bracket(pos);
 
   // Màn 06 · Nút "Thêm từ"
   static const String addWordManual = 'Thêm thủ công';
@@ -100,13 +105,65 @@ class AppStrings {
 
   // Màn 10 · Chọn chế độ luyện tập
   static const String practiceTitle = 'Luyện tập';
-  static const String practiceCollection = 'Học phần';
-  static const String practiceAllCollections = 'Tất cả';
-  static const String practiceQuestionCount = 'Số câu hỏi';
-  static String practiceQuestionOption(int n) => '$n câu';
-  static const String practiceEmptyTitle = 'Học phần chưa có từ vựng';
-  static const String practiceEmptyMessage = 'Thêm từ vào học phần này để bắt đầu luyện tập nhé.';
-  static String practiceReady(int words) => '$words từ sẵn sàng • chọn chế độ bên dưới';
+  static const String practiceSourceLabel = 'Nguồn học phần';
+  static const String practiceSourceHint = 'Chọn tối đa 3 bộ';
+  static const String practiceSourceEmpty = 'Chưa chọn học phần';
+  static const String practiceStatusLabel = 'Trạng thái từ';
+  static const String practiceStatusUnmastered = 'Chưa thuộc';
+  static const String practiceStatusMastered = 'Đã thuộc';
+  static const String practiceStatusAll = 'Tất cả';
+  static const String practiceCountLabel = 'Số lượng từ';
+  static const String practiceOrderLabel = 'Thứ tự hiển thị';
+  static const String practiceOrderAlphabet = 'Theo thứ tự (A-Z)';
+  static const String practiceOrderRandom = 'Ngẫu nhiên';
+  static const String practiceGamesTitle = 'Danh sách trò chơi';
+  static const String practiceSheetDone = 'Xong';
+  // Màn 09 · Sửa từ vựng & Màn 24 · Thêm từ vựng
+  static const String wordFormEditTitle = 'Sửa từ vựng';
+  static const String wordFormAddTitle = 'Thêm từ vựng';
+  static const String wordFormTerm = 'Từ tiếng Anh';
+  static const String wordFormTermHint = 'resilient';
+  static const String wordFormIpa = 'IPA';
+  static const String wordFormIpaHint = '/rɪˈzɪliənt/';
+  static const String wordFormMeaning = 'Nghĩa tiếng Việt';
+  static const String wordFormMeaningHint = 'Kiên cường, bền bỉ';
+  static const String wordFormPartOfSpeech = 'Từ loại';
+  static const String wordFormExample = 'Ví dụ';
+  static const String wordFormExampleHint = 'She stayed resilient through challenges.';
+  static const String wordFormLevel = 'Trình độ';
+  static const String wordFormNote = 'Ghi chú';
+  static const String wordFormNoteHint = 'Gợi nhớ: đứng dậy sau những khó khăn.';
+  static const String wordFormSaveChanges = 'Lưu thay đổi';
+  static const String wordFormMeaningRequired = 'Vui lòng nhập nghĩa tiếng Việt';
+  static String wordFormDuplicate(String term) => 'Từ "$term" đã có trong học phần này';
+  static const String wordDetailNote = 'Ghi chú';
+
+  /// Tên tiếng Việt của các cấp CEFR.
+  static const Map<String, String> cefrNames = {
+    'A1': 'Mới bắt đầu',
+    'A2': 'Sơ cấp',
+    'B1': 'Trung cấp',
+    'B2': 'Trung cao cấp',
+    'C1': 'Cao cấp',
+  };
+  static String cefrOption(String level) => '$level · ${cefrNames[level] ?? ''}';
+
+  static const String practiceNoRelations =
+      'Các từ đã chọn chưa có từ đồng nghĩa / trái nghĩa. Hãy chọn học phần khác.';
+  static const String practiceNoWords = 'Không có từ phù hợp. Hãy đổi học phần hoặc trạng thái từ.';
+
+  static const String gamePronunciation = 'Luyện phát âm';
+  static const String gamePronunciationDesc = 'Luyện phát âm bằng AI';
+  static const String gameListenType = modeListenType;
+  static const String gameListenTypeDesc = 'Nghe và viết lại từ';
+  static const String gameListenChoose = 'Nghe và chọn từ';
+  static const String gameListenChooseDesc = 'Nghe và chọn đáp án';
+  static const String gameChooseMeaning = modeMeaningChoose;
+  static const String gameChooseMeaningDesc = modeMeaningChoose;
+  static const String gameSynonymAntonym = 'Đồng nghĩa và trái nghĩa';
+  static const String gameSynonymAntonymDesc = 'Phân biệt đồng nghĩa và trái nghĩa';
+  static const String gameRecallType = modeRecallType;
+  static const String gameRecallTypeDesc = 'Xem nghĩa và viết lại từ';
 
   static const String modeListenChoose = 'Nghe chọn từ';
   static const String modeListenType = 'Nghe và điền từ';
@@ -142,23 +199,41 @@ class AppStrings {
   static const String quizTypingHint = 'Nhập từ tiếng Anh...';
   static const String quizListenTypeHint = 'Gõ từ bạn nghe được...';
   static const String quizCheck = 'Kiểm tra';
+
+  // Game Luyện phát âm
+  static const String quizPromptPronunciation = 'Đọc to từ dưới đây';
+  static const String speakTapToStart = 'Chạm để bắt đầu nói';
+  static const String speakListening = 'Đang nghe... chạm để dừng';
+  static const String speakMicSemantics = 'Bắt đầu hoặc dừng ghi âm';
+  static String speakHeard(String text) => 'Máy nghe được: "$text"';
+  static const String speakUnavailable =
+      'Thiết bị hoặc trình duyệt này chưa hỗ trợ nhận dạng giọng nói. Hãy thử Chrome hoặc điện thoại Android.';
+  static const String speakPermissionDenied = 'Hãy cho phép KarVocab dùng micro để luyện phát âm.';
+  static const String speakNoSpeech = 'Chưa nghe rõ, bạn hãy thử nói lại nhé.';
+  static const String speakSkip = 'Bỏ qua câu này';
+  static const String feedbackYouSaid = 'Bạn đã nói:';
+
+  // Game Đồng nghĩa và trái nghĩa
+  static const String quizPromptSynonymAntonym = 'Hai từ này có quan hệ gì với nhau?';
+  static const String relationSynonym = 'Đồng nghĩa';
+  static const String relationAntonym = 'Trái nghĩa';
+  static String relationExplain(String term, String relation, String pair) =>
+      '"$term" ${relation.toLowerCase()} với "$pair"';
   static const String audioPlaySemantics = 'Phát âm thanh';
+  static const String listenPronunciation = 'Nghe thử phát âm';
+  static String listenPronunciationOf(String term) => 'Nghe phát âm từ $term';
   static const String audioPlaying = 'Đang phát...';
   static const String audioTapToReplay = 'Chạm để nghe lại';
 
   // Màn 11 · Phản hồi đáp án
-  static const String feedbackCorrect = 'Chính xác! 🎉';
+  static const String feedbackCorrect = 'Chính xác!';
   static String feedbackAlmost(String term) => 'Suýt đúng! Chú ý chính tả: $term';
   static const String feedbackWrong = 'Chưa đúng rồi';
   static const String feedbackCorrectAnswer = 'Đáp án đúng:';
-  static String feedbackExplanation(String term, String ipa, String meaning) =>
-      '$term $ipa — $meaning';
   static const String feedbackContinue = 'Tiếp tục';
   static const String feedbackSeeResult = 'Xem kết quả';
 
   // Màn 12 / 26 · Kết quả & luyện lại câu sai
-  static const String resultEmojiExcellent = '🦎🎉';
-  static const String resultEmojiEncourage = '🦎💪';
   static const String resultExcellent = 'Xuất sắc!';
   static const String resultEncourage = 'Cố gắng thêm một chút nhé!';
   static const String resultSubtitle = 'Kết quả buổi luyện tập';
@@ -172,6 +247,11 @@ class AppStrings {
   static const String resultMissedWords = 'Từ cần ôn lại';
   static String resultRetryMissed(int count) => 'Luyện lại câu sai ($count)';
   static const String resultDone = 'Hoàn thành';
+  static const String resultAccuracy = 'chính xác';
+  static const String resultNoMistakes = 'Bạn không sai câu nào. Tiếp tục phát huy nhé!';
+  static const String quizRetryChip = 'Luyện lại câu sai';
+  static const String quizMeaningLabel = 'Nghĩa';
+  static const String quizExampleLabel = 'Ví dụ';
 
   // Màn 13 · Tạo từ vựng bằng AI
   static const String aiGenerateTitle = 'Tạo từ vựng bằng AI';
@@ -189,7 +269,6 @@ class AppStrings {
   static const String aiIncrease = 'Tăng';
   static const String aiSimulateFailure = 'Mô phỏng lỗi AI (Demo)';
   static const String aiGenerateButton = 'Tạo từ vựng ngay';
-  static const String aiLoadingEmoji = '🦎';
   static const String aiLoadingTitle = 'Axolotl đang suy nghĩ...';
   static String aiLoadingSubtitle(int count, String level) =>
       'Đang tạo $count từ vựng cấp $level';
@@ -217,7 +296,7 @@ class AppStrings {
   static String aiNewCollectionDefault(String topic) => 'AI · $topic';
   static String aiDestinationNew(String name) => 'Tạo mới: $name';
   static const String aiAlreadyInCollection = 'Đã có trong học phần';
-  static String aiDraftMeta(String pos, String ipa) => '[$pos.]  $ipa';
+  static String aiDraftMeta(String pos, String ipa) => '${PartOfSpeech.bracket(pos)}  $ipa';
   static String aiEditTooltip(String term) => 'Sửa từ $term';
   static String aiEditTitle(String term) => 'Sửa "$term"';
   static const String aiMeaningLabel = 'Nghĩa tiếng Việt';
@@ -225,40 +304,20 @@ class AppStrings {
   static const String aiMeaningRequired = 'Nghĩa tiếng Việt không được để trống';
   static const String aiExampleLabel = 'Câu ví dụ';
   static const String aiExampleHint = 'Nhập câu ví dụ...';
-  static const String aiUpdate = 'Cập nhật';
+  static const String aiUpdate = update;
   static const String aiDestinationTitle = 'Lưu vào học phần';
   static const String aiNewCollectionLabel = 'Hoặc tạo học phần mới';
   static const String aiNewCollectionHint = 'Tên học phần (2–50 ký tự)';
-  static const String aiCreateCollection = 'Tạo học phần mới';
+  static const String aiCreateCollection = libraryCreateCourse;
   static const String aiCollectionDescription = 'Học phần được tạo bằng AI';
 
   // Màn 16 · Ôn tập hôm nay
   static const String reviewTitle = 'Ôn tập hôm nay';
-  static const String reviewDoneTitle = 'Bạn đã ôn xong hôm nay! 🎉';
+  static const String reviewDoneTitle = 'Bạn đã ôn xong hôm nay!';
   static const String reviewDoneMessage = 'Không còn từ nào đến hạn. Quay lại vào ngày mai nhé.';
   static const String reviewBackHome = 'Về Trang chủ';
   static const String reviewDueNow = 'Đến hạn bây giờ';
   static String reviewOverdueHours(int h) => 'Quá hạn $h giờ';
   static String reviewOverdueDays(int d) => 'Quá hạn $d ngày';
   static String reviewStart(int count) => 'Bắt đầu ôn $count từ';
-
-  // Màn 04 · Trang chủ (bản FE2 — dashboard/home_screen.dart)
-  static const String dashboardTitle = 'Trang chủ';
-  static const String dashboardGreeting = 'Xin chào! 👋';
-  static const String dashboardTagline = 'Mỗi ngày một chút, nhớ lâu hơn.';
-  static String dashboardStreak(int days) => '$days ngày';
-  static const String dashboardStreakDone = 'Chuỗi học liên tiếp — hôm nay đã xong! ✅';
-  static const String dashboardStreakPending = 'Chuỗi học liên tiếp — học ngay để giữ lửa!';
-  static const String dashboardGoalTitle = 'Mục tiêu hôm nay';
-  static String dashboardGoalReached(int reviewed, int goal) =>
-      'Tuyệt vời! Bạn đã hoàn thành mục tiêu ($reviewed/$goal từ) 🎉';
-  static String dashboardGoalProgress(int reviewed, int goal) =>
-      '$reviewed / $goal từ đã ôn hôm nay';
-  static String dashboardDueTitle(int count) => 'Bạn có $count từ cần ôn hôm nay';
-  static const String dashboardDueMessage =
-      'Ôn đúng hạn giúp bạn nhớ lâu hơn theo chu kỳ lặp lại ngắt quãng.';
-  static const String dashboardReviewNow = 'Ôn tập ngay';
-  static const String dashboardShortcuts = 'Lối tắt học nhanh';
-  static String dashboardQuickPractice(int count) => 'Luyện nhanh\n$count câu';
-  static const String dashboardAiShortcut = 'Tạo từ\nbằng AI';
 }

@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../core/constants/app_assets.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/state_widgets.dart';
@@ -30,18 +32,18 @@ class AiGenerateScreen extends StatefulWidget {
       case 'RATE_LIMITED':
         final s = e.retryAfterSeconds;
         return s == null
-            ? 'Bạn thao tác quá nhanh. Vui lòng chờ một lát rồi thử lại.'
-            : 'Bạn thao tác quá nhanh. Vui lòng chờ $s giây rồi thử lại.';
+            ? AppStrings.aiErrorRateLimited
+            : AppStrings.aiErrorRateLimitedSeconds(s);
       case 'AI_TIMEOUT':
-        return 'AI phản hồi quá lâu. Vui lòng thử lại.';
+        return AppStrings.aiErrorTimeout;
       case 'AI_BAD_RESPONSE':
-        return 'AI trả về dữ liệu không hợp lệ. Hãy thử lại hoặc đổi chủ đề.';
+        return AppStrings.aiErrorBadResponse;
       case 'AI_UNAVAILABLE':
-        return 'Dịch vụ AI đang tạm thời không khả dụng. Vui lòng thử lại sau.';
+        return AppStrings.aiErrorUnavailable;
       case 'UNAUTHORIZED':
-        return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+        return AppStrings.aiErrorUnauthorized;
       default:
-        return e.message ?? 'Không thể tạo từ vựng. Vui lòng thử lại.';
+        return e.message ?? AppStrings.aiErrorDefault;
     }
   }
 
@@ -55,12 +57,6 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
   static const int _minWords = 3;
   static const int _maxWords = 20;
   static const List<String> _levels = ['A1', 'A2', 'B1', 'B2', 'C1'];
-  static const List<String> _suggestions = [
-    'IELTS Speaking Part 2',
-    'Technology',
-    'Coffee Culture',
-    'Business Negotiation',
-  ];
 
   final TextEditingController _topicController = TextEditingController();
   late final AnimationController _shimmer;
@@ -123,7 +119,7 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
     } on AiVocabException catch (e) {
       _fail(AiGenerateScreen.aiErrorMessage(e));
     } catch (_) {
-      _fail('Không thể kết nối tới máy chủ AI. Kiểm tra mạng và thử lại.');
+      _fail(AppStrings.aiErrorConnection);
     }
   }
 
@@ -140,7 +136,7 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Tạo từ vựng bằng AI', style: AppTypography.headingMedium),
+        title: Text(AppStrings.aiGenerateTitle, style: AppTypography.headingMedium),
       ),
       body: SafeArea(
         child: switch (_state) {
@@ -157,7 +153,7 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
       children: [
         Expanded(
           child: ErrorStateWidget(
-            title: 'Tạo từ vựng thất bại',
+            title: AppStrings.aiErrorTitle,
             errorMessage: _errorMessage,
             onRetry: _generate,
           ),
@@ -170,7 +166,7 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
             AppDimensions.space16,
           ),
           child: AppButton(
-            text: 'Quay về',
+            text: AppStrings.aiBackToForm,
             variant: AppButtonVariant.outline,
             onPressed: () => setState(() => _state = _GenState.idle),
           ),
@@ -185,12 +181,17 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
       child: Column(
         children: [
           const SizedBox(height: AppDimensions.space24),
-          const Text('🦎', style: TextStyle(fontSize: 72)),
+          Image.asset(
+            AppAssets.logo,
+            width: AppDimensions.mascotIllustrationSize,
+            height: AppDimensions.mascotIllustrationSize,
+            excludeFromSemantics: true,
+          ),
           const SizedBox(height: AppDimensions.space12),
-          Text('Axolotl đang suy nghĩ...', style: AppTypography.headingMedium),
+          Text(AppStrings.aiLoadingTitle, style: AppTypography.headingMedium),
           const SizedBox(height: AppDimensions.space4),
           Text(
-            'Đang tạo $_count từ vựng cấp $_level',
+            AppStrings.aiLoadingSubtitle(_count, _level),
             style: AppTypography.bodyMedium,
           ),
           const SizedBox(height: AppDimensions.space24),
@@ -224,7 +225,7 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
           child: ListView(
             padding: const EdgeInsets.all(AppDimensions.screenMargin),
             children: [
-              Text('Chủ đề bạn muốn học', style: AppTypography.bodyBold),
+              Text(AppStrings.aiTopicLabel, style: AppTypography.bodyBold),
               const SizedBox(height: AppDimensions.space8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space16),
@@ -243,7 +244,7 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
                   onChanged: (_) => setState(() {}),
                   style: AppTypography.bodyLarge,
                   decoration: InputDecoration(
-                    hintText: 'VD: Airport, Travel...',
+                    hintText: AppStrings.aiTopicHint,
                     hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.textMuted),
                     border: InputBorder.none,
                   ),
@@ -254,7 +255,7 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
                 spacing: AppDimensions.space8,
                 runSpacing: AppDimensions.space8,
                 children: [
-                  for (final s in _suggestions)
+                  for (final s in AppStrings.aiTopicSuggestions)
                     _Pill(
                       label: s,
                       selected: false,
@@ -267,7 +268,7 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
                 ],
               ),
               const SizedBox(height: AppDimensions.space24),
-              Text('Cấp độ CEFR', style: AppTypography.bodyBold),
+              Text(AppStrings.aiCefrLabel, style: AppTypography.bodyBold),
               const SizedBox(height: AppDimensions.space8),
               Row(
                 children: [
@@ -286,13 +287,13 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
                 ],
               ),
               const SizedBox(height: AppDimensions.space24),
-              Text('Số lượng từ ($_minWords – $_maxWords)', style: AppTypography.bodyBold),
+              Text(AppStrings.aiWordCountLabel(_minWords, _maxWords), style: AppTypography.bodyBold),
               const SizedBox(height: AppDimensions.space8),
               Row(
                 children: [
                   _StepButton(
                     icon: Icons.remove_rounded,
-                    tooltip: 'Giảm',
+                    tooltip: AppStrings.aiDecrease,
                     onPressed: _count > _minWords ? () => setState(() => _count--) : null,
                   ),
                   SizedBox(
@@ -305,7 +306,7 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
                   ),
                   _StepButton(
                     icon: Icons.add_rounded,
-                    tooltip: 'Tăng',
+                    tooltip: AppStrings.aiIncrease,
                     onPressed: _count < _maxWords ? () => setState(() => _count++) : null,
                   ),
                 ],
@@ -313,7 +314,7 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
               const SizedBox(height: AppDimensions.space16),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: Text('Mô phỏng lỗi AI (Demo)', style: AppTypography.bodyMedium),
+                title: Text(AppStrings.aiSimulateFailure, style: AppTypography.bodyMedium),
                 value: MockAiVocabRepository.simulateFailure,
                 onChanged: (v) => setState(() => MockAiVocabRepository.simulateFailure = v),
               ),
@@ -328,7 +329,7 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
             AppDimensions.space16,
           ),
           child: AppButton(
-            text: 'Tạo từ vựng ngay',
+            text: AppStrings.aiGenerateButton,
             icon: const Icon(Icons.auto_awesome_rounded, color: AppColors.white, size: 20),
             isEnabled: _canGenerate,
             onPressed: _generate,

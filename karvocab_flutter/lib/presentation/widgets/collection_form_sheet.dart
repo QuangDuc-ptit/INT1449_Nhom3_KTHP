@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/validators.dart';
 import '../../core/widgets/app_button.dart';
@@ -109,7 +111,7 @@ class _CollectionFormSheetState extends State<CollectionFormSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Tạo học phần mới', style: AppTypography.headingMedium),
+                  Text(AppStrings.libraryCreateCourse, style: AppTypography.headingMedium),
                   IconButton(
                     icon: const Icon(Icons.close_rounded),
                     tooltip: 'Đóng',

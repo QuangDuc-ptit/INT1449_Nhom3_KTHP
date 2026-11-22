@@ -80,7 +80,6 @@ class AppColors {
   static const Color textPrimary = Color(0xFF17324D);
   static const Color textSecondary = Color(0xFF64748B);
   static const Color textMuted = Color(0xFF94A3B8);
-  static const Color textOnBlue = Color(0xFFFFFFFF);
 
   // Status & Feedback Colors
   static const Color successGreen = Color(0xFF22C55E);
@@ -99,4 +98,37 @@ class AppColors {
   static const Color cefrB1Text = Color(0xFF0095E8);
   static const Color cefrC1 = Color(0xFFEDE9FE);
   static const Color cefrC1Text = Color(0xFF7C3AED);
+
+  // ---------------------------------------------------------------------------
+  // Màn 10 · Luyện tập (theo ảnh thiết kế mới)
+  // ---------------------------------------------------------------------------
+  static const Color practiceBackground = Color(0xFFF4FAFE);
+  static const Color practicePrimary = Color(0xFF0066CC);
+  static const Color practiceTextPrimary = Color(0xFF173858);
+  static const Color practiceTextSecondary = Color(0xFF8191A8);
+  static const Color practiceBorder = Color(0xFFC3E1FF);
+  /// Nền ô chọn / nút chưa chọn — xanh rất nhạt.
+  static const Color practiceFieldFill = Color(0xFFF4FAFE);
+  /// Nền nút thứ tự đang chọn và nền icon thẻ trò chơi.
+  static const Color practiceSelectedFill = Color(0xFFE6F2FF);
+  /// Viền thẻ trò chơi và đường phân cách — rất nhạt.
+  static const Color practiceCardBorder = Color(0xFFE3EEF9);
+
+  // Thanh điều hướng dưới: nền viên thuốc của mục đang chọn.
+  static const Color navActivePill = practiceSelectedFill;
+
+  // ---------------------------------------------------------------------------
+  // Màn chơi & kết quả: nền nhạt cho trạng thái đúng / suýt đúng / sai
+  // ---------------------------------------------------------------------------
+  static const Color quizCorrectTint = Color(0xFFE9F9EF);
+  static const Color quizAlmostTint = Color(0xFFFEF4E6);
+  static const Color quizWrongTint = Color(0xFFFDEDED);
+
+  // ---------------------------------------------------------------------------
+  // Màn 09 · Sửa từ vựng / Màn 24 · Thêm từ vựng
+  // ---------------------------------------------------------------------------
+  /// Nút "Lưu thay đổi".
+  static const Color wordFormSave = Color(0xFF0077BD);
+  /// Chữ trong ô nhập: xanh xám đậm.
+  static const Color wordFormInputText = Color(0xFF2E4A66);
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/cefr_badge.dart';
@@ -16,9 +17,9 @@ class ReviewTodayScreen extends StatelessWidget {
 
   String _overdueLabel(DateTime due) {
     final diff = DateTime.now().difference(due);
-    if (diff.inHours < 1) return 'Đến hạn bây giờ';
-    if (diff.inHours < 24) return 'Quá hạn ${diff.inHours} giờ';
-    return 'Quá hạn ${diff.inDays} ngày';
+    if (diff.inHours < 1) return AppStrings.reviewDueNow;
+    if (diff.inHours < 24) return AppStrings.reviewOverdueHours(diff.inHours);
+    return AppStrings.reviewOverdueDays(diff.inDays);
   }
 
   void _start(BuildContext context, DashboardStore store) {
@@ -37,7 +38,7 @@ class ReviewTodayScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Ôn tập hôm nay', style: AppTypography.headingLarge),
+        title: Text(AppStrings.reviewTitle, style: AppTypography.headingLarge),
       ),
       body: ListenableBuilder(
         listenable: store,
@@ -46,10 +47,10 @@ class ReviewTodayScreen extends StatelessWidget {
 
           if (due.isEmpty) {
             return EmptyStateWidget(
-              title: 'Bạn đã ôn xong hôm nay! 🎉',
-              message: 'Không còn từ nào đến hạn. Quay lại vào ngày mai nhé.',
+              title: AppStrings.reviewDoneTitle,
+              message: AppStrings.reviewDoneMessage,
               icon: Icons.verified_rounded,
-              actionText: 'Về Trang chủ',
+              actionText: AppStrings.reviewBackHome,
               onAction: () => Navigator.of(context).pop(),
             );
           }
@@ -112,7 +113,7 @@ class ReviewTodayScreen extends StatelessWidget {
                     AppDimensions.space16,
                   ),
                   child: AppButton(
-                    text: 'Bắt đầu ôn ${due.length > 10 ? 10 : due.length} từ',
+                    text: AppStrings.reviewStart(due.length > 10 ? 10 : due.length),
                     onPressed: () => _start(context, store),
                   ),
                 ),

@@ -12,11 +12,10 @@ import 'library_ui_state.dart';
 /// theo tên + mô tả), ô tìm kiếm có debounce 300ms.
 class LibraryController extends ChangeNotifier {
   LibraryController({
-    required CollectionStore store,
+    required this._store,
     String? initialCategoryId,
     Duration debounce = const Duration(milliseconds: 300),
-  })  : _store = store,
-        _selectedCategoryId = initialCategoryId,
+  })  : _selectedCategoryId = initialCategoryId,
         _debouncer = Debouncer(delay: debounce) {
     _store.addListener(notifyListeners);
   }

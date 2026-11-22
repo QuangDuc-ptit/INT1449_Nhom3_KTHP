@@ -1,3 +1,4 @@
+import '../../core/constants/app_strings.dart';
 import '../models/collection_model.dart';
 import '../models/vocabulary_model.dart';
 import 'collection_store.dart';
@@ -23,7 +24,7 @@ class CollectionBridge {
       name = '$base ($n)';
     }
     return store
-        .createCollection(title: name, description: 'Học phần được tạo bằng AI')
+        .createCollection(title: name, description: AppStrings.aiCollectionDescription)
         .id;
   }
 
