@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'core/constants/app_colors.dart';
-import 'core/theme/app_typography.dart';
+import 'core/theme/app_theme.dart';
 import 'data/repositories/track_sync.dart';
 import 'data/services/device_tts_service.dart';
 import 'data/services/pronunciation_service.dart';
@@ -32,23 +31,7 @@ class KarVocabApp extends StatelessWidget {
     return MaterialApp(
       title: 'KarVocab',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: AppColors.background,
-        primaryColor: AppColors.primaryBlue,
-        fontFamily: AppTypography.fontFamily,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primaryBlue,
-          primary: AppColors.primaryBlue,
-          surface: AppColors.background,
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: AppColors.background,
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          iconTheme: IconThemeData(color: AppColors.textPrimary),
-        ),
-      ),
+      theme: AppTheme.light,
       home: const SplashScreen(),
     );
   }

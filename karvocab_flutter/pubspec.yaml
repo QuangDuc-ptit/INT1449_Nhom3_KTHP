@@ -109,6 +109,15 @@ flutter:
           weight: 800
         - asset: assets/fonts/Nunito-Black.ttf
           weight: 900
+    # Noto Sans rút gọn, chỉ chứa ký tự phiên âm IPA (ɪ ʊ ə ʃ ˈ ...) mà Nunito không có.
+    - family: NotoSansIPA
+      fonts:
+        - asset: assets/fonts/NotoSansIPA-400.ttf
+          weight: 400
+        - asset: assets/fonts/NotoSansIPA-600.ttf
+          weight: 600
+        - asset: assets/fonts/NotoSansIPA-700.ttf
+          weight: 700
 
   # To add assets to your application, add an assets section, like this:
   # assets:
