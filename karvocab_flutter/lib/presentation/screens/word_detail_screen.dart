@@ -5,9 +5,7 @@ import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_durations.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/constants/part_of_speech.dart';
-import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_typography.dart';
-import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_toast.dart';
 import '../../core/widgets/cefr_badge.dart';
 import '../../core/widgets/sound_wave_indicator.dart';
@@ -15,22 +13,20 @@ import '../../data/models/vocabulary_model.dart';
 import '../../data/repositories/collection_store.dart';
 import '../../data/services/pronunciation_service.dart';
 import '../widgets/delete_word_dialog.dart';
+import '../widgets/word_screen_header.dart';
 import 'word_form_screen.dart';
 
-/// Màn 07 · Chi tiết từ vựng (Word Detail Screen)
-/// Phát âm UK/US, IPA, loại từ, định nghĩa song ngữ, câu ví dụ in đậm từ khoá,
-/// mở Màn 09 (Sửa) và Màn 28 (Xác nhận xoá).
+/// Màn 07 · Chi tiết từ vựng.
+/// Thẻ từ (trình độ, từ loại, từ, IPA, nút phát âm), nghĩa tiếng Việt, ví dụ,
+/// ghi chú, từ đồng nghĩa / trái nghĩa và nút xoá (Màn 28 xác nhận).
+/// Bút chì mở Màn 09 (Sửa) với dữ liệu hiện tại; màn này luôn đọc bản mới nhất
+/// từ [CollectionStore] nên lưu xong quay về là thấy nội dung mới.
 class WordDetailScreen extends StatefulWidget {
   final VocabularyModel vocabulary;
   final CollectionStore? store;
   final PronunciationService? pronunciation;
 
-  const WordDetailScreen({
-    super.key,
-    required this.vocabulary,
-    this.store,
-    this.pronunciation,
-  });
+  const WordDetailScreen({super.key, required this.vocabulary, this.store, this.pronunciation});
 
   @override
   State<WordDetailScreen> createState() => _WordDetailScreenState();
@@ -40,19 +36,14 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
   CollectionStore get _store => widget.store ?? CollectionStore.instance;
   PronunciationService get _audio => widget.pronunciation ?? PronunciationService.instance;
 
-
   Future<void> _openEdit(VocabularyModel vocab) async {
     final saved = await Navigator.of(context).push<VocabularyModel>(
       MaterialPageRoute(
-        builder: (_) => WordFormScreen(
-          collectionId: vocab.collectionId,
-          initialWord: vocab,
-          store: widget.store,
-        ),
+        builder: (_) => WordFormScreen(collectionId: vocab.collectionId, initialWord: vocab, store: widget.store),
       ),
     );
     if (saved != null && mounted) {
-      AppToast.success(context, 'Đã cập nhật từ "${saved.term}"');
+      AppToast.success(context, AppStrings.wordDetailUpdated(saved.term));
     }
   }
 
@@ -68,11 +59,11 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text('Đã xoá từ "${removed.term}"'),
+          content: Text(AppStrings.wordDetailDeleted(removed.term)),
           backgroundColor: AppColors.textPrimary,
           behavior: SnackBarBehavior.floating,
           action: SnackBarAction(
-            label: 'Hoàn tác',
+            label: AppStrings.wordDetailUndo,
             textColor: AppColors.lightBlue,
             onPressed: () => _store.restoreWord(removed),
           ),
@@ -87,201 +78,319 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
       builder: (context, _) {
         // Đọc bản mới nhất từ store để phản ánh ngay thay đổi sau khi sửa.
         final vocab = _store.findWord(widget.vocabulary.id) ?? widget.vocabulary;
-        final isPlaying = _audio.isPlaying(vocab.id);
 
         return Scaffold(
-          backgroundColor: AppColors.mainBackground,
-          appBar: AppBar(
-            title: Text('Chi tiết từ vựng', style: AppTypography.headingMedium),
-            centerTitle: true,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.edit_outlined, color: AppColors.primaryBlue),
+          backgroundColor: AppColors.practiceBackground,
+          body: WordScreenBody(
+            header: WordScreenHeader(
+              title: AppStrings.wordDetailTitle,
+              trailing: IconButton(
+                key: const Key('word_detail_edit'),
+                tooltip: AppStrings.wordDetailEdit,
+                constraints: const BoxConstraints(
+                  minWidth: AppDimensions.minTouchTarget,
+                  minHeight: AppDimensions.minTouchTarget,
+                ),
+                icon: const Icon(Icons.edit_outlined, color: AppColors.practicePrimary),
                 onPressed: () => _openEdit(vocab),
-                tooltip: 'Sửa từ',
               ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline_rounded, color: AppColors.errorRed),
-                onPressed: () => _confirmDelete(vocab),
-                tooltip: 'Xoá từ',
+            ),
+            children: [
+              _WordCard(vocab: vocab, audio: _audio),
+              const SizedBox(height: AppDimensions.wordDetailSectionGap),
+              const _Label(AppStrings.wordDetailMeaning),
+              const SizedBox(height: AppDimensions.space8),
+              Text(vocab.definitionVi, style: AppTypography.wordDetailMeaning),
+              if (vocab.definitionEn.isNotEmpty) ...[
+                const SizedBox(height: AppDimensions.space6),
+                Text(
+                  vocab.definitionEn,
+                  style: AppTypography.wordDetailBody.copyWith(color: AppColors.practiceTextSecondary),
+                ),
+              ],
+              if (vocab.exampleSentence.isNotEmpty) ...[
+                const SizedBox(height: AppDimensions.wordDetailBlockGap),
+                _TintBlock(
+                  label: AppStrings.wordDetailExample,
+                  child: HighlightedSentence(sentence: vocab.exampleSentence, keyword: vocab.term),
+                ),
+              ],
+              if (vocab.note.isNotEmpty) ...[
+                const SizedBox(height: AppDimensions.space12),
+                _TintBlock(
+                  label: AppStrings.wordDetailNoteLabel,
+                  child: Text(vocab.note, style: AppTypography.wordDetailBody),
+                ),
+              ],
+              if (vocab.synonyms.isNotEmpty) ...[
+                const SizedBox(height: AppDimensions.wordDetailBlockGap),
+                _WordGroup(title: AppStrings.wordDetailSynonyms, words: vocab.synonyms, highlighted: true),
+              ],
+              if (vocab.antonyms.isNotEmpty) ...[
+                const SizedBox(height: AppDimensions.wordDetailBlockGap),
+                _WordGroup(title: AppStrings.wordDetailAntonyms, words: vocab.antonyms, highlighted: false),
+              ],
+              const SizedBox(height: AppDimensions.wordDetailSectionGap),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  key: const Key('word_detail_delete'),
+                  onPressed: () => _confirmDelete(vocab),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.errorRed,
+                    minimumSize: const Size(0, AppDimensions.minTouchTarget),
+                    padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space4),
+                    textStyle: AppTypography.wordDetailGroupTitle,
+                  ),
+                  icon: const Icon(Icons.delete_outline_rounded, size: AppDimensions.iconSmall),
+                  label: const Text(AppStrings.wordDetailDelete),
+                ),
               ),
             ],
-          ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppDimensions.screenMargin),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeaderCard(vocab, isPlaying),
-                const SizedBox(height: AppDimensions.space20),
-                _buildSection(
-                  title: AppStrings.aiMeaningLabel,
-                  icon: Icons.translate_rounded,
-                  child: Text(
-                    vocab.definitionVi,
-                    style: AppTypography.bodyBold.copyWith(fontSize: AppTypography.fontSize17, color: AppColors.textPrimary),
-                  ),
-                ),
-                if (vocab.definitionEn.isNotEmpty) ...[
-                  const SizedBox(height: AppDimensions.space16),
-                  _buildSection(
-                    title: 'Định nghĩa (English)',
-                    icon: Icons.menu_book_rounded,
-                    child: Text(vocab.definitionEn, style: AppTypography.bodyMedium),
-                  ),
-                ],
-                if (vocab.exampleSentence.isNotEmpty) ...[
-                  const SizedBox(height: AppDimensions.space16),
-                  _buildSection(
-                    title: 'Ví dụ câu ngữ cảnh',
-                    icon: Icons.format_quote_rounded,
-                    child: HighlightedSentence(sentence: vocab.exampleSentence, keyword: vocab.term),
-                  ),
-                ],
-                if (vocab.note.isNotEmpty) ...[
-                  const SizedBox(height: AppDimensions.space16),
-                  _buildSection(
-                    title: AppStrings.wordDetailNote,
-                    icon: Icons.sticky_note_2_outlined,
-                    child: Text(vocab.note, style: AppTypography.bodyMedium),
-                  ),
-                ],
-                const SizedBox(height: AppDimensions.space32),
-                AppButton(
-                  text: isPlaying ? 'Đang phát âm...' : 'Nghe phát âm (${_audio.accent.label})',
-                  icon: const Icon(Icons.volume_up_rounded, color: AppColors.white),
-                  onPressed: () => _audio.play(vocab),
-                  isEnabled: !isPlaying,
-                ),
-                const SizedBox(height: AppDimensions.space16),
-              ],
-            ),
           ),
         );
       },
     );
   }
+}
 
-  Widget _buildHeaderCard(VocabularyModel vocab, bool isPlaying) {
+/// Thẻ trắng: trình độ + từ loại, từ, IPA, chọn giọng; nút phát âm vuông bên phải.
+class _WordCard extends StatelessWidget {
+  final VocabularyModel vocab;
+  final PronunciationService audio;
+
+  const _WordCard({required this.vocab, required this.audio});
+
+  @override
+  Widget build(BuildContext context) {
+    final isPlaying = audio.isPlaying(vocab.id);
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppDimensions.space24),
+      padding: const EdgeInsets.all(AppDimensions.wordDetailCardPadding),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-        boxShadow: AppShadows.cardRaised,
+        borderRadius: BorderRadius.circular(AppDimensions.wordDetailCardRadius),
+        border: Border.all(color: AppColors.practiceCardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space10, vertical: AppDimensions.space4),
-                decoration: BoxDecoration(
-                  color: AppColors.secondaryBackground,
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusSmall),
-                ),
-                child: Text(
-                  PartOfSpeech.bracket(vocab.partOfSpeech),
-                  style: AppTypography.labelSmall.copyWith(
-                    color: AppColors.navyBlue,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppDimensions.space8),
               CefrBadge(level: vocab.cefrLevel),
-              const Spacer(),
-              // Nút phát âm tròn to chuẩn Figma (52dp ≥ 48dp)
-              Semantics(
-                button: true,
-                label: 'Phát âm ${vocab.term}',
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: () => _audio.play(vocab),
-                  child: AnimatedContainer(
-                    duration: AppDurations.fast,
-                    width: AppDimensions.audioButtonSize,
-                    height: AppDimensions.audioButtonSize,
-                    decoration: BoxDecoration(
-                      color: isPlaying ? AppColors.navyBlue : AppColors.softBlueSurface,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: isPlaying
-                          ? const SoundWaveIndicator(isActive: true, color: AppColors.white)
-                          : const Icon(Icons.volume_up_outlined, color: AppColors.primaryBlue, size: AppDimensions.iconFeature),
-                    ),
-                  ),
+              const SizedBox(width: AppDimensions.space8),
+              Flexible(
+                child: Text(
+                  PartOfSpeech.shortLabelOf(vocab.partOfSpeech),
+                  style: AppTypography.quizCaption,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: AppDimensions.space16),
-          Text(
-            vocab.term,
-            style: AppTypography.displayLarge.copyWith(color: AppColors.navyBlue, fontSize: AppTypography.fontSize32),
-          ),
-          if (vocab.ipa.isNotEmpty) ...[
-            const SizedBox(height: AppDimensions.space4),
-            Text(
-              vocab.ipa,
-              style: AppTypography.headingMedium.copyWith(
-                color: AppColors.primaryBlue,
-                fontWeight: FontWeight.w600,
+          const SizedBox(height: AppDimensions.space12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(vocab.term, style: AppTypography.wordDetailTerm),
+                    if (vocab.ipa.isNotEmpty) ...[
+                      const SizedBox(height: AppDimensions.space4),
+                      Text(vocab.ipa, style: AppTypography.wordDetailIpa),
+                    ],
+                  ],
+                ),
               ),
-            ),
-          ],
-          const SizedBox(height: AppDimensions.space16),
-          // Chọn giọng UK / US
-          SegmentedButton<Accent>(
-            segments: Accent.values
-                .map((a) => ButtonSegment<Accent>(value: a, label: Text('Giọng ${a.label}')))
-                .toList(),
-            selected: {_audio.accent},
-            showSelectedIcon: false,
-            onSelectionChanged: (selection) => _audio.accent = selection.first,
-            style: SegmentedButton.styleFrom(
-              minimumSize: const Size(0, AppDimensions.minTouchTarget),
-              selectedBackgroundColor: AppColors.softBlueSurface,
-              selectedForegroundColor: AppColors.navyBlue,
-              foregroundColor: AppColors.textSecondary,
-              side: const BorderSide(color: AppColors.borderLight),
-            ),
+              const SizedBox(width: AppDimensions.space12),
+              _SpeakButton(term: vocab.term, isPlaying: isPlaying, onTap: () => audio.play(vocab)),
+            ],
+          ),
+          const SizedBox(height: AppDimensions.space12),
+          // Chọn giọng đọc cho nút phát âm (UK / US).
+          Wrap(
+            spacing: AppDimensions.space8,
+            children: [
+              for (final accent in Accent.values)
+                _AccentChip(
+                  label: AppStrings.wordDetailAccent(accent.label),
+                  selected: audio.accent == accent,
+                  onTap: () => audio.accent = accent,
+                ),
+            ],
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildSection({
-    required String title,
-    required IconData icon,
-    required Widget child,
-  }) {
+class _SpeakButton extends StatelessWidget {
+  final String term;
+  final bool isPlaying;
+  final VoidCallback onTap;
+
+  const _SpeakButton({required this.term, required this.isPlaying, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(AppDimensions.wordDetailSpeakRadius);
+    return Semantics(
+      button: true,
+      label: AppStrings.wordDetailSpeak(term),
+      child: Material(
+        color: isPlaying ? AppColors.practicePrimary : AppColors.practiceSelectedFill,
+        borderRadius: radius,
+        child: InkWell(
+          key: const Key('word_detail_speak'),
+          borderRadius: radius,
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: AppDurations.fast,
+            width: AppDimensions.wordDetailSpeakSize,
+            height: AppDimensions.wordDetailSpeakSize,
+            alignment: Alignment.center,
+            child: isPlaying
+                ? const SoundWaveIndicator(isActive: true, color: AppColors.white)
+                : const Icon(Icons.volume_up_rounded, color: AppColors.practicePrimary, size: AppDimensions.iconMedium),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AccentChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _AccentChip({required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(AppDimensions.radiusPill);
+    return Semantics(
+      selected: selected,
+      button: true,
+      child: Material(
+        color: selected ? AppColors.practiceSelectedFill : AppColors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: radius,
+          side: BorderSide(color: selected ? AppColors.practicePrimary : AppColors.practiceCardBorder),
+        ),
+        child: InkWell(
+          borderRadius: radius,
+          onTap: onTap,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: AppDimensions.minTouchTarget),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space16),
+              child: Center(
+                widthFactor: 1,
+                child: Text(
+                  label,
+                  style: AppTypography.wordDetailChip.copyWith(
+                    color: selected ? AppColors.practicePrimary : AppColors.practiceTextSecondary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Label extends StatelessWidget {
+  final String text;
+  final Color color;
+
+  const _Label(this.text, {this.color = AppColors.practiceTextSecondary});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      header: true,
+      child: Text(text, style: AppTypography.wordDetailLabel.copyWith(color: color)),
+    );
+  }
+}
+
+/// Khối nền xanh nhạt có nhãn (Ví dụ sử dụng, Ghi chú).
+class _TintBlock extends StatelessWidget {
+  final String label;
+  final Widget child;
+
+  const _TintBlock({required this.label, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppDimensions.space16),
+      padding: const EdgeInsets.all(AppDimensions.wordDetailExamplePadding),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-        border: Border.all(color: AppColors.borderLight),
+        color: AppColors.practiceSelectedFill,
+        borderRadius: BorderRadius.circular(AppDimensions.wordDetailCardRadius),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(icon, size: AppDimensions.iconCompact, color: AppColors.primaryBlue),
-              const SizedBox(width: AppDimensions.space8),
-              Text(title, style: AppTypography.labelSmall.copyWith(fontSize: AppTypography.fontSize13)),
-            ],
-          ),
-          const SizedBox(height: AppDimensions.space12),
+          _Label(label, color: AppColors.practicePrimary),
+          const SizedBox(height: AppDimensions.space8),
           child,
         ],
       ),
+    );
+  }
+}
+
+/// Nhóm từ đồng nghĩa (chip xanh) hoặc trái nghĩa (chip trắng, chữ xám).
+class _WordGroup extends StatelessWidget {
+  final String title;
+  final List<String> words;
+  final bool highlighted;
+
+  const _WordGroup({required this.title, required this.words, required this.highlighted});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Semantics(header: true, child: Text(title, style: AppTypography.wordDetailGroupTitle)),
+        const SizedBox(height: AppDimensions.space10),
+        Wrap(
+          spacing: AppDimensions.space8,
+          runSpacing: AppDimensions.space8,
+          children: [
+            for (final word in words)
+              Container(
+                constraints: const BoxConstraints(minHeight: AppDimensions.wordDetailChipHeight),
+                padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space12),
+                decoration: BoxDecoration(
+                  color: highlighted ? AppColors.practiceSelectedFill : AppColors.white,
+                  borderRadius: BorderRadius.circular(AppDimensions.wordDetailChipRadius),
+                  border: highlighted ? null : Border.all(color: AppColors.practiceCardBorder),
+                ),
+                child: Center(
+                  widthFactor: 1,
+                  heightFactor: 1,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: AppDimensions.space8),
+                    child: Text(
+                      word,
+                      style: AppTypography.wordDetailChip.copyWith(
+                        color: highlighted ? AppColors.practicePrimary : AppColors.practiceTextSecondary,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -296,12 +405,8 @@ class HighlightedSentence extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final base = AppTypography.bodyLarge.copyWith(
-      fontStyle: FontStyle.italic,
-      color: AppColors.textPrimary,
-      fontWeight: FontWeight.w400,
-    );
-    final highlight = base.copyWith(fontWeight: FontWeight.w800, color: AppColors.navyBlue);
+    const base = AppTypography.wordDetailBody;
+    final highlight = base.copyWith(fontWeight: FontWeight.w800, color: AppColors.practicePrimary);
 
     final key = keyword.trim();
     if (key.isEmpty) return Text(sentence, style: base);
