@@ -9,11 +9,8 @@ import 'package:karvocab_flutter/presentation/widgets/weekly_bar_chart.dart';
 
 Widget _app(Widget home) => MaterialApp(home: home);
 
-NotificationUiState _withUnread(int unread) => NotificationUiState(
-      items: const [],
-      totalCount: unread,
-      unreadCount: unread,
-    );
+NotificationUiState _withUnread(int unread) =>
+    NotificationUiState(items: const [], totalCount: unread, unreadCount: unread);
 
 void main() {
   group('Màn 04 · Trang chủ', () {
@@ -35,6 +32,30 @@ void main() {
       expect(find.text('Học thuật & IELTS Core'), findsOneWidget);
       // Học phần thứ 4 không hiển thị
       expect(find.text('Từ vựng hằng ngày'), findsNothing);
+    });
+
+    testWidgets('Mục tiêu hôm nay: số từ đã ôn / mục tiêu; đạt thì đổi lời', (tester) async {
+      await tester.pumpWidget(_app(const HomeScreen(state: HomeSampleData.full)));
+      expect(find.byKey(const Key('home_daily_goal')), findsOneWidget);
+      expect(find.text('Mục tiêu hôm nay'), findsOneWidget);
+      expect(find.text('6/10 từ'), findsOneWidget);
+
+      const done = HomeUiState(
+        userName: 'Minh Anh',
+        totalWords: 10,
+        streakDays: 1,
+        newWords: 0,
+        wordsToReview: 0,
+        reviewMinutes: 0,
+        weeklyStats: [null, null, null, null, 12, null, null],
+        todayIndex: 4,
+        courses: [],
+        reviewedToday: 12,
+        dailyGoal: 10,
+      );
+      await tester.pumpWidget(_app(const HomeScreen(state: done)));
+      expect(find.text('Đã hoàn thành mục tiêu hôm nay'), findsOneWidget);
+      expect(find.text('12/10 từ'), findsOneWidget);
     });
 
     testWidgets('Trạng thái trống: ẩn thẻ nhắc, nút bị khoá, báo chưa có học phần', (tester) async {
@@ -68,14 +89,20 @@ void main() {
       var reviewTaps = 0;
       HomeStat? tappedStat;
       var seeAllTaps = 0;
-      await tester.pumpWidget(_app(HomeScreen(
-        state: HomeSampleData.full,
-        onStartReviewClick: () => reviewTaps++,
-        onStatClick: (s) => tappedStat = s,
-        onSeeAllCoursesClick: () => seeAllTaps++,
-      )));
+      await tester.pumpWidget(
+        _app(
+          HomeScreen(
+            state: HomeSampleData.full,
+            onStartReviewClick: () => reviewTaps++,
+            onStatClick: (s) => tappedStat = s,
+            onSeeAllCoursesClick: () => seeAllTaps++,
+          ),
+        ),
+      );
 
-      await tester.tap(find.descendant(of: find.byKey(const Key('home_review_reminder')), matching: find.byType(AppButton)));
+      await tester.tap(
+        find.descendant(of: find.byKey(const Key('home_review_reminder')), matching: find.byType(AppButton)),
+      );
       await tester.tap(find.text('Tổng số từ'));
       await tester.scrollUntilVisible(find.text('Xem tất cả'), 200);
       await tester.tap(find.text('Xem tất cả'));

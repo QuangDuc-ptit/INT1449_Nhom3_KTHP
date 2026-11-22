@@ -60,6 +60,9 @@ class AppStrings {
   static String homeStreakValue(int days) => '$days ngày';
 
   static String homeReviewReminderTitle(int words) => '$words từ đang chờ bạn ôn tập';
+  static const String homeDailyGoalTitle = 'Mục tiêu hôm nay';
+  static String homeDailyGoalProgress(int done, int goal) => '$done/$goal từ';
+  static const String homeDailyGoalReached = 'Đã hoàn thành mục tiêu hôm nay';
   static String homeReviewReminderSubtitle(int minutes) =>
       'Một phiên ngắn · khoảng $minutes phút';
 

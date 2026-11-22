@@ -119,6 +119,7 @@ class AppDimensions {
   static const double homeCardRadius = 16.0;
   static const double homeCardPadding = 16.0;
   static const double homeCardBorderWidth = 1.0;
+  static const double homeGoalBarHeight = 8.0;
   static const double homeHeaderHeight = 56.0;
   static const double bellButtonSize = 44.0;
   static const double notificationBadgeSize = 18.0;

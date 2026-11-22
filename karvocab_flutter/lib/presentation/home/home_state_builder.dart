@@ -35,6 +35,8 @@ class HomeStateBuilder {
       reviewMinutes: (due * secondsPerReviewWord / 60).ceil(),
       weeklyStats: _weekly(today, dashboard.reviewedToday),
       todayIndex: today,
+      reviewedToday: dashboard.reviewedToday,
+      dailyGoal: dashboard.dailyGoal,
       courses: [
         for (final c in collections.collections)
           HomeCourse(
@@ -43,11 +45,10 @@ class HomeStateBuilder {
             wordCount: c.totalWords,
             progressPercent: c.totalWords == 0
                 ? 0
-                : (collections.wordsOf(c.id).where((w) => w.isMastered).length *
-                        100 /
-                        c.totalWords)
-                    .round()
-                    .clamp(0, 100),
+                : (collections.wordsOf(c.id).where((w) => w.isMastered).length * 100 / c.totalWords).round().clamp(
+                    0,
+                    100,
+                  ),
           ),
       ],
     );
@@ -59,12 +60,7 @@ class HomeStateBuilder {
     final history = HomeSampleData.full.weeklyStats;
     return [
       for (var i = 0; i < 7; i++)
-        if (i < today)
-          history[i] ?? 0
-        else if (i == today)
-          reviewedToday
-        else
-          null,
+        if (i < today) history[i] ?? 0 else if (i == today) reviewedToday else null,
     ];
   }
 }

@@ -14,6 +14,8 @@ class HomeSampleData {
     reviewMinutes: 5,
     weeklyStats: [12, 20, 8, 25, 15, null, null],
     todayIndex: 4,
+    reviewedToday: 6,
+    dailyGoal: 10,
     courses: [
       HomeCourse(id: 'c1', name: 'Học thuật & IELTS Core', wordCount: 120, progressPercent: 65),
       HomeCourse(id: 'c2', name: 'Tiếng Anh Du lịch & Trải nghiệm', wordCount: 80, progressPercent: 40),

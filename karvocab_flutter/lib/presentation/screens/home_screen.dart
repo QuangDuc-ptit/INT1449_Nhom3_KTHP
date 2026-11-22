@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widget_previews.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_strings.dart';
@@ -64,13 +65,11 @@ class HomeScreen extends StatelessWidget {
             AppDimensions.homeBlockGap,
           ),
           children: [
-            _Header(
-              userName: state.userName,
-              notifications: notifications,
-              notificationCallbacks: notificationCallbacks,
-            ),
+            _Header(userName: state.userName, notifications: notifications, notificationCallbacks: notificationCallbacks),
             blockGap,
             _StatGrid(state: state, onStatClick: onStatClick),
+            blockGap,
+            _DailyGoalCard(done: state.reviewedToday, goal: state.dailyGoal),
             blockGap,
             // Một khối duy nhất: thông tin phiên ôn tập + nút bắt đầu (trước đây là 2 nút cùng chức năng).
             _ReviewPanel(
@@ -222,10 +221,7 @@ class _UnreadBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
       ),
       alignment: Alignment.center,
-      child: Text(
-        count > 99 ? AppStrings.notificationBadgeOverflow : '$count',
-        style: AppTypography.notificationBadge,
-      ),
+      child: Text(count > 99 ? AppStrings.notificationBadgeOverflow : '$count', style: AppTypography.notificationBadge),
     );
   }
 }
@@ -296,6 +292,73 @@ class _StatGrid extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Mục tiêu hôm nay (số từ ôn / mục tiêu đặt ở Cài đặt)
+// -----------------------------------------------------------------------------
+
+class _DailyGoalCard extends StatelessWidget {
+  final int done;
+  final int goal;
+
+  const _DailyGoalCard({required this.done, required this.goal});
+
+  @override
+  Widget build(BuildContext context) {
+    final reached = goal > 0 && done >= goal;
+    final ratio = goal <= 0 ? 0.0 : (done / goal).clamp(0.0, 1.0);
+    final color = reached ? AppColors.successGreen : AppColors.actionPrimary;
+    return _HomeCard(
+      child: Column(
+        key: const Key('home_daily_goal'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(
+                reached ? Icons.check_circle_rounded : Icons.flag_rounded,
+                size: AppDimensions.iconMedium,
+                color: color,
+              ),
+              const SizedBox(width: AppDimensions.space8),
+              Expanded(
+                child: Text(
+                  reached ? AppStrings.homeDailyGoalReached : AppStrings.homeDailyGoalTitle,
+                  style: AppTypography.homeBodyBold,
+                ),
+              ),
+              Text(
+                AppStrings.homeDailyGoalProgress(done, goal),
+                style: AppTypography.homeBodyBold.copyWith(color: color),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppDimensions.space12),
+          Semantics(
+            value: AppStrings.homeDailyGoalProgress(done, goal),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+              child: SizedBox(
+                height: AppDimensions.homeGoalBarHeight,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    const ColoredBox(color: AppColors.homeDivider),
+                    FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: ratio,
+                      child: ColoredBox(color: color),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -389,11 +452,7 @@ class _WeeklyActivityCard extends StatelessWidget {
         children: [
           Text(AppStrings.homeWeeklyActivity, style: AppTypography.homeCardTitle),
           const SizedBox(height: AppDimensions.space16),
-          WeeklyBarChart(
-            values: weeklyStats,
-            dayLabels: AppStrings.weekdayShort,
-            todayIndex: todayIndex,
-          ),
+          WeeklyBarChart(values: weeklyStats, dayLabels: AppStrings.weekdayShort, todayIndex: todayIndex),
         ],
       ),
     );
@@ -409,11 +468,7 @@ class _CoursesSection extends StatelessWidget {
   final VoidCallback? onSeeAllCoursesClick;
   final ValueChanged<HomeCourse>? onCourseClick;
 
-  const _CoursesSection({
-    required this.courses,
-    required this.onSeeAllCoursesClick,
-    required this.onCourseClick,
-  });
+  const _CoursesSection({required this.courses, required this.onSeeAllCoursesClick, required this.onCourseClick});
 
   @override
   Widget build(BuildContext context) {
@@ -441,10 +496,7 @@ class _CoursesSection extends StatelessWidget {
         else
           for (var i = 0; i < shown.length; i++) ...[
             if (i > 0) const SizedBox(height: AppDimensions.homeGridGap),
-            _CourseCard(
-              course: shown[i],
-              onTap: onCourseClick == null ? null : () => onCourseClick!(shown[i]),
-            ),
+            _CourseCard(course: shown[i], onTap: onCourseClick == null ? null : () => onCourseClick!(shown[i])),
           ],
       ],
     );
@@ -471,23 +523,14 @@ class _CourseCard extends StatelessWidget {
               color: AppColors.homeSurfaceTint,
               borderRadius: BorderRadius.circular(AppDimensions.courseIconBoxRadius),
             ),
-            child: const Icon(
-              Icons.menu_book_outlined,
-              size: AppDimensions.iconMedium,
-              color: AppColors.primaryBlue,
-            ),
+            child: const Icon(Icons.menu_book_outlined, size: AppDimensions.iconMedium, color: AppColors.primaryBlue),
           ),
           const SizedBox(width: AppDimensions.space12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  course.name,
-                  style: AppTypography.homeCardTitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                Text(course.name, style: AppTypography.homeCardTitle, maxLines: 1, overflow: TextOverflow.ellipsis),
                 Text(AppStrings.homeCourseWordCount(course.wordCount), style: AppTypography.homeSmall),
                 const SizedBox(height: AppDimensions.space8),
                 ClipRRect(
@@ -522,10 +565,7 @@ class _HomeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final content = Padding(
-      padding: const EdgeInsets.all(AppDimensions.homeCardPadding),
-      child: child,
-    );
+    final content = Padding(padding: const EdgeInsets.all(AppDimensions.homeCardPadding), child: child);
     return Material(
       color: AppColors.white,
       shape: RoundedRectangleBorder(

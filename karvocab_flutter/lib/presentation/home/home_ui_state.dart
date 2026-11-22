@@ -19,6 +19,10 @@ class HomeUiState {
 
   final List<HomeCourse> courses;
 
+  /// Số từ đã ôn hôm nay / mục tiêu ngày đặt ở Cài đặt (Màn 23).
+  final int reviewedToday;
+  final int dailyGoal;
+
   const HomeUiState({
     required this.userName,
     required this.totalWords,
@@ -29,7 +33,13 @@ class HomeUiState {
     required this.weeklyStats,
     required this.todayIndex,
     required this.courses,
+    this.reviewedToday = 0,
+    this.dailyGoal = 10,
   });
+
+  /// 0 … 1.
+  double get goalRatio => dailyGoal <= 0 ? 0 : (reviewedToday / dailyGoal).clamp(0.0, 1.0);
+  bool get goalReached => dailyGoal > 0 && reviewedToday >= dailyGoal;
 }
 
 /// Một học phần trong mục "Học phần của bạn".
@@ -41,12 +51,7 @@ class HomeCourse {
   /// 0 – 100.
   final int progressPercent;
 
-  const HomeCourse({
-    required this.id,
-    required this.name,
-    required this.wordCount,
-    required this.progressPercent,
-  });
+  const HomeCourse({required this.id, required this.name, required this.wordCount, required this.progressPercent});
 }
 
 /// Thẻ thống kê được bấm (tham số của `onStatClick`).
