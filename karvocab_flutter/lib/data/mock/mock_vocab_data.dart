@@ -52,6 +52,8 @@ class MockVocabData {
       definitionEn: 'Logical and consistent, clear and easy to understand.',
       exampleSentence: 'He proposed a coherent plan for comprehensive educational reform.',
       cefrLevel: 'B2',
+      synonyms: ['logical', 'consistent'],
+      antonyms: ['incoherent', 'confused'],
     ),
     const VocabularyModel(
       id: 'voc-2',
@@ -63,6 +65,8 @@ class MockVocabData {
       definitionEn: 'Certain to happen and unable to be avoided or prevented.',
       exampleSentence: 'Accidents are the inevitable consequence of careless driving.',
       cefrLevel: 'B2',
+      synonyms: ['unavoidable', 'certain'],
+      antonyms: ['avoidable', 'uncertain'],
     ),
     const VocabularyModel(
       id: 'voc-3',
@@ -74,6 +78,8 @@ class MockVocabData {
       definitionEn: 'To make something less harmful, unpleasant, or bad.',
       exampleSentence: 'Early warnings can effectively mitigate the consequences of natural disasters.',
       cefrLevel: 'C1',
+      synonyms: ['reduce', 'alleviate'],
+      antonyms: ['worsen', 'aggravate'],
     ),
     const VocabularyModel(
       id: 'voc-4',
@@ -85,6 +91,7 @@ class MockVocabData {
       definitionEn: 'A particular attitude toward or way of regarding something.',
       exampleSentence: 'Traveling across different cultures gives you a fresh perspective on life.',
       cefrLevel: 'B2',
+      synonyms: ['viewpoint', 'outlook'],
     ),
     const VocabularyModel(
       id: 'voc-5',
@@ -96,6 +103,8 @@ class MockVocabData {
       definitionEn: 'The act of putting money, effort, or time into something to get a profit.',
       exampleSentence: 'Building vocabulary every single day is the best investment in yourself.',
       cefrLevel: 'B1',
+      synonyms: ['funding', 'stake'],
+      antonyms: ['withdrawal'],
     ),
 
     // Collection 2: Du lịch
@@ -109,6 +118,7 @@ class MockVocabData {
       definitionEn: 'A detailed plan or route of a journey or trip.',
       exampleSentence: 'The tour guide gave everyone an itinerary for the 3-day exploration.',
       cefrLevel: 'B1',
+      synonyms: ['schedule', 'route'],
     ),
     const VocabularyModel(
       id: 'voc-7',
@@ -120,6 +130,8 @@ class MockVocabData {
       definitionEn: 'The place to which someone or something is going or being sent.',
       exampleSentence: 'Da Nang is an extremely popular holiday destination for young people.',
       cefrLevel: 'A2',
+      synonyms: ['goal', 'endpoint'],
+      antonyms: ['origin', 'starting point'],
     ),
     const VocabularyModel(
       id: 'voc-8',
@@ -131,6 +143,8 @@ class MockVocabData {
       definitionEn: 'To travel around an area to find out what it is like.',
       exampleSentence: 'We rented a motorbike to explore the remote corners of the island.',
       cefrLevel: 'A2',
+      synonyms: ['discover', 'investigate'],
+      antonyms: ['ignore', 'neglect'],
     ),
     const VocabularyModel(
       id: 'voc-9',
@@ -142,6 +156,7 @@ class MockVocabData {
       definitionEn: 'Something you keep to remember a special place you visited.',
       exampleSentence: 'I bought a handmade silk lantern as a souvenir from Hoi An.',
       cefrLevel: 'A2',
+      synonyms: ['memento', 'keepsake'],
     ),
 
     // Collection 3: Đời sống
@@ -155,6 +170,8 @@ class MockVocabData {
       definitionEn: 'Having a strong determination to achieve success and high goals.',
       exampleSentence: 'She is an ambitious student who aims to win a full scholarship.',
       cefrLevel: 'B1',
+      synonyms: ['determined', 'driven'],
+      antonyms: ['unambitious', 'lazy'],
     ),
     const VocabularyModel(
       id: 'voc-11',
@@ -166,6 +183,8 @@ class MockVocabData {
       definitionEn: 'Continuing to do something in a determined way despite difficulties.',
       exampleSentence: 'Persistent practice is the key to mastering English pronunciation.',
       cefrLevel: 'B2',
+      synonyms: ['determined', 'tenacious'],
+      antonyms: ['irresolute', 'hesitant'],
     ),
     const VocabularyModel(
       id: 'voc-12',
@@ -177,6 +196,8 @@ class MockVocabData {
       definitionEn: 'A time or set of circumstances that makes it possible to do something.',
       exampleSentence: 'Never miss an opportunity to practice speaking with foreigners.',
       cefrLevel: 'A2',
+      synonyms: ['chance', 'opening'],
+      antonyms: ['obstacle', 'setback'],
     ),
   ];
 }

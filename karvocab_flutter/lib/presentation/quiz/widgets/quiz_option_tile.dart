@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_strings.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/constants/app_durations.dart';
+import '../../../core/constants/app_strings.dart';
 import '../../../core/theme/app_typography.dart';
 
 enum OptionVisualState { idle, correct, wrong, dimmed }
 
-/// Thẻ đáp án A/B/C/D — cao tối thiểu AppDimensions.quizOptionMinHeight (60dp) (≥ 48dp theo Rubric).
+/// Thẻ đáp án A/B/C/D, cao tối thiểu [AppDimensions.quizOptionMinHeight] (60dp, ≥ 48dp theo Rubric).
+/// Sau khi trả lời: đáp án đúng xanh lá, đáp án đã chọn sai đỏ, các thẻ còn lại mờ đi.
 class QuizOptionTile extends StatelessWidget {
   final String letter;
   final String text;
@@ -24,85 +26,87 @@ class QuizOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color border = AppColors.borderLight;
-    Color bg = AppColors.white;
-    Color letterBg = AppColors.secondaryBackground;
-    Color letterFg = AppColors.navyBlue;
-    Color textColor = AppColors.textPrimary;
+    var border = AppColors.practiceCardBorder;
+    var background = AppColors.white;
+    var letterBackground = AppColors.practiceSelectedFill;
+    var letterForeground = AppColors.practicePrimary;
     IconData? trailing;
     Color? trailingColor;
 
     switch (state) {
       case OptionVisualState.idle:
+      case OptionVisualState.dimmed:
         break;
       case OptionVisualState.correct:
         border = AppColors.successGreen;
-        bg = AppColors.successGreen.withValues(alpha: AppDimensions.selectedTintOpacity);
-        letterBg = AppColors.successGreen;
-        letterFg = AppColors.white;
+        background = AppColors.quizCorrectTint;
+        letterBackground = AppColors.successGreen;
+        letterForeground = AppColors.white;
         trailing = Icons.check_circle_rounded;
         trailingColor = AppColors.successGreen;
         break;
       case OptionVisualState.wrong:
         border = AppColors.errorRed;
-        bg = AppColors.errorRed.withValues(alpha: AppDimensions.selectedTintOpacity);
-        letterBg = AppColors.errorRed;
-        letterFg = AppColors.white;
+        background = AppColors.quizWrongTint;
+        letterBackground = AppColors.errorRed;
+        letterForeground = AppColors.white;
         trailing = Icons.cancel_rounded;
         trailingColor = AppColors.errorRed;
-        break;
-      case OptionVisualState.dimmed:
-        textColor = AppColors.textMuted;
-        letterFg = AppColors.textMuted;
         break;
     }
 
     return Semantics(
       button: true,
       label: AppStrings.quizOptionSemantics(letter, text),
-      child: Material(
-        color: bg,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          side: BorderSide(color: border, width: AppDimensions.borderMedium),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: AppDimensions.quizOptionMinHeight),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.space16,
-                vertical: AppDimensions.space12,
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: AppDimensions.quizOptionLetterSize,
-                    height: AppDimensions.quizOptionLetterSize,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: letterBg,
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
-                    ),
-                    child: Text(
-                      letter,
-                      style: AppTypography.bodyBold.copyWith(color: letterFg),
-                    ),
+      excludeSemantics: true,
+      child: AnimatedOpacity(
+        duration: AppDurations.fast,
+        opacity: state == OptionVisualState.dimmed ? AppDimensions.quizDimmedOpacity : 1,
+        child: AnimatedContainer(
+          duration: AppDurations.fast,
+          decoration: BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.circular(AppDimensions.quizOptionRadius),
+            border: Border.all(color: border, width: AppDimensions.borderMedium),
+          ),
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(AppDimensions.quizOptionRadius),
+              splashColor: AppColors.practiceSelectedFill,
+              highlightColor: AppColors.practiceSelectedFill,
+              onTap: onTap,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: AppDimensions.quizOptionMinHeight),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.space12,
+                    vertical: AppDimensions.space10,
                   ),
-                  const SizedBox(width: AppDimensions.space12),
-                  Expanded(
-                    child: Text(
-                      text,
-                      style: AppTypography.bodyLarge.copyWith(color: textColor),
-                    ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: AppDimensions.quizOptionLetterSize,
+                        height: AppDimensions.quizOptionLetterSize,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: letterBackground,
+                          borderRadius: BorderRadius.circular(AppDimensions.quizOptionLetterRadius),
+                        ),
+                        child: Text(
+                          letter,
+                          style: AppTypography.quizOptionLetter.copyWith(color: letterForeground),
+                        ),
+                      ),
+                      const SizedBox(width: AppDimensions.space12),
+                      Expanded(child: Text(text, style: AppTypography.quizOption)),
+                      if (trailing != null) ...[
+                        const SizedBox(width: AppDimensions.space8),
+                        Icon(trailing, color: trailingColor, size: AppDimensions.iconMedium),
+                      ],
+                    ],
                   ),
-                  if (trailing != null) ...[
-                    const SizedBox(width: AppDimensions.space8),
-                    Icon(trailing, color: trailingColor),
-                  ],
-                ],
+                ),
               ),
             ),
           ),

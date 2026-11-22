@@ -3,12 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:karvocab_flutter/core/utils/fuzzy_match.dart';
 import 'package:karvocab_flutter/core/utils/session_id.dart';
 import 'package:karvocab_flutter/data/mock/mock_vocab_data.dart';
+import 'package:karvocab_flutter/data/models/ai_vocab_draft.dart';
 import 'package:karvocab_flutter/data/models/quiz_models.dart';
 import 'package:karvocab_flutter/data/repositories/ai_vocab_repository.dart';
 import 'package:karvocab_flutter/data/repositories/dashboard_store.dart';
 import 'package:karvocab_flutter/data/repositories/quiz_question_factory.dart';
 import 'package:karvocab_flutter/data/services/feedback_service.dart';
-import 'package:karvocab_flutter/data/models/ai_vocab_draft.dart';
 import 'package:karvocab_flutter/presentation/ai_vocab/ai_generate_screen.dart';
 import 'package:karvocab_flutter/presentation/quiz/practice_mode_screen.dart';
 import 'package:karvocab_flutter/presentation/quiz/quiz_controller.dart';
@@ -289,15 +289,18 @@ void main() {
   });
 
   group('Track B — Widget tests', () {
-    testWidgets('Màn 10 hiển thị đủ 4 chế độ luyện tập', (tester) async {
+    testWidgets('Màn 10 hiển thị đủ 6 trò chơi luyện tập', (tester) async {
       await tester.binding.setSurfaceSize(const Size(420, 1400));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
       await tester.pumpWidget(const MaterialApp(home: PracticeModeScreen()));
 
-      expect(find.text('Nghe chọn từ'), findsOneWidget);
+      expect(find.text('Luyện phát âm'), findsOneWidget);
       expect(find.text('Nghe và điền từ'), findsOneWidget);
-      expect(find.text('Chọn nghĩa đúng'), findsOneWidget);
+      expect(find.text('Nghe và chọn từ'), findsOneWidget);
+      // "Chọn nghĩa đúng" vừa là tên vừa là mô tả của thẻ.
+      expect(find.text('Chọn nghĩa đúng'), findsNWidgets(2));
+      expect(find.text('Đồng nghĩa và trái nghĩa'), findsOneWidget);
       expect(find.text('Nhớ từ qua nghĩa'), findsOneWidget);
     });
 

@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../../core/constants/app_assets.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_durations.dart';
+import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/app_button.dart';
 import '../../data/models/quiz_models.dart';
 import '../../data/repositories/quiz_question_factory.dart';
 import '../../data/services/speech_service.dart';
 import 'quiz_session_screen.dart';
+import 'widgets/quiz_card.dart';
 
 /// Màn 12 — Báo cáo kết quả buổi học (+ nút vào Màn 26 Luyện lại câu sai).
 class QuizResultScreen extends StatelessWidget {
@@ -15,11 +19,10 @@ class QuizResultScreen extends StatelessWidget {
 
   const QuizResultScreen({super.key, required this.summary});
 
-  String _formatDuration(int seconds) {
-    final m = seconds ~/ 60;
-    final s = seconds % 60;
-    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-  }
+  /// Từ 80% trở lên được tính là "Xuất sắc".
+  static const double excellentPercent = 80;
+
+  String _formatDuration(int seconds) => AppStrings.resultDurationValue(seconds ~/ 60, seconds % 60);
 
   void _retryMissed(BuildContext context) {
     final questions = QuizQuestionFactory.rebuildForRetry(summary.missedQuestions);
@@ -30,133 +33,110 @@ class QuizResultScreen extends StatelessWidget {
     );
   }
 
+  void _finish(BuildContext context) => Navigator.of(context).popUntil((r) => r.isFirst);
+
   @override
   Widget build(BuildContext context) {
-    final excellent = summary.accuracyPercent >= 80;
+    final excellent = summary.accuracyPercent >= excellentPercent;
     final accent = excellent ? AppColors.successGreen : AppColors.warningOrange;
     final missed = summary.missedQuestions;
 
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) Navigator.of(context).popUntil((r) => r.isFirst);
+        if (!didPop) _finish(context);
       },
       child: Scaffold(
-        backgroundColor: AppColors.mainBackground,
+        backgroundColor: AppColors.practiceBackground,
         body: SafeArea(
           child: Column(
             children: [
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(AppDimensions.screenMargin),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: AppDimensions.space16),
-                      Text(excellent ? '🦎🎉' : '🦎💪', style: const TextStyle(fontSize: 64)),
-                      const SizedBox(height: AppDimensions.space12),
-                      Text(
-                        excellent ? 'Xuất sắc!' : 'Cố gắng thêm một chút nhé!',
-                        style: AppTypography.headingLarge,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: AppDimensions.space4),
-                      Text(
-                        summary.isRetry ? 'Kết quả luyện lại câu sai' : 'Kết quả buổi luyện tập',
-                        style: AppTypography.bodyMedium,
-                      ),
-                      const SizedBox(height: AppDimensions.space24),
-                      SizedBox(
-                        width: 150,
-                        height: 150,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            SizedBox(
-                              width: 150,
-                              height: 150,
-                              child: CircularProgressIndicator(
-                                value: summary.accuracyPercent / 100,
-                                strokeWidth: 12,
-                                backgroundColor: AppColors.secondaryBackground,
-                                valueColor: AlwaysStoppedAnimation<Color>(accent),
-                              ),
-                            ),
-                            Text(
-                              '${summary.accuracyPercent.round()}%',
-                              style: AppTypography.displayLarge.copyWith(color: accent),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: AppDimensions.space24),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _StatCard(
-                              icon: Icons.check_circle_rounded,
-                              color: AppColors.successGreen,
-                              value: '${summary.correctCount}',
-                              label: 'Đúng',
-                            ),
-                          ),
-                          const SizedBox(width: AppDimensions.space12),
-                          Expanded(
-                            child: _StatCard(
-                              icon: Icons.cancel_rounded,
-                              color: AppColors.errorRed,
-                              value: '${summary.wrongCount}',
-                              label: 'Sai',
-                            ),
-                          ),
-                          const SizedBox(width: AppDimensions.space12),
-                          Expanded(
-                            child: _StatCard(
-                              icon: Icons.timer_rounded,
-                              color: AppColors.primaryBlue,
-                              value: _formatDuration(summary.durationSeconds),
-                              label: 'Thời gian',
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (missed.isNotEmpty) ...[
-                        const SizedBox(height: AppDimensions.space24),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text('Từ cần ôn lại', style: AppTypography.headingMedium),
+                  padding: const EdgeInsets.symmetric(vertical: AppDimensions.space24),
+                  child: _centered(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Image.asset(
+                          AppAssets.logo,
+                          width: AppDimensions.mascotIllustrationSize,
+                          height: AppDimensions.mascotIllustrationSize,
+                          excludeFromSemantics: true,
                         ),
                         const SizedBox(height: AppDimensions.space12),
-                        for (final q in missed) ...[
-                          _MissedWordTile(question: q),
-                          const SizedBox(height: AppDimensions.space8),
+                        Text(
+                          excellent ? AppStrings.resultExcellent : AppStrings.resultEncourage,
+                          style: AppTypography.quizResultTitle,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: AppDimensions.space4),
+                        Text(
+                          summary.isRetry ? AppStrings.resultRetrySubtitle : AppStrings.resultSubtitle,
+                          style: AppTypography.quizPrompt,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: AppDimensions.space24),
+                        _ScoreCard(
+                          summary: summary,
+                          accent: accent,
+                          duration: _formatDuration(summary.durationSeconds),
+                        ),
+                        const SizedBox(height: AppDimensions.space24),
+                        if (missed.isEmpty)
+                          const QuizCard(
+                            child: Row(
+                              children: [
+                                Icon(Icons.verified_rounded, color: AppColors.successGreen),
+                                SizedBox(width: AppDimensions.space12),
+                                Expanded(
+                                  child: Text(AppStrings.resultNoMistakes, style: AppTypography.quizOption),
+                                ),
+                              ],
+                            ),
+                          )
+                        else ...[
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Text(AppStrings.resultMissedWords, style: AppTypography.practiceSectionTitle),
+                              ),
+                              QuizChip(
+                                label: '${missed.length}',
+                                foreground: AppColors.errorRed,
+                                background: AppColors.quizWrongTint,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppDimensions.space12),
+                          for (final q in missed) ...[
+                            _MissedWordTile(question: q),
+                            const SizedBox(height: AppDimensions.quizOptionGap),
+                          ],
                         ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppDimensions.screenMargin,
-                  AppDimensions.space8,
-                  AppDimensions.screenMargin,
-                  AppDimensions.space16,
-                ),
+              _BottomBar(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (missed.isNotEmpty) ...[
                       AppButton(
-                        text: 'Luyện lại câu sai (${missed.length})',
+                        text: AppStrings.resultRetryMissed(missed.length),
                         variant: AppButtonVariant.outline,
+                        foregroundColor: AppColors.practicePrimary,
+                        borderColor: AppColors.practicePrimary,
                         onPressed: () => _retryMissed(context),
                       ),
                       const SizedBox(height: AppDimensions.space12),
                     ],
                     AppButton(
-                      text: 'Hoàn thành',
-                      onPressed: () =>
-                          Navigator.of(context).popUntil((r) => r.isFirst),
+                      text: AppStrings.resultDone,
+                      backgroundColor: AppColors.practicePrimary,
+                      onPressed: () => _finish(context),
                     ),
                   ],
                 ),
@@ -169,34 +149,130 @@ class QuizResultScreen extends StatelessWidget {
   }
 }
 
-class _StatCard extends StatelessWidget {
+Widget _centered(Widget child) {
+  return Center(
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: AppDimensions.quizMaxContentWidth),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppDimensions.quizHorizontalPadding),
+        child: child,
+      ),
+    ),
+  );
+}
+
+/// Vòng tròn % chính xác (chạy từ 0 khi mở màn) và 3 số liệu Đúng / Sai / Thời gian.
+class _ScoreCard extends StatelessWidget {
+  final QuizSummary summary;
+  final Color accent;
+  final String duration;
+
+  const _ScoreCard({required this.summary, required this.accent, required this.duration});
+
+  @override
+  Widget build(BuildContext context) {
+    return QuizCard(
+      child: Column(
+        children: [
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: summary.accuracyPercent / 100),
+            duration: AppDurations.pulse,
+            curve: Curves.easeOutCubic,
+            builder: (context, value, _) => SizedBox(
+              width: AppDimensions.quizResultRingSize,
+              height: AppDimensions.quizResultRingSize,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  CircularProgressIndicator(
+                    value: value,
+                    strokeWidth: AppDimensions.quizResultRingStroke,
+                    strokeCap: StrokeCap.round,
+                    backgroundColor: AppColors.practiceSelectedFill,
+                    valueColor: AlwaysStoppedAnimation<Color>(accent),
+                  ),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        AppStrings.resultPercent((value * 100).round()),
+                        style: AppTypography.quizResultPercent.copyWith(color: accent),
+                      ),
+                      const Text(AppStrings.resultAccuracy, style: AppTypography.quizCaption),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: AppDimensions.space20),
+          const Divider(height: 1, color: AppColors.practiceCardBorder),
+          const SizedBox(height: AppDimensions.space16),
+          IntrinsicHeight(
+            child: Row(
+              children: [
+                _Stat(
+                  icon: Icons.check_rounded,
+                  color: AppColors.successGreen,
+                  tint: AppColors.quizCorrectTint,
+                  value: '${summary.correctCount}',
+                  label: AppStrings.resultCorrect,
+                ),
+                const VerticalDivider(width: 1, color: AppColors.practiceCardBorder),
+                _Stat(
+                  icon: Icons.close_rounded,
+                  color: AppColors.errorRed,
+                  tint: AppColors.quizWrongTint,
+                  value: '${summary.wrongCount}',
+                  label: AppStrings.resultWrong,
+                ),
+                const VerticalDivider(width: 1, color: AppColors.practiceCardBorder),
+                _Stat(
+                  icon: Icons.schedule_rounded,
+                  color: AppColors.practicePrimary,
+                  tint: AppColors.practiceSelectedFill,
+                  value: duration,
+                  label: AppStrings.resultDuration,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Stat extends StatelessWidget {
   final IconData icon;
   final Color color;
+  final Color tint;
   final String value;
   final String label;
 
-  const _StatCard({
+  const _Stat({
     required this.icon,
     required this.color,
+    required this.tint,
     required this.value,
     required this.label,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: AppDimensions.space16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-        border: Border.all(color: AppColors.borderLight),
-      ),
+    return Expanded(
       child: Column(
         children: [
-          Icon(icon, color: color),
+          Container(
+            width: AppDimensions.quizStatIconBox,
+            height: AppDimensions.quizStatIconBox,
+            decoration: BoxDecoration(color: tint, shape: BoxShape.circle),
+            child: Icon(icon, color: color, size: AppDimensions.iconSmall),
+          ),
+          const SizedBox(height: AppDimensions.space8),
+          Text(value, style: AppTypography.quizStatValue),
           const SizedBox(height: AppDimensions.space4),
-          Text(value, style: AppTypography.headingMedium),
-          Text(label, style: AppTypography.labelSmall),
+          Text(label, style: AppTypography.quizCaption),
         ],
       ),
     );
@@ -215,8 +291,8 @@ class _MissedWordTile extends StatelessWidget {
       padding: const EdgeInsets.only(left: AppDimensions.space16),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        border: Border.all(color: AppColors.borderLight),
+        borderRadius: BorderRadius.circular(AppDimensions.quizOptionRadius),
+        border: Border.all(color: AppColors.practiceCardBorder),
       ),
       child: Row(
         children: [
@@ -226,22 +302,57 @@ class _MissedWordTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(v.term, style: AppTypography.bodyBold),
-                  Text(v.definitionVi, style: AppTypography.bodyMedium),
+                  Text.rich(
+                    TextSpan(children: [
+                      TextSpan(text: v.term, style: AppTypography.quizStatValue),
+                      TextSpan(
+                        text: '  ${AppStrings.partOfSpeech(v.partOfSpeech)}',
+                        style: AppTypography.quizCaption,
+                      ),
+                    ]),
+                  ),
+                  const SizedBox(height: AppDimensions.space4),
+                  Text(v.definitionVi, style: AppTypography.quizCaption),
                 ],
               ),
             ),
           ),
           IconButton(
-            tooltip: 'Nghe ${v.term}',
+            tooltip: AppStrings.quizListenWordTooltip(v.term),
             constraints: const BoxConstraints(
               minWidth: AppDimensions.minTouchTarget,
               minHeight: AppDimensions.minTouchTarget,
             ),
-            icon: const Icon(Icons.volume_up_rounded, color: AppColors.primaryBlue),
+            icon: const Icon(Icons.volume_up_rounded, color: AppColors.practicePrimary),
             onPressed: () => SpeechService.instance.speak(v.term),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Thanh nút cố định dưới đáy, nền trắng với bóng nhẹ phía trên.
+class _BottomBar extends StatelessWidget {
+  final Widget child;
+
+  const _BottomBar({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.practiceTextPrimary.withValues(alpha: AppDimensions.quizSheetShadowOpacity),
+            blurRadius: AppDimensions.quizSheetShadowBlur,
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppDimensions.space16),
+        child: _centered(child),
       ),
     );
   }

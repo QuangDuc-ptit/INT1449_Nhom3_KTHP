@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_strings.dart';
@@ -13,8 +14,8 @@ class AppBottomNavBar extends StatelessWidget {
 
   static const List<_NavItem> _items = [
     _NavItem(AppStrings.navHome, Icons.home_outlined, Icons.home_rounded),
-    _NavItem(AppStrings.navLibrary, Icons.shelves, Icons.shelves),
-    _NavItem(AppStrings.navPractice, Icons.bolt_outlined, Icons.bolt_rounded),
+    _NavItem(AppStrings.navLibrary, Icons.library_books_outlined, Icons.library_books_rounded),
+    _NavItem(AppStrings.navPractice, Icons.play_circle_outline_rounded, Icons.play_arrow_rounded),
     _NavItem(AppStrings.navProfile, Icons.person_outline_rounded, Icons.person_rounded),
   ];
 
@@ -42,6 +43,8 @@ class AppBottomNavBar extends StatelessWidget {
     );
   }
 
+  /// Mục đang chọn: icon xanh trong nền viên thuốc xanh nhạt, nhãn xanh đậm.
+  /// Mục khác: icon nét mảnh, chữ xám xanh.
   Widget _buildItem(_NavItem item, bool selected, VoidCallback onTap) {
     final color = selected ? AppColors.navyBlue : AppColors.navInactive;
     return Semantics(
@@ -52,12 +55,21 @@ class AppBottomNavBar extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              selected ? item.activeIcon : item.icon,
-              size: AppDimensions.iconMedium,
-              color: color,
+            AnimatedContainer(
+              duration: kThemeAnimationDuration,
+              width: AppDimensions.navActivePillWidth,
+              height: AppDimensions.navActivePillHeight,
+              decoration: BoxDecoration(
+                color: selected ? AppColors.navActivePill : AppColors.transparent,
+                borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+              ),
+              child: Icon(
+                selected ? item.activeIcon : item.icon,
+                size: AppDimensions.iconMedium,
+                color: selected ? AppColors.practicePrimary : AppColors.navInactive,
+              ),
             ),
-            const SizedBox(height: AppDimensions.space4),
+            const SizedBox(height: AppDimensions.space2),
             Text(
               item.label,
               style: AppTypography.bottomNavLabel.copyWith(

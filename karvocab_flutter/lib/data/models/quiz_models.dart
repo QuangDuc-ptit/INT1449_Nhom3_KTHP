@@ -1,7 +1,20 @@
+import '../../core/constants/app_strings.dart';
 import 'vocabulary_model.dart';
 
-/// 4 chế độ luyện tập (Màn 08 / 19 / 25 / 20) — khớp `mode` của API BE.
-enum QuizMode { listenChoose, listenType, meaningChoose, recallType }
+/// Các chế độ luyện tập. 4 chế độ đầu (Màn 08 / 19 / 25 / 20) khớp `mode` của API BE;
+/// [pronunciation] và [synonymAntonym] là 2 game mới của Màn 10, BE chưa có (xem [apiKey]).
+enum QuizMode {
+  listenChoose,
+  listenType,
+  meaningChoose,
+  recallType,
+  pronunciation,
+  synonymAntonym;
+
+  /// Các chế độ dùng cho phiên ôn tập hỗn hợp (Màn 16): không cần micro và
+  /// không cần dữ liệu đồng nghĩa / trái nghĩa, nên từ nào cũng ôn được.
+  static const List<QuizMode> reviewModes = [listenChoose, listenType, meaningChoose, recallType];
+}
 
 extension QuizModeX on QuizMode {
   /// Giá trị gửi lên `GET /practice/questions?mode=...` & `POST /practice/submit-session`
@@ -16,32 +29,46 @@ extension QuizModeX on QuizMode {
         return 'choose_meaning';
       case QuizMode.recallType:
         return 'type_meaning';
+      // Chưa có trong enum `QuizMode` của backend: BE cần thêm 2 giá trị này
+      // trước khi nối `POST /practice/submit-session` cho 2 game mới.
+      case QuizMode.pronunciation:
+        return 'pronunciation';
+      case QuizMode.synonymAntonym:
+        return 'synonym_antonym';
     }
   }
 
   String get title {
     switch (this) {
       case QuizMode.listenChoose:
-        return 'Nghe chọn từ';
+        return AppStrings.modeListenChoose;
       case QuizMode.listenType:
-        return 'Nghe và điền từ';
+        return AppStrings.modeListenType;
       case QuizMode.meaningChoose:
-        return 'Chọn nghĩa đúng';
+        return AppStrings.modeMeaningChoose;
       case QuizMode.recallType:
-        return 'Nhớ từ qua nghĩa';
+        return AppStrings.modeRecallType;
+      case QuizMode.pronunciation:
+        return AppStrings.gamePronunciation;
+      case QuizMode.synonymAntonym:
+        return AppStrings.gameSynonymAntonym;
     }
   }
 
   String get description {
     switch (this) {
       case QuizMode.listenChoose:
-        return 'Nghe phát âm rồi chọn từ đúng trong 4 đáp án.';
+        return AppStrings.modeListenChooseDesc;
       case QuizMode.listenType:
-        return 'Nghe phát âm và gõ chính xác chính tả của từ.';
+        return AppStrings.modeListenTypeDesc;
       case QuizMode.meaningChoose:
-        return 'Xem từ tiếng Anh, chọn nghĩa tiếng Việt chính xác.';
+        return AppStrings.modeMeaningChooseDesc;
       case QuizMode.recallType:
-        return 'Đọc nghĩa tiếng Việt, gõ lại từ tiếng Anh tương ứng.';
+        return AppStrings.modeRecallTypeDesc;
+      case QuizMode.pronunciation:
+        return AppStrings.gamePronunciationDesc;
+      case QuizMode.synonymAntonym:
+        return AppStrings.gameSynonymAntonymDesc;
     }
   }
 
@@ -62,8 +89,12 @@ class QuizQuestion {
   /// Danh sách 4 đáp án đã xáo trộn (chỉ dùng cho chế độ trắc nghiệm, rỗng nếu là chế độ gõ).
   final List<String> options;
 
-  /// Đáp án đúng: `term` (mode 08/19/20) hoặc `definitionVi` (mode 25).
+  /// Đáp án đúng: `term` (mode 08/19/20, phát âm), `definitionVi` (mode 25)
+  /// hoặc nhãn "Đồng nghĩa" / "Trái nghĩa" (game đồng nghĩa và trái nghĩa).
   final String correctAnswer;
+
+  /// Game đồng nghĩa và trái nghĩa: từ được so với [vocab]. Các chế độ khác để null.
+  final String? pairWord;
 
   const QuizQuestion({
     required this.id,
@@ -71,6 +102,7 @@ class QuizQuestion {
     required this.mode,
     required this.options,
     required this.correctAnswer,
+    this.pairWord,
   });
 }
 

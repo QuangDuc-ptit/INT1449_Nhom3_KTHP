@@ -53,6 +53,27 @@ class QuizController extends ChangeNotifier {
     _commit(text.trim(), evaluateTypedAnswer(text, current.correctAnswer));
   }
 
+  /// Game phát âm: chấm từng phương án máy nghe được, lấy kết quả tốt nhất.
+  void submitSpoken(List<String> alternatives) {
+    if (isAnswered || alternatives.isEmpty) return;
+    var best = alternatives.first;
+    var bestResult = AnswerResult.wrong;
+    for (final heard in alternatives) {
+      final result = evaluateTypedAnswer(heard, current.correctAnswer);
+      if (result.index < bestResult.index) {
+        best = heard;
+        bestResult = result;
+      }
+    }
+    _commit(best, bestResult);
+  }
+
+  /// Bỏ qua câu hiện tại (vd máy không nhận dạng được giọng): tính là sai.
+  void skip() {
+    if (isAnswered) return;
+    _commit('', AnswerResult.wrong);
+  }
+
   void _commit(String userAnswer, AnswerResult result) {
     _question.stop();
     _lastRecord = QuizAnswerRecord(

@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import '../../core/constants/app_strings.dart';
 import '../mock/mock_vocab_data.dart';
 import '../models/quiz_models.dart';
 import '../models/vocabulary_model.dart';
@@ -9,14 +10,17 @@ class QuizQuestionFactory {
   QuizQuestionFactory._();
 
   /// Tạo [count] câu hỏi cùng 1 chế độ từ [pool].
+  /// [shuffle] = false giữ nguyên thứ tự của [pool] (Màn 10 · "Theo thứ tự (A-Z)").
   static List<QuizQuestion> build({
     required QuizMode mode,
     required List<VocabularyModel> pool,
     int count = 10,
     Random? random,
+    bool shuffle = true,
   }) {
     final rnd = random ?? Random();
-    final picked = List<VocabularyModel>.from(pool)..shuffle(rnd);
+    final picked = pool.where((v) => supports(mode, v)).toList();
+    if (shuffle) picked.shuffle(rnd);
     final chosen = picked.take(count).toList();
     return [
       for (var i = 0; i < chosen.length; i++)
@@ -24,7 +28,14 @@ class QuizQuestionFactory {
     ];
   }
 
-  /// Phiên ôn tập hỗn hợp: xoay vòng cả 4 chế độ (dùng cho Màn 16).
+  /// Từ [vocab] có dùng được cho [mode] không. Game đồng nghĩa / trái nghĩa
+  /// chỉ nhận từ đã có dữ liệu quan hệ; các chế độ khác nhận mọi từ.
+  static bool supports(QuizMode mode, VocabularyModel vocab) {
+    if (mode != QuizMode.synonymAntonym) return true;
+    return vocab.synonyms.isNotEmpty || vocab.antonyms.isNotEmpty;
+  }
+
+  /// Phiên ôn tập hỗn hợp: xoay vòng 4 chế độ cơ bản (dùng cho Màn 16).
   static List<QuizQuestion> buildMixed({
     required List<VocabularyModel> pool,
     int count = 10,
@@ -33,7 +44,7 @@ class QuizQuestionFactory {
     final rnd = random ?? Random();
     final picked = List<VocabularyModel>.from(pool)..shuffle(rnd);
     final chosen = picked.take(count).toList();
-    const modes = QuizMode.values;
+    const modes = QuizMode.reviewModes;
     return [
       for (var i = 0; i < chosen.length; i++)
         _buildOne(i, modes[i % modes.length], chosen[i], rnd),
@@ -78,8 +89,11 @@ class QuizQuestionFactory {
           options: _options(vocab, rnd, (v) => v.definitionVi),
           correctAnswer: vocab.definitionVi,
         );
+      case QuizMode.synonymAntonym:
+        return _relationQuestion(id, vocab, rnd);
       case QuizMode.listenType:
       case QuizMode.recallType:
+      case QuizMode.pronunciation:
         return QuizQuestion(
           id: id,
           vocab: vocab,
@@ -88,6 +102,22 @@ class QuizQuestionFactory {
           correctAnswer: vocab.term,
         );
     }
+  }
+
+  /// Ghép [vocab] với 1 từ đồng nghĩa hoặc trái nghĩa (chọn ngẫu nhiên nếu có cả hai).
+  /// Hai lựa chọn luôn theo thứ tự cố định: A = Đồng nghĩa, B = Trái nghĩa.
+  static QuizQuestion _relationQuestion(String id, VocabularyModel vocab, Random rnd) {
+    final useSynonym = vocab.antonyms.isEmpty ||
+        (vocab.synonyms.isNotEmpty && rnd.nextBool());
+    final list = useSynonym ? vocab.synonyms : vocab.antonyms;
+    return QuizQuestion(
+      id: id,
+      vocab: vocab,
+      mode: QuizMode.synonymAntonym,
+      options: const [AppStrings.relationSynonym, AppStrings.relationAntonym],
+      correctAnswer: useSynonym ? AppStrings.relationSynonym : AppStrings.relationAntonym,
+      pairWord: list[rnd.nextInt(list.length)],
+    );
   }
 
   /// 1 đáp án đúng + tối đa 3 distractor (ưu tiên cùng từ loại), xáo ngẫu nhiên A/B/C/D.
