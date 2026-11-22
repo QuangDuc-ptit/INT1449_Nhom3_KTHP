@@ -11,8 +11,11 @@ import '../../data/models/collection_model.dart';
 import '../../data/models/vocabulary_model.dart';
 import '../../data/repositories/collection_store.dart';
 import '../../data/services/pronunciation_service.dart';
+import '../ai_vocab/ai_generate_screen.dart';
 import 'word_detail_screen.dart';
 import 'word_form_screen.dart';
+
+enum _AddWordChoice { manual, ai }
 
 /// Màn 06 · Danh sách từ vựng theo học phần
 /// Hỗ trợ tìm kiếm, nghe nhanh phát âm (kèm sóng âm), mở chi tiết, thêm từ mới.
@@ -53,6 +56,60 @@ class _WordListScreenState extends State<WordListScreen> {
     );
     if (saved != null && mounted) {
       AppToast.success(context, 'Đã thêm từ "${saved.term}" vào học phần');
+    }
+  }
+
+  /// Màn 13 (FE2): sinh từ bằng AI, học phần đích chọn sẵn là học phần đang xem.
+  /// Lưu xong Màn 14 quay về đây (luồng §3.2: kết thúc ở Màn 06).
+  Future<void> _openAiGenerate() async {
+    await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => AiGenerateScreen(initialCollectionId: widget.collection.id),
+      ),
+    );
+  }
+
+  /// Nút "Thêm từ": chọn thêm thủ công (Màn 24) hoặc tạo bằng AI (Màn 13).
+  Future<void> _openAddMenu() async {
+    final choice = await showModalBottomSheet<_AddWordChoice>(
+      context: context,
+      backgroundColor: AppColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimensions.radiusCard)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppDimensions.space12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                key: const Key('add_word_manual'),
+                minTileHeight: AppDimensions.minTouchTarget,
+                leading: const Icon(Icons.edit_note_rounded, color: AppColors.primaryBlue),
+                title: Text('Thêm thủ công', style: AppTypography.bodyBold),
+                onTap: () => Navigator.of(sheetContext).pop(_AddWordChoice.manual),
+              ),
+              ListTile(
+                key: const Key('add_word_ai'),
+                minTileHeight: AppDimensions.minTouchTarget,
+                leading: const Icon(Icons.auto_awesome_rounded, color: AppColors.primaryBlue),
+                title: Text('Tạo bằng AI', style: AppTypography.bodyBold),
+                onTap: () => Navigator.of(sheetContext).pop(_AddWordChoice.ai),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (!mounted) return;
+    switch (choice) {
+      case _AddWordChoice.manual:
+        await _openAddWord();
+      case _AddWordChoice.ai:
+        await _openAiGenerate();
+      case null:
+        break;
     }
   }
 
@@ -103,7 +160,7 @@ class _WordListScreenState extends State<WordListScreen> {
             ],
           ),
           floatingActionButton: FloatingActionButton.extended(
-            onPressed: _openAddWord,
+            onPressed: _openAddMenu,
             backgroundColor: AppColors.primaryBlue,
             icon: const Icon(Icons.add_rounded, color: AppColors.white),
             label: Text('Thêm từ', style: AppTypography.buttonText),
@@ -120,7 +177,7 @@ class _WordListScreenState extends State<WordListScreen> {
         title: 'Chưa có từ vựng',
         message: 'Hãy thêm từ đầu tiên vào học phần này nhé!',
         actionText: 'Thêm từ mới ngay',
-        onAction: _openAddWord,
+        onAction: _openAddMenu,
       );
     }
     if (filtered.isEmpty) {

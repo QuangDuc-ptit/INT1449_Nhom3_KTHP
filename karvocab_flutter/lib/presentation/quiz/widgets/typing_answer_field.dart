@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_strings.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_button.dart';
@@ -16,7 +17,7 @@ class TypingAnswerField extends StatefulWidget {
     super.key,
     required this.locked,
     required this.onSubmit,
-    this.hint = 'Nhập từ tiếng Anh...',
+    this.hint = AppStrings.quizTypingHint,
   });
 
   @override
@@ -61,7 +62,7 @@ class _TypingAnswerFieldState extends State<TypingAnswerField> {
             borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
             border: Border.all(
               color: _focus.hasFocus ? AppColors.borderFocused : AppColors.borderLight,
-              width: 1.5,
+              width: AppDimensions.borderMedium,
             ),
           ),
           alignment: Alignment.center,
@@ -87,7 +88,7 @@ class _TypingAnswerFieldState extends State<TypingAnswerField> {
         ),
         const SizedBox(height: AppDimensions.space16),
         AppButton(
-          text: 'Kiểm tra',
+          text: AppStrings.quizCheck,
           onPressed: _submit,
           isEnabled: !widget.locked && _controller.text.trim().isNotEmpty,
         ),

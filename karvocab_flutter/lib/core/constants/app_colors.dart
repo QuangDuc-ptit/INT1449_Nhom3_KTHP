@@ -54,6 +54,12 @@ class AppColors {
   /// Divider #E6EDF5.
   static const Color authDivider = homeDivider;
 
+  // Bảng màu của các mô tả thiết kế mới (Thư viện …) — trỏ tới màu đã có.
+  /// SurfaceTint #E3F2FD.
+  static const Color surfaceTint = homeSurfaceTint;
+  /// Divider #E6EDF5.
+  static const Color divider = homeDivider;
+
   // Background Surfaces
   /// Màu nền chung của toàn app (#F5FAFE). Theme dùng màu này làm
   /// scaffoldBackgroundColor; native splash Android dùng cùng giá trị

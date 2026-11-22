@@ -97,7 +97,9 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
           const SizedBox(height: AppDimensions.space16),
           Text('Số câu hỏi', style: AppTypography.bodyBold),
           const SizedBox(height: AppDimensions.space8),
-          Row(
+          // Wrap thay Row: màn hẹp thì các nút tự xuống dòng thay vì tràn.
+          Wrap(
+            runSpacing: AppDimensions.space8,
             children: [
               for (final n in _countOptions)
                 _FilterPill(

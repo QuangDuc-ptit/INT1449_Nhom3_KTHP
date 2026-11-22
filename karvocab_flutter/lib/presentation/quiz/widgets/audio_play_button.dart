@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_strings.dart';
+import '../../../core/constants/app_durations.dart';
+import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/services/speech_service.dart';
 
-/// Nút loa lớn 96dp dùng cho các chế độ "Nghe". Tự phát khi mở câu hỏi (nếu [autoPlay]).
+/// Nút loa lớn (AppDimensions.quizAudioButtonSize) dùng cho các chế độ "Nghe". Tự phát khi mở câu hỏi (nếu [autoPlay]).
 class AudioPlayButton extends StatefulWidget {
   final String text;
   final bool autoPlay;
@@ -14,7 +17,7 @@ class AudioPlayButton extends StatefulWidget {
     super.key,
     required this.text,
     this.autoPlay = true,
-    this.size = 96,
+    this.size = AppDimensions.quizAudioButtonSize,
   });
 
   @override
@@ -31,7 +34,7 @@ class _AudioPlayButtonState extends State<AudioPlayButton>
     super.initState();
     _pulse = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 700),
+      duration: AppDurations.audioPulse,
     );
     if (widget.autoPlay) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _play());
@@ -66,18 +69,18 @@ class _AudioPlayButtonState extends State<AudioPlayButton>
       children: [
         Semantics(
           button: true,
-          label: 'Phát âm thanh',
+          label: AppStrings.audioPlaySemantics,
           child: AnimatedBuilder(
             animation: _pulse,
             builder: (context, child) {
-              final scale = 1 + _pulse.value * 0.08;
+              final scale = 1 + _pulse.value * AppDimensions.quizAudioPulseScale;
               return Transform.scale(scale: scale, child: child);
             },
             child: Material(
               color: AppColors.primaryBlue,
               shape: const CircleBorder(),
-              elevation: 4,
-              shadowColor: AppColors.primaryBlue.withValues(alpha: 0.4),
+              elevation: AppDimensions.quizAudioElevation,
+              shadowColor: AppColors.primaryBlue.withValues(alpha: AppDimensions.quizAudioShadowOpacity),
               child: InkWell(
                 customBorder: const CircleBorder(),
                 onTap: _play,
@@ -87,16 +90,16 @@ class _AudioPlayButtonState extends State<AudioPlayButton>
                   child: Icon(
                     _playing ? Icons.graphic_eq_rounded : Icons.volume_up_rounded,
                     color: AppColors.white,
-                    size: widget.size * 0.45,
+                    size: widget.size * AppDimensions.quizAudioIconFactor,
                   ),
                 ),
               ),
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppDimensions.space8),
         Text(
-          _playing ? 'Đang phát...' : 'Chạm để nghe lại',
+          _playing ? AppStrings.audioPlaying : AppStrings.audioTapToReplay,
           style: AppTypography.labelSmall,
         ),
       ],

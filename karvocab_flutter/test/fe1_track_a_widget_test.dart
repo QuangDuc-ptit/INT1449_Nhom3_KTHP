@@ -95,7 +95,8 @@ void main() {
       final store = _freshStore();
       await tester.pumpWidget(_app(LibraryScreen(store: store)));
       await tester.pump(); // post-frame → load()
-      await tester.pump(); // hoàn tất Future.delayed(zero)
+      // pump() không thời lượng không chạy timer Future.delayed(zero) → cho đồng hồ chạy 1ms.
+      await tester.pump(const Duration(milliseconds: 1));
 
       expect(find.text('Học thuật & IELTS Core'), findsOneWidget);
       expect(find.text('Tiếng Anh Du lịch & Trải nghiệm'), findsOneWidget);
@@ -114,12 +115,12 @@ void main() {
       final store = _freshStore()..simulateNetworkError = true;
       await tester.pumpWidget(_app(LibraryScreen(store: store)));
       await tester.pump();
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1));
 
       expect(find.text('Không tải được thư viện'), findsOneWidget);
       await tester.tap(find.text('Thử lại ngay'));
       await tester.pump();
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1));
 
       expect(find.text('Không tải được thư viện'), findsNothing);
       expect(find.text('Học thuật & IELTS Core'), findsOneWidget);

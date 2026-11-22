@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_strings.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/vocab_display.dart';
@@ -29,17 +30,17 @@ class FeedbackBanner extends StatelessWidget {
       case AnswerResult.correct:
         color = AppColors.successGreen;
         icon = Icons.check_circle_rounded;
-        title = 'Chính xác! 🎉';
+        title = AppStrings.feedbackCorrect;
         break;
       case AnswerResult.almost:
         color = AppColors.warningOrange;
         icon = Icons.info_rounded;
-        title = 'Suýt đúng! Chú ý chính tả: ${record.question.vocab.term}';
+        title = AppStrings.feedbackAlmost(record.question.vocab.term);
         break;
       case AnswerResult.wrong:
         color = AppColors.errorRed;
         icon = Icons.cancel_rounded;
-        title = 'Chưa đúng rồi';
+        title = AppStrings.feedbackWrong;
         break;
     }
 
@@ -54,9 +55,9 @@ class FeedbackBanner extends StatelessWidget {
         AppDimensions.space16,
       ),
       decoration: BoxDecoration(
-        color: Color.alphaBlend(color.withValues(alpha: 0.12), AppColors.white),
-        border: Border(top: BorderSide(color: color, width: 2)),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        color: Color.alphaBlend(color.withValues(alpha: AppDimensions.tintOpacity), AppColors.white),
+        border: Border(top: BorderSide(color: color, width: AppDimensions.borderThick)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppDimensions.sheetRadius)),
       ),
       child: SafeArea(
         top: false,
@@ -66,7 +67,7 @@ class FeedbackBanner extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(icon, color: color, size: 28),
+                Icon(icon, color: color, size: AppDimensions.iconLarge),
                 const SizedBox(width: AppDimensions.space8),
                 Expanded(
                   child: Text(
@@ -78,7 +79,7 @@ class FeedbackBanner extends StatelessWidget {
             ),
             if (record.result == AnswerResult.wrong) ...[
               const SizedBox(height: AppDimensions.space8),
-              Text('Đáp án đúng:', style: AppTypography.labelSmall),
+              Text(AppStrings.feedbackCorrectAnswer, style: AppTypography.labelSmall),
               Text(
                 record.question.correctAnswer,
                 style: AppTypography.headingMedium.copyWith(color: AppColors.textPrimary),
@@ -86,7 +87,7 @@ class FeedbackBanner extends StatelessWidget {
             ],
             const SizedBox(height: AppDimensions.space8),
             Text(
-              '${vocab.term} ${vocab.ipaText} — ${vocab.definitionVi}',
+              AppStrings.feedbackExplanation(vocab.term, vocab.ipaText, vocab.definitionVi),
               style: AppTypography.bodyMedium,
             ),
             const SizedBox(height: AppDimensions.space16),
@@ -104,7 +105,7 @@ class FeedbackBanner extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  isLast ? 'Xem kết quả' : 'Tiếp tục',
+                  isLast ? AppStrings.feedbackSeeResult : AppStrings.feedbackContinue,
                   style: AppTypography.buttonText,
                 ),
               ),

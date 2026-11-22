@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_strings.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 
 enum OptionVisualState { idle, correct, wrong, dimmed }
 
-/// Thẻ đáp án A/B/C/D — cao tối thiểu 60dp (≥ 48dp theo Rubric).
+/// Thẻ đáp án A/B/C/D — cao tối thiểu AppDimensions.quizOptionMinHeight (60dp) (≥ 48dp theo Rubric).
 class QuizOptionTile extends StatelessWidget {
   final String letter;
   final String text;
@@ -36,7 +37,7 @@ class QuizOptionTile extends StatelessWidget {
         break;
       case OptionVisualState.correct:
         border = AppColors.successGreen;
-        bg = AppColors.successGreen.withValues(alpha: 0.10);
+        bg = AppColors.successGreen.withValues(alpha: AppDimensions.selectedTintOpacity);
         letterBg = AppColors.successGreen;
         letterFg = AppColors.white;
         trailing = Icons.check_circle_rounded;
@@ -44,7 +45,7 @@ class QuizOptionTile extends StatelessWidget {
         break;
       case OptionVisualState.wrong:
         border = AppColors.errorRed;
-        bg = AppColors.errorRed.withValues(alpha: 0.10);
+        bg = AppColors.errorRed.withValues(alpha: AppDimensions.selectedTintOpacity);
         letterBg = AppColors.errorRed;
         letterFg = AppColors.white;
         trailing = Icons.cancel_rounded;
@@ -58,18 +59,18 @@ class QuizOptionTile extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: 'Đáp án $letter: $text',
+      label: AppStrings.quizOptionSemantics(letter, text),
       child: Material(
         color: bg,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          side: BorderSide(color: border, width: 1.5),
+          side: BorderSide(color: border, width: AppDimensions.borderMedium),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 60),
+            constraints: const BoxConstraints(minHeight: AppDimensions.quizOptionMinHeight),
             child: Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppDimensions.space16,
@@ -78,8 +79,8 @@ class QuizOptionTile extends StatelessWidget {
               child: Row(
                 children: [
                   Container(
-                    width: 32,
-                    height: 32,
+                    width: AppDimensions.quizOptionLetterSize,
+                    height: AppDimensions.quizOptionLetterSize,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: letterBg,

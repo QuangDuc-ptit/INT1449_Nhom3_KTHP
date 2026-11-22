@@ -1,42 +1,33 @@
-import '../mock/mock_vocab_data.dart';
 import '../models/collection_model.dart';
 import '../models/vocabulary_model.dart';
+import 'collection_store.dart';
 
 /// Cầu nối tích hợp giữa Track B (AI Vocab) và Track A (Thư viện).
-/// Đặc tả §5.1: FE2 chỉ gọi `addWords(collectionId, words)`; FE1 sẽ thay phần
-/// triển khai bên trong bằng store thật của Thư viện khi họ hoàn thiện.
+/// Đặc tả §5.1: FE2 chỉ gọi `addWords(collectionId, words)`; phần bên trong
+/// chuyển hết sang [CollectionStore] của FE1 để Thư viện (Màn 05/06) cập nhật ngay.
+/// Chữ ký các hàm giữ nguyên như bản FE2 viết ban đầu.
 class CollectionBridge {
   CollectionBridge._();
 
-  static List<CollectionModel> get collections =>
-      List.unmodifiable(MockVocabData.initialCollections);
+  /// Store đích. Test có thể gán store riêng rồi trả lại [CollectionStore.instance].
+  static CollectionStore store = CollectionStore.instance;
 
-  /// Tạo học phần mới, trả về id.
+  static List<CollectionModel> get collections => store.collections;
+
+  /// Tạo học phần mới, trả về id. Nếu tên đã có thì thêm hậu tố " (2)", " (3)"…
+  /// vì Màn 22 của FE1 không cho trùng tên học phần.
   static String createCollection(String title) {
-    final id = 'col-ai-${DateTime.now().microsecondsSinceEpoch}';
-    MockVocabData.initialCollections.insert(
-      0,
-      CollectionModel(
-        id: id,
-        title: title,
-        description: 'Học phần được tạo bằng AI',
-        category: 'academic',
-        iconName: 'school_rounded',
-        totalWords: 0,
-      ),
-    );
-    return id;
+    final base = title.trim();
+    var name = base;
+    for (var n = 2; store.isTitleTaken(name); n++) {
+      name = '$base ($n)';
+    }
+    return store
+        .createCollection(title: name, description: 'Học phần được tạo bằng AI')
+        .id;
   }
 
-  /// Thêm danh sách từ vào học phần và cập nhật `totalWords`.
-  static void addWords(String collectionId, List<VocabularyModel> words) {
-    MockVocabData.initialVocabularies.addAll(words);
-    final list = MockVocabData.initialCollections;
-    final index = list.indexWhere((c) => c.id == collectionId);
-    if (index != -1) {
-      list[index] = list[index].copyWith(
-        totalWords: list[index].totalWords + words.length,
-      );
-    }
-  }
+  /// Thêm danh sách từ vào học phần (cập nhật `totalWords` và báo cho Thư viện).
+  static void addWords(String collectionId, List<VocabularyModel> words) =>
+      store.addWords(collectionId, words);
 }

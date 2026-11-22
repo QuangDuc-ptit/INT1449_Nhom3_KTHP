@@ -291,10 +291,82 @@ class AppTypography {
     color: AppColors.white,
   );
 
+  // ---------------------------------------------------------------------------
+  // Màn 05 · Thư viện
+  // ---------------------------------------------------------------------------
+
+  /// Tiêu đề "Thư viện" — 28 ExtraBold, BrandDark.
+  static const TextStyle libraryTitle = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 28.0,
+    fontWeight: FontWeight.w800,
+    color: AppColors.navyBlue,
+    height: 1.2,
+  );
+
+  /// Chữ gõ trong ô tìm kiếm — 14, TextPrimary.
+  static const TextStyle searchInput = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14.0,
+    fontWeight: FontWeight.w400,
+    color: AppColors.authTextPrimary,
+    height: 1.4,
+  );
+
+  /// Chữ chip lọc — 14 SemiBold (màu theo trạng thái chọn).
+  static const TextStyle filterChip = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14.0,
+    fontWeight: FontWeight.w600,
+    height: 1.2,
+  );
+
+  /// Tên học phần — 16 Bold, TextPrimary.
+  static const TextStyle courseTitle = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 16.0,
+    fontWeight: FontWeight.w700,
+    color: AppColors.authTextPrimary,
+    height: 1.3,
+  );
+
+  /// Nhãn trình độ (B1, B2…) — 11 Bold, BrandDark.
+  static const TextStyle levelBadge = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 11.0,
+    fontWeight: FontWeight.w700,
+    color: AppColors.navyBlue,
+    height: 1.2,
+  );
+
+  /// Số từ của học phần — 13, TextSecondary.
+  static const TextStyle courseMeta = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 13.0,
+    fontWeight: FontWeight.w400,
+    color: AppColors.authTextSecondary,
+    height: 1.3,
+  );
+
+  /// Phần trăm giữa vòng tiến độ — 11 Bold, BrandDark.
+  static const TextStyle progressPercent = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 11.0,
+    fontWeight: FontWeight.w700,
+    color: AppColors.navyBlue,
+    height: 1.0,
+  );
+
   static const TextStyle buttonText = TextStyle(
     fontFamily: fontFamily,
     fontSize: 16.0,
     fontWeight: FontWeight.w700,
     color: AppColors.white,
   );
+
+  /// Emoji minh hoạ lớn (Màn 12 kết quả).
+  static const TextStyle emojiHero = TextStyle(fontSize: 64.0);
+
+  /// Emoji Axolotl khi AI đang sinh từ (Màn 13).
+  static const TextStyle emojiLoading = TextStyle(fontSize: 72.0);
 }

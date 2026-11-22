@@ -18,6 +18,7 @@ class MockVocabData {
       category: 'academic',
       iconName: 'school_rounded',
       totalWords: 5,
+      level: 'B2',
     ),
     const CollectionModel(
       id: 'col-2',
@@ -26,6 +27,7 @@ class MockVocabData {
       category: 'travel',
       iconName: 'flight_takeoff_rounded',
       totalWords: 4,
+      level: 'A2',
     ),
     const CollectionModel(
       id: 'col-3',
@@ -34,6 +36,7 @@ class MockVocabData {
       category: 'life',
       iconName: 'chat_bubble_outline_rounded',
       totalWords: 3,
+      level: 'B1',
     ),
   ];
 

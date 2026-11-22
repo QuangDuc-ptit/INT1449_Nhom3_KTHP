@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
@@ -19,7 +18,10 @@ class AiGenerateScreen extends StatefulWidget {
   /// Cho phép tiêm repository khác (ví dụ bản gọi BE thật hoặc bản test).
   final AiVocabRepository? repository;
 
-  const AiGenerateScreen({super.key, this.repository});
+  /// Học phần đích chọn sẵn ở Màn 14 (mở từ Màn 06 của FE1). `null` = tạo học phần mới.
+  final String? initialCollectionId;
+
+  const AiGenerateScreen({super.key, this.repository, this.initialCollectionId});
 
   /// Chuyển `errorCode` của BE thành thông báo tiếng Việt cho Màn 13.
   @visibleForTesting
@@ -105,14 +107,17 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
       if (!mounted) return;
       _shimmer.stop();
       setState(() => _state = _GenState.idle);
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(
+      final saved = await Navigator.of(context).push<bool>(
+        MaterialPageRoute<bool>(
           builder: (_) => AiPreviewScreen(
             drafts: drafts,
             topic: _topicController.text.trim(),
+            initialCollectionId: widget.initialCollectionId,
           ),
         ),
       );
+      // Lưu xong thì đóng luôn Màn 13, quay về màn đã mở nó (Trang chủ hoặc Màn 06).
+      if (saved == true && mounted) Navigator.of(context).pop(true);
     } on TimeoutException {
       _fail(AiGenerateScreen.aiErrorMessage(const AiVocabException('AI_TIMEOUT')));
     } on AiVocabException catch (e) {

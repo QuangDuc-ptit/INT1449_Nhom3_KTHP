@@ -27,7 +27,8 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   static const int minDailyGoal = 5;
-  static const int maxDailyGoal = 50;
+  /// BE và `DashboardStore` (FE2) chỉ nhận mục tiêu 5–30 từ/ngày (FE-BE-ALIGNMENT).
+  static const int maxDailyGoal = 30;
   static const int dailyGoalStep = 5;
 
   late int _dailyGoal;

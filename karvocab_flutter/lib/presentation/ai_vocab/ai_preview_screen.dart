@@ -15,7 +15,15 @@ class AiPreviewScreen extends StatefulWidget {
   final List<AiVocabDraft> drafts;
   final String topic;
 
-  const AiPreviewScreen({super.key, required this.drafts, required this.topic});
+  /// Học phần đích chọn sẵn (nếu còn tồn tại); `null` = tạo học phần mới.
+  final String? initialCollectionId;
+
+  const AiPreviewScreen({
+    super.key,
+    required this.drafts,
+    required this.topic,
+    this.initialCollectionId,
+  });
 
   @override
   State<AiPreviewScreen> createState() => _AiPreviewScreenState();
@@ -34,6 +42,10 @@ class _AiPreviewScreenState extends State<AiPreviewScreen> {
     _drafts = List.of(widget.drafts);
     final base = 'AI · ${widget.topic}';
     _newCollectionName = base.length > 50 ? base.substring(0, 50) : base;
+    final initial = widget.initialCollectionId;
+    if (initial != null && CollectionBridge.collections.any((c) => c.id == initial)) {
+      _destinationId = initial;
+    }
   }
 
   int get _selectedCount => _drafts.where((d) => d.selected).length;
@@ -98,7 +110,8 @@ class _AiPreviewScreenState extends State<AiPreviewScreen> {
         content: Text('Đã thêm ${words.length} từ vào học phần'),
       ),
     );
-    Navigator.of(context).popUntil((r) => r.isFirst);
+    // Trả `true` cho Màn 13 để nó tự đóng, quay về màn đã mở luồng AI.
+    Navigator.of(context).pop(true);
   }
 
   @override

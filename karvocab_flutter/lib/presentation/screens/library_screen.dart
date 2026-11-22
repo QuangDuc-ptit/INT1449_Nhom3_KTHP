@@ -1,25 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widget_previews.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_durations.dart';
+import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_typography.dart';
-import '../../core/utils/debouncer.dart';
 import '../../core/widgets/app_toast.dart';
 import '../../core/widgets/state_widgets.dart';
-import '../../data/models/collection_model.dart';
 import '../../data/repositories/collection_store.dart';
+import '../library/library_controller.dart';
+import '../library/library_sample_data.dart';
+import '../library/library_ui_state.dart';
+import '../widgets/app_bottom_nav_bar.dart';
 import '../widgets/collection_form_sheet.dart';
+import '../widgets/course_progress_ring.dart';
 import 'word_list_screen.dart';
 
-/// Màn 05 · Thư viện học phần (Collections Library Screen)
-/// - Tìm kiếm theo tên & mô tả với debounce 300ms.
-/// - Lọc theo chủ đề bằng Filter Chips (lọc offline trên danh sách local).
-/// - Đủ 3 trạng thái Loading / Error (có Thử lại) / Empty (có lối ra).
+/// Màn 05 · Thư viện — nối [LibraryController] (dữ liệu) với [LibraryView]
+/// (giao diện) và xử lý điều hướng: mở học phần, tạo học phần (Màn 22).
 class LibraryScreen extends StatefulWidget {
   final CollectionStore? store;
 
-  /// Chủ đề lọc sẵn — dùng lại màn này cho các màn Phân loại theo chủ đề (17, 18, 27).
+  /// Chủ đề lọc sẵn ('all' = Tất cả) — dùng lại màn này cho các màn
+  /// Phân loại theo chủ đề (17, 18, 27).
   final String initialCategory;
 
   const LibraryScreen({super.key, this.store, this.initialCategory = 'all'});
@@ -29,283 +34,431 @@ class LibraryScreen extends StatefulWidget {
 }
 
 class _LibraryScreenState extends State<LibraryScreen> {
-  final TextEditingController _searchController = TextEditingController();
-  final Debouncer _searchDebouncer = Debouncer(delay: const Duration(milliseconds: 300));
-
-  late String _selectedCategory;
-  String _searchQuery = '';
-
   CollectionStore get _store => widget.store ?? CollectionStore.instance;
 
-  static const Map<String, String> _filters = {
-    'all': 'Tất cả',
-    ...CollectionCategories.labels,
-  };
+  late final LibraryController _controller = LibraryController(
+    store: _store,
+    initialCategoryId: widget.initialCategory == 'all' ? null : widget.initialCategory,
+  );
 
   @override
   void initState() {
     super.initState();
-    _selectedCategory = widget.initialCategory;
     // Gọi sau frame đầu để không notify listener khác (vd tab Hồ sơ) khi cây widget đang build.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _store.ensureLoaded());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _controller.ensureLoaded());
   }
 
   @override
   void dispose() {
-    _searchDebouncer.dispose();
-    _searchController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
-  void _onSearchChanged(String value) {
-    setState(() {}); // cập nhật nút xoá (x) ngay lập tức
-    _searchDebouncer.run(() {
-      if (mounted) setState(() => _searchQuery = value.trim());
-    });
+  void _openCourse(String id) {
+    final collection = _store.findCollection(id);
+    if (collection == null) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => WordListScreen(collection: collection, store: widget.store)),
+    );
   }
 
-  void _clearSearch() {
-    _searchDebouncer.cancel();
-    _searchController.clear();
-    setState(() => _searchQuery = '');
-  }
-
-  Future<void> _openCreateCollection() async {
+  Future<void> _createCourse() async {
     final created = await showCollectionFormSheet(context, store: _store);
     if (created == null || !mounted) return;
-    AppToast.success(context, 'Đã tạo học phần "${created.title}"');
-    _openCollection(created);
-  }
-
-  void _openCollection(CollectionModel col) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => WordListScreen(collection: col, store: widget.store)),
-    );
+    AppToast.success(context, AppStrings.libraryCourseCreated(created.title));
+    _openCourse(created.id);
   }
 
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: _controller,
+      builder: (context, _) => LibraryView(
+        state: _controller.state,
+        onQueryChange: _controller.onQueryChange,
+        onCategorySelect: _controller.onCategorySelect,
+        onCourseClick: _openCourse,
+        onCreateCourseClick: _createCourse,
+        onRetry: _controller.retry,
+        onRefresh: _controller.refresh,
+      ),
+    );
+  }
+}
+
+/// Giao diện Màn 05 · Thư viện: chỉ đọc [state], mọi thao tác đưa ra callback.
+///
+/// Thanh điều hướng dưới do `MainShellScreen` vẽ chung cho các tab
+/// (`AppBottomNavBar`), nên màn này không tự vẽ.
+class LibraryView extends StatefulWidget {
+  final LibraryUiState state;
+  final ValueChanged<String> onQueryChange;
+
+  /// `null` = chip "Tất cả".
+  final ValueChanged<String?> onCategorySelect;
+  final ValueChanged<String> onCourseClick;
+  final VoidCallback onCreateCourseClick;
+  final VoidCallback onRetry;
+
+  /// Kéo xuống để tải lại; `null` = tắt.
+  final Future<void> Function()? onRefresh;
+
+  const LibraryView({
+    super.key,
+    required this.state,
+    required this.onQueryChange,
+    required this.onCategorySelect,
+    required this.onCourseClick,
+    required this.onCreateCourseClick,
+    required this.onRetry,
+    this.onRefresh,
+  });
+
+  @override
+  State<LibraryView> createState() => _LibraryViewState();
+}
+
+class _LibraryViewState extends State<LibraryView> {
+  /// Nút "+" có vùng chạm 48dp, icon 28dp: lùi sang phải phần đệm này để icon thẳng lề 20dp.
+  static const double _createButtonInset = (AppDimensions.minTouchTarget - AppDimensions.iconLarge) / 2;
+
+  late final TextEditingController _searchController = TextEditingController(text: widget.state.query);
+
+  @override
+  void didUpdateWidget(covariant LibraryView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_searchController.text != widget.state.query) {
+      _searchController.value = TextEditingValue(
+        text: widget.state.query,
+        selection: TextSelection.collapsed(offset: widget.state.query.length),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scrollView = CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        SliverToBoxAdapter(child: _buildHeader()),
+        SliverToBoxAdapter(child: _buildSearchField()),
+        SliverToBoxAdapter(child: _buildCategoryChips()),
+        ..._buildContent(),
+      ],
+    );
+
     return Scaffold(
-      backgroundColor: AppColors.mainBackground,
-      appBar: AppBar(
-        title: Text('Thư viện học phần', style: AppTypography.headingLarge),
-        actions: [
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        bottom: false,
+        child: widget.onRefresh == null
+            ? scrollView
+            : RefreshIndicator(onRefresh: widget.onRefresh!, child: scrollView),
+      ),
+    );
+  }
+
+  // 1. Tiêu đề "Thư viện" + nút "+" tạo học phần.
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: AppDimensions.libraryHorizontalPadding,
+        right: AppDimensions.libraryHorizontalPadding - _createButtonInset,
+        top: AppDimensions.space12,
+      ),
+      child: Row(
+        children: [
+          const Expanded(child: Text(AppStrings.libraryTitle, style: AppTypography.libraryTitle)),
           IconButton(
-            icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primaryBlue, size: AppDimensions.iconLarge),
-            onPressed: _openCreateCollection,
-            tooltip: 'Tạo học phần mới',
+            key: const Key('library_create_course'),
+            onPressed: widget.onCreateCourseClick,
+            tooltip: AppStrings.libraryCreateCourse,
+            icon: const Icon(
+              Icons.add_circle_outline_rounded,
+              color: AppColors.navyBlue,
+              size: AppDimensions.iconLarge,
+            ),
           ),
         ],
       ),
-      body: ListenableBuilder(
-        listenable: _store,
-        builder: (context, _) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSearchBar(),
-              const SizedBox(height: AppDimensions.space12),
-              _buildFilterChips(),
-              const SizedBox(height: AppDimensions.space16),
-              Expanded(child: _buildBody()),
-            ],
-          );
-        },
+    );
+  }
+
+  // 2. Ô tìm kiếm.
+  Widget _buildSearchField() {
+    final hasText = widget.state.query.isNotEmpty;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppDimensions.libraryHorizontalPadding,
+        AppDimensions.space16,
+        AppDimensions.libraryHorizontalPadding,
+        0,
+      ),
+      child: Container(
+        height: AppDimensions.searchFieldHeight,
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(AppDimensions.searchFieldRadius),
+          border: Border.all(color: AppColors.divider, width: AppDimensions.borderThin),
+        ),
+        child: Row(
+          children: [
+            const SizedBox(width: AppDimensions.space12),
+            const Icon(Icons.search_rounded, size: AppDimensions.iconSmall, color: AppColors.authTextSecondary),
+            Expanded(
+              child: TextField(
+                key: const Key('library_search'),
+                controller: _searchController,
+                onChanged: widget.onQueryChange,
+                // Nút Search trên bàn phím: Flutter tự đóng bàn phím khi bấm.
+                textInputAction: TextInputAction.search,
+                style: AppTypography.searchInput,
+                decoration: const InputDecoration(
+                  hintText: AppStrings.librarySearchHint,
+                  hintStyle: AppTypography.authBody,
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(horizontal: AppDimensions.space8),
+                ),
+              ),
+            ),
+            if (hasText)
+              IconButton(
+                key: const Key('library_search_clear'),
+                onPressed: () => widget.onQueryChange(''),
+                tooltip: AppStrings.libraryClearSearch,
+                icon: const Icon(Icons.close_rounded, size: AppDimensions.iconSmall, color: AppColors.authTextSecondary),
+              ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildBody() {
-    switch (_store.status) {
-      case LoadStatus.initial:
-      case LoadStatus.loading:
-        return const _CollectionSkeletonList();
-      case LoadStatus.error:
-        return ErrorStateWidget(
-          title: 'Không tải được thư viện',
-          errorMessage: _store.errorMessage ?? 'Đã có lỗi xảy ra.',
-          onRetry: _store.load,
-        );
-      case LoadStatus.ready:
+  // 3. Hàng chip lọc: "Tất cả" + các nhóm trong categories.
+  Widget _buildCategoryChips() {
+    final categories = widget.state.categories;
+    return Padding(
+      // Chip cao 36dp nhưng vùng chạm 48dp → trừ phần đệm để khoảng cách nhìn thấy đúng 12dp / 20dp.
+      padding: const EdgeInsets.only(top: AppDimensions.space12 - AppDimensions.filterChipTouchInset),
+      child: SizedBox(
+        height: AppDimensions.minTouchTarget,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: AppDimensions.libraryHorizontalPadding),
+          itemCount: categories.length + 1,
+          separatorBuilder: (_, _) => const SizedBox(width: AppDimensions.space8),
+          itemBuilder: (context, index) {
+            final id = index == 0 ? null : categories[index - 1].id;
+            final label = index == 0 ? AppStrings.libraryAllCategories : categories[index - 1].name;
+            return _FilterChip(
+              label: label,
+              selected: widget.state.selectedCategoryId == id,
+              onTap: () => widget.onCategorySelect(id),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // 4–5. Danh sách học phần / trạng thái tải, lỗi, trống.
+  List<Widget> _buildContent() {
+    const listPadding = EdgeInsets.fromLTRB(
+      AppDimensions.libraryHorizontalPadding,
+      AppDimensions.space20 - AppDimensions.filterChipTouchInset,
+      AppDimensions.libraryHorizontalPadding,
+      AppDimensions.space24,
+    );
+    final state = widget.state;
+
+    switch (state.status) {
+      case LibraryLoadStatus.loading:
+        return [
+          SliverPadding(
+            padding: listPadding,
+            sliver: SliverList.separated(
+              itemCount: AppDimensions.skeletonCardCount,
+              separatorBuilder: (_, _) => const SizedBox(height: AppDimensions.space12),
+              itemBuilder: (_, _) => const SkeletonCard(),
+            ),
+          ),
+        ];
+      case LibraryLoadStatus.error:
+        return [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: ErrorStateWidget(
+              title: AppStrings.libraryLoadErrorTitle,
+              errorMessage: state.errorMessage ?? AppStrings.libraryLoadErrorFallback,
+              onRetry: widget.onRetry,
+            ),
+          ),
+        ];
+      case LibraryLoadStatus.ready:
         break;
     }
 
-    if (_store.collections.isEmpty) {
-      return EmptyStateWidget(
-        icon: Icons.pets_rounded,
-        title: 'Thư viện của bạn còn trống',
-        message: 'Tạo học phần đầu tiên để bắt đầu lưu và ôn luyện từ vựng nhé!',
-        actionText: 'Tạo học phần đầu tiên',
-        onAction: _openCreateCollection,
-      );
-    }
-
-    final filtered = _store.search(query: _searchQuery, category: _selectedCategory);
-    if (filtered.isEmpty) {
-      return EmptyStateWidget(
-        icon: Icons.search_off_rounded,
-        title: 'Không tìm thấy học phần nào',
-        message: _searchQuery.isNotEmpty
-            ? 'Không có học phần khớp với "$_searchQuery". Thử từ khoá khác nhé.'
-            : 'Chưa có học phần nào thuộc chủ đề này.',
-        actionText: 'Xoá bộ lọc',
-        onAction: () {
-          _clearSearch();
-          setState(() => _selectedCategory = 'all');
-        },
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: () => _store.load(silent: true),
-      child: ListView.separated(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(
-          AppDimensions.screenMargin,
-          0,
-          AppDimensions.screenMargin,
-          AppDimensions.space24,
+    if (state.courses.isEmpty) {
+      final noResults = state.isFiltering;
+      return [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: _EmptyMessage(
+            icon: noResults ? Icons.search_rounded : Icons.menu_book_rounded,
+            message: noResults ? AppStrings.libraryNoResults : AppStrings.libraryEmpty,
+          ),
         ),
-        itemCount: filtered.length,
-        separatorBuilder: (_, _) => const SizedBox(height: AppDimensions.space16),
-        itemBuilder: (context, index) => _buildCollectionCard(filtered[index]),
+      ];
+    }
+
+    return [
+      SliverPadding(
+        padding: listPadding,
+        sliver: SliverList.separated(
+          itemCount: state.courses.length,
+          separatorBuilder: (_, _) => const SizedBox(height: AppDimensions.space12),
+          itemBuilder: (context, index) {
+            final course = state.courses[index];
+            return CourseCard(course: course, onTap: () => widget.onCourseClick(course.id));
+          },
+        ),
       ),
-    );
+    ];
   }
+}
 
-  Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.screenMargin),
-      child: Container(
-        height: AppDimensions.minTouchTarget,
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          border: Border.all(color: AppColors.borderLight),
-        ),
-        child: TextField(
-          controller: _searchController,
-          onChanged: _onSearchChanged,
-          textInputAction: TextInputAction.search,
-          decoration: InputDecoration(
-            hintText: 'Tìm kiếm bộ từ vựng...',
-            hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.textMuted),
-            prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted),
-            suffixIcon: _searchController.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear_rounded, size: AppDimensions.iconCompact),
-                    tooltip: 'Xoá tìm kiếm',
-                    onPressed: _clearSearch,
-                  )
-                : null,
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: AppDimensions.space12),
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _FilterChip({required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+      side: selected
+          ? BorderSide.none
+          : const BorderSide(color: AppColors.divider, width: AppDimensions.borderThin),
+    );
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: GestureDetector(
+        // Vùng chạm phủ cả phần đệm trên/dưới (đủ 48dp).
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Center(
+          child: Material(
+            color: selected ? AppColors.navyBlue : AppColors.white,
+            shape: shape,
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onTap,
+              child: Container(
+                height: AppDimensions.filterChipHeight,
+                padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space16),
+                alignment: Alignment.center,
+                child: Text(
+                  label,
+                  style: AppTypography.filterChip.copyWith(
+                    color: selected ? AppColors.white : AppColors.authTextSecondary,
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildFilterChips() {
-    final entries = _filters.entries.toList();
-    return SizedBox(
-      height: AppDimensions.minTouchTarget,
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: AppDimensions.screenMargin),
-        scrollDirection: Axis.horizontal,
-        itemCount: entries.length,
-        separatorBuilder: (_, _) => const SizedBox(width: AppDimensions.space8),
-        itemBuilder: (context, index) {
-          final entry = entries[index];
-          final isSelected = _selectedCategory == entry.key;
-          return Center(
-            child: ChoiceChip(
-              label: Text(entry.value),
-              labelStyle: AppTypography.labelSmall.copyWith(
-                color: isSelected ? AppColors.white : AppColors.textSecondary,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-              ),
-              selected: isSelected,
-              selectedColor: AppColors.primaryBlue,
-              backgroundColor: AppColors.white,
-              side: BorderSide(
-                color: isSelected ? AppColors.primaryBlue : AppColors.borderLight,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
-              ),
-              showCheckmark: false,
-              onSelected: (_) => setState(() => _selectedCategory = entry.key),
-            ),
-          );
-        },
-      ),
-    );
-  }
+/// Thẻ học phần: ô icon sách · tên + trình độ + số từ · vòng tiến độ.
+class CourseCard extends StatelessWidget {
+  final Course course;
+  final VoidCallback onTap;
 
-  Widget _buildCollectionCard(CollectionModel col) {
-    return Container(
+  const CourseCard({super.key, required this.course, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(AppDimensions.courseCardRadius);
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-        border: Border.all(color: AppColors.borderLight),
-        boxShadow: AppShadows.card,
+        borderRadius: radius,
+        boxShadow: AppShadows.cardSoft,
       ),
       child: Material(
         color: AppColors.transparent,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+        borderRadius: radius,
         child: InkWell(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-          onTap: () => _openCollection(col),
+          borderRadius: radius,
+          onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(AppDimensions.space20),
+            padding: const EdgeInsets.all(AppDimensions.space16),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: AppDimensions.collectionIconBoxSize,
-                  height: AppDimensions.collectionIconBoxSize,
+                  width: AppDimensions.libraryCourseIconBoxSize,
+                  height: AppDimensions.libraryCourseIconBoxSize,
                   decoration: BoxDecoration(
-                    color: AppColors.softBlueSurface,
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
+                    color: AppColors.surfaceTint,
+                    borderRadius: BorderRadius.circular(AppDimensions.courseCardIconRadius),
                   ),
-                  child: Icon(
-                    CollectionCategories.icon(col.iconName),
-                    color: AppColors.primaryBlue,
-                    size: AppDimensions.iconFeature,
-                  ),
+                  child: const Icon(Icons.menu_book_rounded, size: AppDimensions.iconMedium, color: AppColors.primaryBlue),
                 ),
-                const SizedBox(width: AppDimensions.space16),
+                const SizedBox(width: AppDimensions.space12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(col.title, style: AppTypography.headingMedium),
-                      const SizedBox(height: AppDimensions.space4),
                       Text(
-                        col.description,
-                        style: AppTypography.bodyMedium,
-                        maxLines: 2,
+                        course.name,
+                        style: AppTypography.courseTitle,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: AppDimensions.space12),
-                      Wrap(
-                        spacing: AppDimensions.space8,
-                        runSpacing: AppDimensions.space4,
+                      const SizedBox(height: AppDimensions.space6),
+                      Row(
                         children: [
-                          _pill('${col.totalWords} từ vựng', AppColors.secondaryBackground, AppColors.navyBlue),
-                          if (CollectionCategories.labels[col.category] != null)
-                            _pill(
-                              CollectionCategories.labels[col.category]!,
-                              AppColors.softBlueSurface,
-                              AppColors.primaryBlue,
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppDimensions.levelBadgePaddingH,
+                              vertical: AppDimensions.levelBadgePaddingV,
                             ),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceTint,
+                              borderRadius: BorderRadius.circular(AppDimensions.levelBadgeRadius),
+                            ),
+                            child: Text(course.level, style: AppTypography.levelBadge),
+                          ),
+                          const SizedBox(width: AppDimensions.space8),
+                          Flexible(
+                            child: Text(
+                              AppStrings.libraryWordCount(course.wordCount),
+                              style: AppTypography.courseMeta,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                         ],
                       ),
                     ],
                   ),
                 ),
-                const Icon(Icons.arrow_forward_ios_rounded, size: AppDimensions.iconXSmall, color: AppColors.textMuted),
+                const SizedBox(width: AppDimensions.space12),
+                CourseProgressRing(percent: course.progressPercent),
               ],
             ),
           ),
@@ -313,43 +466,36 @@ class _LibraryScreenState extends State<LibraryScreen> {
       ),
     );
   }
-
-  Widget _pill(String text, Color bg, Color fg) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.chipPaddingH, vertical: AppDimensions.chipPaddingV),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
-      ),
-      child: Text(
-        text,
-        style: AppTypography.labelSmall.copyWith(color: fg, fontWeight: FontWeight.w700),
-      ),
-    );
-  }
 }
 
-/// Skeleton loader cho danh sách học phần (đặc tả §6: không dùng spinner đơn điệu).
-class _CollectionSkeletonList extends StatelessWidget {
-  const _CollectionSkeletonList();
+class _EmptyMessage extends StatelessWidget {
+  final IconData icon;
+  final String message;
+
+  const _EmptyMessage({required this.icon, required this.message});
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.screenMargin),
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: 3,
-      separatorBuilder: (_, _) => const SizedBox(height: AppDimensions.space16),
-      itemBuilder: (_, _) => const SkeletonCard(),
+    return Padding(
+      padding: const EdgeInsets.all(AppDimensions.libraryHorizontalPadding),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: AppDimensions.libraryEmptyIconSize, color: AppColors.authTextSecondary),
+            const SizedBox(height: AppDimensions.space12),
+            Text(message, style: AppTypography.authBody, textAlign: TextAlign.center),
+          ],
+        ),
+      ),
     );
   }
 }
 
-/// Thẻ khung xương nhấp nháy nhẹ — dùng cho Loading State của các danh sách Track A.
+/// Thẻ khung xương nhấp nháy nhẹ — Loading State của danh sách học phần
+/// (đặc tả §6: không dùng spinner đơn điệu). Cùng khung với [CourseCard].
 class SkeletonCard extends StatefulWidget {
-  final double height;
-
-  const SkeletonCard({super.key, this.height = 112});
+  const SkeletonCard({super.key});
 
   @override
   State<SkeletonCard> createState() => _SkeletonCardState();
@@ -370,33 +516,40 @@ class _SkeletonCardState extends State<SkeletonCard> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Đang tải dữ liệu',
+      label: AppStrings.libraryLoading,
       child: FadeTransition(
         opacity: Tween<double>(begin: AppDimensions.skeletonMinOpacity, end: 1).animate(_controller),
         child: Container(
-          height: widget.height,
-          padding: const EdgeInsets.all(AppDimensions.space20),
+          padding: const EdgeInsets.all(AppDimensions.space16),
           decoration: BoxDecoration(
             color: AppColors.white,
-            borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-            border: Border.all(color: AppColors.borderLight),
+            borderRadius: BorderRadius.circular(AppDimensions.courseCardRadius),
           ),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _block(50, 50, AppDimensions.radiusMedium),
-              const SizedBox(width: AppDimensions.space16),
+              _block(AppDimensions.libraryCourseIconBoxSize, AppDimensions.libraryCourseIconBoxSize, AppDimensions.courseCardIconRadius),
+              const SizedBox(width: AppDimensions.space12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _block(160, 16, 6),
+                    FractionallySizedBox(
+                      widthFactor: AppDimensions.skeletonTitleWidthFactor,
+                      child: _block(double.infinity, AppDimensions.space16, AppDimensions.levelBadgeRadius),
+                    ),
                     const SizedBox(height: AppDimensions.space8),
-                    _block(double.infinity, 12, 6),
-                    const SizedBox(height: AppDimensions.space8),
-                    _block(80, 12, 6),
+                    FractionallySizedBox(
+                      widthFactor: AppDimensions.skeletonMetaWidthFactor,
+                      child: _block(double.infinity, AppDimensions.space12, AppDimensions.levelBadgeRadius),
+                    ),
                   ],
                 ),
+              ),
+              const SizedBox(width: AppDimensions.space12),
+              Container(
+                width: AppDimensions.progressRingSize,
+                height: AppDimensions.progressRingSize,
+                decoration: const BoxDecoration(color: AppColors.surfaceTint, shape: BoxShape.circle),
               ),
             ],
           ),
@@ -410,9 +563,39 @@ class _SkeletonCardState extends State<SkeletonCard> with SingleTickerProviderSt
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: AppColors.secondaryBackground,
+        color: AppColors.surfaceTint,
         borderRadius: BorderRadius.circular(radius),
       ),
     );
   }
 }
+
+// -----------------------------------------------------------------------------
+// Preview (Flutter Widget Previewer)
+// -----------------------------------------------------------------------------
+
+Widget _previewFrame(LibraryUiState state) {
+  return MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: Scaffold(
+      body: LibraryView(
+        state: state,
+        onQueryChange: (_) {},
+        onCategorySelect: (_) {},
+        onCourseClick: (_) {},
+        onCreateCourseClick: () {},
+        onRetry: () {},
+      ),
+      bottomNavigationBar: AppBottomNavBar(currentIndex: 1, onTabSelected: (_) {}),
+    ),
+  );
+}
+
+@Preview(name: 'Thư viện · có dữ liệu', size: Size(390, 844))
+Widget libraryFullPreview() => _previewFrame(LibrarySampleData.full);
+
+@Preview(name: 'Thư viện · đang lọc theo nhóm', size: Size(390, 844))
+Widget libraryFilteredPreview() => _previewFrame(LibrarySampleData.filtered);
+
+@Preview(name: 'Thư viện · trống', size: Size(390, 844))
+Widget libraryEmptyPreview() => _previewFrame(LibrarySampleData.empty);

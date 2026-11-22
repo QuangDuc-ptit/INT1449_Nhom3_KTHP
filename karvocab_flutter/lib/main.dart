@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'core/constants/app_colors.dart';
 import 'core/theme/app_typography.dart';
+import 'data/repositories/track_sync.dart';
 import 'presentation/screens/splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   // Màn 01: giải mã logo trước frame đầu để nối liền với splash native
   SplashScreen.precacheLogoBeforeFirstFrame();
+  // Đồng bộ mục tiêu ngày và streak giữa Track A và Track B
+  TrackSync.attach();
   runApp(const KarVocabApp());
 }
 

@@ -7,6 +7,12 @@ class CollectionModel {
   final String iconName;
   final int totalWords;
 
+  /// Trình độ CEFR của học phần (A1 … C1), hiển thị ở Màn 05.
+  final String level;
+
+  /// Trình độ mặc định khi tạo học phần mới (form Màn 22 chưa có ô chọn trình độ).
+  static const String defaultLevel = 'B1';
+
   const CollectionModel({
     required this.id,
     required this.title,
@@ -14,6 +20,7 @@ class CollectionModel {
     required this.category,
     required this.iconName,
     required this.totalWords,
+    this.level = defaultLevel,
   });
 
   CollectionModel copyWith({
@@ -23,6 +30,7 @@ class CollectionModel {
     String? category,
     String? iconName,
     int? totalWords,
+    String? level,
   }) {
     return CollectionModel(
       id: id ?? this.id,
@@ -31,6 +39,7 @@ class CollectionModel {
       category: category ?? this.category,
       iconName: iconName ?? this.iconName,
       totalWords: totalWords ?? this.totalWords,
+      level: level ?? this.level,
     );
   }
 }

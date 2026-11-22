@@ -85,6 +85,27 @@ class AppDimensions {
   /// Bo góc ô nhập và nút của màn Quên mật khẩu.
   static const double authControlRadius = 14.0;
 
+  // Màn 05 · Thư viện
+  static const double libraryHorizontalPadding = 20.0;
+  static const double searchFieldHeight = 48.0;
+  static const double searchFieldRadius = 14.0;
+  static const double filterChipHeight = 36.0;
+  /// Phần đệm trên/dưới mỗi chip để vùng chạm đủ [minTouchTarget] (36 + 2×6 = 48).
+  static const double filterChipTouchInset = (minTouchTarget - filterChipHeight) / 2;
+  static const double courseCardRadius = 16.0;
+  static const double libraryCourseIconBoxSize = 48.0;
+  static const double courseCardIconRadius = 12.0;
+  static const double levelBadgeRadius = 6.0;
+  static const double levelBadgePaddingH = 6.0;
+  static const double levelBadgePaddingV = 2.0;
+  static const double progressRingSize = 44.0;
+  static const double progressRingStroke = 4.0;
+  static const double libraryEmptyIconSize = 48.0;
+  /// Số thẻ khung xương khi đang tải và độ rộng 2 dòng chữ giả (theo tỉ lệ).
+  static const int skeletonCardCount = 3;
+  static const double skeletonTitleWidthFactor = 0.7;
+  static const double skeletonMetaWidthFactor = 0.4;
+
   // Màn 23 · Cài đặt
   static const double dailyGoalValueMinWidth = 36.0;
   static const double dialogActionWidth = 132.0;
@@ -146,4 +167,53 @@ class AppDimensions {
   // Thanh điều hướng dưới
   static const double bottomNavHeight = 64.0;
   static const double bottomNavBorderWidth = 1.0;
+
+  /// Bo góc trên của bottom sheet và banner phản hồi.
+  static const double sheetRadius = 24.0;
+  /// Bề rộng tối thiểu nút chữ trong hộp thoại (cao = [minTouchTarget]).
+  static const double dialogTextButtonMinWidth = 88.0;
+  /// Nền nhạt của thẻ đang chọn / đúng / sai.
+  static const double selectedTintOpacity = 0.10;
+
+  // ===========================================================================
+  // TRACK B (FE2)
+  // ===========================================================================
+
+  // Màn 08 / 19 · Nút loa lớn
+  static const double quizAudioButtonSize = 96.0;
+  /// Icon chiếm 45% đường kính nút.
+  static const double quizAudioIconFactor = 0.45;
+  /// Nút phóng to thêm tối đa 8% khi đang phát.
+  static const double quizAudioPulseScale = 0.08;
+  static const double quizAudioElevation = 4.0;
+  static const double quizAudioShadowOpacity = 0.4;
+
+  // Thẻ đáp án A/B/C/D
+  static const double quizOptionMinHeight = 60.0;
+  static const double quizOptionLetterSize = 32.0;
+
+  // Thanh tiến độ phiên làm bài
+  static const double quizProgressHeight = 10.0;
+
+  // Màn 10 · Chọn chế độ
+  static const double practiceEmptyHeight = 280.0;
+  static const double practiceModeIconBoxSize = 52.0;
+
+  // Màn 12 · Vòng tròn tỉ lệ đúng
+  static const double resultRingSize = 150.0;
+  static const double resultRingStroke = 12.0;
+
+  // Màn 13 · Sinh từ AI
+  static const int aiSkeletonRowCount = 4;
+  static const double aiSkeletonRowHeight = 72.0;
+  static const double stepperValueWidth = 80.0;
+  static const int aiTopicMaxLines = 2;
+
+  // Màn 04 · Trang chủ bản FE2
+  static const double streakIconBoxSize = 64.0;
+  static const double dailyGoalBarHeight = 12.0;
+  static const double shortcutIconBoxSize = 48.0;
+  /// Nền / chữ trắng mờ trên nền gradient xanh.
+  static const double onDarkTintOpacity = 0.18;
+  static const double onDarkTextOpacity = 0.9;
 }

@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
-import '../home/home_sample_data.dart';
+import '../../data/repositories/auth_repository.dart';
+import '../../data/repositories/collection_store.dart';
+import '../../data/repositories/dashboard_store.dart';
+import '../dashboard/review_today_screen.dart';
+import '../home/home_state_builder.dart';
+import '../home/home_ui_state.dart';
 import '../notifications/notification_sample_data.dart';
 import '../notifications/notification_ui_state.dart';
 import '../quiz/practice_mode_screen.dart';
@@ -8,6 +13,7 @@ import '../widgets/app_bottom_nav_bar.dart';
 import 'home_screen.dart';
 import 'library_screen.dart';
 import 'profile_screen.dart';
+import 'word_list_screen.dart';
 
 /// Khung Điều hướng chính (Main Shell Screen) với Bottom Navigation 4 Tab
 /// Chuẩn Figma & Đảm bảo Dev FE1 và FE2 không bị xung đột code
@@ -83,17 +89,31 @@ class _MainShellScreenState extends State<MainShellScreen> {
   Widget build(BuildContext context) {
     // 4 Màn hình tương ứng 4 Tab
     final List<Widget> pages = [
-      // Màn 04 · Trang chủ — dữ liệu mẫu cho tới khi có backend
-      HomeScreen(
-        state: HomeSampleData.full,
-        notifications: _notifications,
-        notificationCallbacks: NotificationPopupCallbacks(
-          onNotificationClick: _onNotificationClick,
-          onMarkAllRead: _onMarkAllRead,
-          onRefresh: _onRefresh,
-          onLoadMore: _onLoadMore,
+      // Màn 04 · Trang chủ — giao diện FE1, số liệu từ CollectionStore (FE1) + DashboardStore (FE2)
+      ListenableBuilder(
+        listenable: Listenable.merge([
+          CollectionStore.instance,
+          DashboardStore.instance,
+          AuthRepository.instance,
+        ]),
+        builder: (context, _) => HomeScreen(
+          state: HomeStateBuilder.build(
+            collections: CollectionStore.instance,
+            dashboard: DashboardStore.instance,
+            user: AuthRepository.instance.currentUser,
+          ),
+          notifications: _notifications,
+          notificationCallbacks: NotificationPopupCallbacks(
+            onNotificationClick: _onNotificationClick,
+            onMarkAllRead: _onMarkAllRead,
+            onRefresh: _onRefresh,
+            onLoadMore: _onLoadMore,
+          ),
+          onStartReviewClick: _openReviewToday,
+          onStatClick: _onStatClick,
+          onSeeAllCoursesClick: () => _selectTab(_libraryTab),
+          onCourseClick: _openCourse,
         ),
-        onSeeAllCoursesClick: () => _selectTab(_libraryTab),
       ),
       const LibraryScreen(), // Tab Thư viện do FE1 phát triển
       const PracticeModeScreen(), // Tab Luyện tập do FE2 phát triển (Màn 10)
@@ -113,6 +133,37 @@ class _MainShellScreenState extends State<MainShellScreen> {
   }
 
   static const int _libraryTab = 1;
+  static const int _profileTab = 3;
 
   void _selectTab(int index) => setState(() => _currentIndex = index);
+
+  // ---------------------------------------------------------------------------
+  // Nối Trang chủ (FE1) với các màn của FE2 / Thư viện
+  // ---------------------------------------------------------------------------
+
+  /// "Bắt đầu ôn tập" / thẻ nhắc ôn → Màn 16 (FE2).
+  void _openReviewToday() {
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const ReviewTodayScreen()));
+  }
+
+  void _onStatClick(HomeStat stat) {
+    switch (stat) {
+      case HomeStat.wordsToReview:
+        _openReviewToday();
+      case HomeStat.totalWords:
+      case HomeStat.newWords:
+        _selectTab(_libraryTab);
+      case HomeStat.streak:
+        _selectTab(_profileTab);
+    }
+  }
+
+  /// Học phần ở Trang chủ → Màn 06.
+  void _openCourse(HomeCourse course) {
+    final collection = CollectionStore.instance.findCollection(course.id);
+    if (collection == null) return;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => WordListScreen(collection: collection)),
+    );
+  }
 }

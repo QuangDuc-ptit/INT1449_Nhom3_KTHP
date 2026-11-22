@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/vocab_display.dart';
 import '../../core/widgets/cefr_badge.dart';
@@ -25,7 +26,7 @@ class _OptionsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const letters = ['A', 'B', 'C', 'D'];
+    const letters = AppStrings.quizOptionLetters;
     final answered = record != null;
 
     return Column(
@@ -79,7 +80,7 @@ class ListenChooseView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const _Prompt('Nghe và chọn từ bạn vừa nghe được'),
+        const _Prompt(AppStrings.quizPromptListenChoose),
         const SizedBox(height: AppDimensions.space24),
         AudioPlayButton(text: question.vocab.term),
         const SizedBox(height: AppDimensions.space32),
@@ -107,7 +108,7 @@ class MeaningChooseView extends StatelessWidget {
     final v = question.vocab;
     return Column(
       children: [
-        const _Prompt('Chọn nghĩa tiếng Việt đúng của từ'),
+        const _Prompt(AppStrings.quizPromptMeaningChoose),
         const SizedBox(height: AppDimensions.space16),
         Container(
           width: double.infinity,
@@ -126,7 +127,7 @@ class MeaningChooseView extends StatelessWidget {
               Text(v.ipaText, style: AppTypography.bodyMedium),
               const SizedBox(height: AppDimensions.space8),
               IconButton(
-                tooltip: 'Nghe phát âm',
+                tooltip: AppStrings.quizListenTooltip,
                 constraints: const BoxConstraints(
                   minWidth: AppDimensions.minTouchTarget,
                   minHeight: AppDimensions.minTouchTarget,
@@ -161,14 +162,14 @@ class ListenTypeView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const _Prompt('Nghe và gõ chính xác từ bạn nghe được'),
+        const _Prompt(AppStrings.quizPromptListenType),
         const SizedBox(height: AppDimensions.space24),
         AudioPlayButton(text: question.vocab.term),
         const SizedBox(height: AppDimensions.space32),
         TypingAnswerField(
           locked: record != null,
           onSubmit: onSubmit,
-          hint: 'Gõ từ bạn nghe được...',
+          hint: AppStrings.quizListenTypeHint,
         ),
       ],
     );
@@ -190,7 +191,7 @@ class RecallTypeView extends StatelessWidget {
 
   /// Che từ khoá trong câu ví dụ → "_____"
   String _blank(String sentence, String term) {
-    return sentence.replaceAll(RegExp(RegExp.escape(term), caseSensitive: false), '_____');
+    return sentence.replaceAll(RegExp(RegExp.escape(term), caseSensitive: false), AppStrings.quizBlank);
   }
 
   @override
@@ -198,7 +199,7 @@ class RecallTypeView extends StatelessWidget {
     final v = question.vocab;
     return Column(
       children: [
-        const _Prompt('Đọc nghĩa và gõ từ tiếng Anh tương ứng'),
+        const _Prompt(AppStrings.quizPromptRecallType),
         const SizedBox(height: AppDimensions.space16),
         Container(
           width: double.infinity,
@@ -215,7 +216,7 @@ class RecallTypeView extends StatelessWidget {
                 children: [
                   CefrBadge(level: v.cefrLevel),
                   const SizedBox(width: AppDimensions.space8),
-                  Text('[${v.partOfSpeech}.]', style: AppTypography.labelSmall),
+                  Text(AppStrings.partOfSpeech(v.partOfSpeech), style: AppTypography.labelSmall),
                 ],
               ),
               const SizedBox(height: AppDimensions.space12),
@@ -227,7 +228,7 @@ class RecallTypeView extends StatelessWidget {
               ),
               const SizedBox(height: AppDimensions.space12),
               Text(
-                'Gợi ý: bắt đầu bằng "${v.term[0]}" • ${v.term.length} chữ cái',
+                AppStrings.quizRecallHint(v.term[0], v.term.length),
                 style: AppTypography.labelSmall.copyWith(color: AppColors.infoBlue),
               ),
             ],

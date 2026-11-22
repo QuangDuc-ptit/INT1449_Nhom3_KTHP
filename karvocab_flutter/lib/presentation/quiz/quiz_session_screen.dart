@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../data/models/quiz_models.dart';
@@ -53,24 +54,24 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
         ),
-        title: Text('Thoát buổi luyện tập?', style: AppTypography.headingMedium),
+        title: Text(AppStrings.quizExitTitle, style: AppTypography.headingMedium),
         content: Text(
-          'Tiến độ của phiên này sẽ không được lưu.',
+          AppStrings.quizExitMessage,
           style: AppTypography.bodyMedium,
         ),
         actions: [
           TextButton(
-            style: TextButton.styleFrom(minimumSize: const Size(88, 48)),
+            style: TextButton.styleFrom(minimumSize: const Size(AppDimensions.dialogTextButtonMinWidth, AppDimensions.minTouchTarget)),
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Tiếp tục học'),
+            child: const Text(AppStrings.quizExitStay),
           ),
           TextButton(
             style: TextButton.styleFrom(
-              minimumSize: const Size(88, 48),
+              minimumSize: const Size(AppDimensions.dialogTextButtonMinWidth, AppDimensions.minTouchTarget),
               foregroundColor: AppColors.errorRed,
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Thoát'),
+            child: const Text(AppStrings.quizExitLeave),
           ),
         ],
       ),
@@ -113,9 +114,9 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
       return Scaffold(
         appBar: AppBar(),
         body: EmptyStateWidget(
-          title: 'Chưa có câu hỏi nào',
-          message: 'Hãy thêm từ vựng vào học phần rồi quay lại luyện tập nhé.',
-          actionText: 'Quay lại',
+          title: AppStrings.quizNoQuestionsTitle,
+          message: AppStrings.quizNoQuestionsMessage,
+          actionText: AppStrings.back,
           onAction: () => Navigator.of(context).pop(),
         ),
       );
@@ -138,7 +139,7 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
               automaticallyImplyLeading: false,
               titleSpacing: 0,
               leading: IconButton(
-                tooltip: 'Thoát',
+                tooltip: AppStrings.quizExitTooltip,
                 constraints: const BoxConstraints(
                   minWidth: AppDimensions.minTouchTarget,
                   minHeight: AppDimensions.minTouchTarget,
@@ -155,7 +156,7 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
                         borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
                         child: LinearProgressIndicator(
                           value: _controller.progress,
-                          minHeight: 10,
+                          minHeight: AppDimensions.quizProgressHeight,
                           backgroundColor: AppColors.secondaryBackground,
                           valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
                         ),
@@ -163,7 +164,7 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
                     ),
                     const SizedBox(width: AppDimensions.space12),
                     Text(
-                      '${_controller.index + 1}/${_controller.total}',
+                      AppStrings.quizProgress(_controller.index + 1, _controller.total),
                       style: AppTypography.bodyBold,
                     ),
                   ],
@@ -187,7 +188,7 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
                           Padding(
                             padding: const EdgeInsets.only(bottom: AppDimensions.space12),
                             child: Text(
-                              'Luyện lại các từ đã làm sai',
+                              AppStrings.quizRetryBanner,
                               style: AppTypography.labelSmall.copyWith(
                                 color: AppColors.warningOrange,
                               ),
