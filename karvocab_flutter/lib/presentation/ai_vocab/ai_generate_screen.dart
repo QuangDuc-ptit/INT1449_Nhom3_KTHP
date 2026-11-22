@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_assets.dart';
@@ -11,6 +12,7 @@ import '../../core/widgets/app_button.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../data/models/ai_vocab_draft.dart';
 import '../../data/repositories/ai_vocab_repository.dart';
+import '../../data/repositories/auth_repository.dart';
 import 'ai_preview_screen.dart';
 
 enum _GenState { idle, loading, error }
@@ -23,7 +25,10 @@ class AiGenerateScreen extends StatefulWidget {
   /// Học phần đích chọn sẵn ở Màn 14 (mở từ Màn 06 của FE1). `null` = tạo học phần mới.
   final String? initialCollectionId;
 
-  const AiGenerateScreen({super.key, this.repository, this.initialCollectionId});
+  /// Tài khoản đang dùng, để áp hạn mức lượt AI theo loại tài khoản (Màn 15).
+  final AuthRepository? authRepository;
+
+  const AiGenerateScreen({super.key, this.repository, this.initialCollectionId, this.authRepository});
 
   /// Chuyển `errorCode` của BE thành thông báo tiếng Việt cho Màn 13.
   @visibleForTesting
@@ -31,9 +36,7 @@ class AiGenerateScreen extends StatefulWidget {
     switch (e.errorCode) {
       case 'RATE_LIMITED':
         final s = e.retryAfterSeconds;
-        return s == null
-            ? AppStrings.aiErrorRateLimited
-            : AppStrings.aiErrorRateLimitedSeconds(s);
+        return s == null ? AppStrings.aiErrorRateLimited : AppStrings.aiErrorRateLimitedSeconds(s);
       case 'AI_TIMEOUT':
         return AppStrings.aiErrorTimeout;
       case 'AI_BAD_RESPONSE':
@@ -51,8 +54,7 @@ class AiGenerateScreen extends StatefulWidget {
   State<AiGenerateScreen> createState() => _AiGenerateScreenState();
 }
 
-class _AiGenerateScreenState extends State<AiGenerateScreen>
-    with SingleTickerProviderStateMixin {
+class _AiGenerateScreenState extends State<AiGenerateScreen> with SingleTickerProviderStateMixin {
   static const int _maxTopicLength = 100;
   static const int _minWords = 3;
   static const int _maxWords = 20;
@@ -71,10 +73,7 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
   void initState() {
     super.initState();
     _repo = widget.repository ?? MockAiVocabRepository();
-    _shimmer = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1100),
-    );
+    _shimmer = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100));
   }
 
   @override
@@ -84,22 +83,30 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
     super.dispose();
   }
 
+  AuthRepository get _auth => widget.authRepository ?? AuthRepository.instance;
+
   bool get _canGenerate => _topicController.text.trim().isNotEmpty;
 
   Future<void> _generate() async {
     if (!_canGenerate) return;
     FocusScope.of(context).unfocus();
+    final limit = _auth.activePlan?.aiDailyLimit;
+    if (limit != null && _auth.aiRemainingToday == 0) {
+      setState(() {
+        _state = _GenState.error;
+        _errorMessage = AppStrings.aiQuotaExceeded(limit);
+      });
+      return;
+    }
     setState(() => _state = _GenState.loading);
     _shimmer.repeat(reverse: true);
 
     try {
       final List<AiVocabDraft> drafts = await _repo
-          .generate(
-            topic: _topicController.text.trim(),
-            cefrLevel: _level,
-            wordCount: _count,
-          )
+          .generate(topic: _topicController.text.trim(), cefrLevel: _level, wordCount: _count)
           .timeout(const Duration(seconds: 15));
+      // Chỉ tính lượt khi AI trả kết quả thành công.
+      _auth.recordAiGeneration();
       if (!mounted) return;
       _shimmer.stop();
       setState(() => _state = _GenState.idle);
@@ -135,9 +142,7 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(AppStrings.aiGenerateTitle, style: AppTypography.headingMedium),
-      ),
+      appBar: AppBar(title: Text(AppStrings.aiGenerateTitle, style: AppTypography.headingMedium)),
       body: SafeArea(
         child: switch (_state) {
           _GenState.loading => _buildLoading(),
@@ -152,11 +157,7 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
     return Column(
       children: [
         Expanded(
-          child: ErrorStateWidget(
-            title: AppStrings.aiErrorTitle,
-            errorMessage: _errorMessage,
-            onRetry: _generate,
-          ),
+          child: ErrorStateWidget(title: AppStrings.aiErrorTitle, errorMessage: _errorMessage, onRetry: _generate),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(
@@ -190,10 +191,7 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
           const SizedBox(height: AppDimensions.space12),
           Text(AppStrings.aiLoadingTitle, style: AppTypography.headingMedium),
           const SizedBox(height: AppDimensions.space4),
-          Text(
-            AppStrings.aiLoadingSubtitle(_count, _level),
-            style: AppTypography.bodyMedium,
-          ),
+          Text(AppStrings.aiLoadingSubtitle(_count, _level), style: AppTypography.bodyMedium),
           const SizedBox(height: AppDimensions.space24),
           for (var i = 0; i < 4; i++) ...[
             AnimatedBuilder(
@@ -298,11 +296,7 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
                   ),
                   SizedBox(
                     width: 80,
-                    child: Text(
-                      '$_count',
-                      textAlign: TextAlign.center,
-                      style: AppTypography.headingLarge,
-                    ),
+                    child: Text('$_count', textAlign: TextAlign.center, style: AppTypography.headingLarge),
                   ),
                   _StepButton(
                     icon: Icons.add_rounded,
@@ -311,13 +305,16 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
                   ),
                 ],
               ),
-              const SizedBox(height: AppDimensions.space16),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(AppStrings.aiSimulateFailure, style: AppTypography.bodyMedium),
-                value: MockAiVocabRepository.simulateFailure,
-                onChanged: (v) => setState(() => MockAiVocabRepository.simulateFailure = v),
-              ),
+              // Công cụ kiểm thử Error State: chỉ hiện ở bản debug, ẩn ở bản phát hành.
+              if (kDebugMode) ...[
+                const SizedBox(height: AppDimensions.space16),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(AppStrings.aiSimulateFailure, style: AppTypography.bodyMedium),
+                  value: MockAiVocabRepository.simulateFailure,
+                  onChanged: (v) => setState(() => MockAiVocabRepository.simulateFailure = v),
+                ),
+              ],
             ],
           ),
         ),
@@ -328,14 +325,45 @@ class _AiGenerateScreenState extends State<AiGenerateScreen>
             AppDimensions.screenMargin,
             AppDimensions.space16,
           ),
-          child: AppButton(
-            text: AppStrings.aiGenerateButton,
-            icon: const Icon(Icons.auto_awesome_rounded, color: AppColors.white, size: 20),
-            isEnabled: _canGenerate,
-            onPressed: _generate,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AppButton(
+                text: AppStrings.aiGenerateButton,
+                icon: const Icon(Icons.auto_awesome_rounded, color: AppColors.white, size: 20),
+                isEnabled: _canGenerate,
+                onPressed: _generate,
+              ),
+              _AiQuotaLabel(auth: _auth),
+            ],
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Dòng "Còn x/y lượt tạo từ bằng AI hôm nay" (ẩn với gói không giới hạn).
+class _AiQuotaLabel extends StatelessWidget {
+  final AuthRepository auth;
+
+  const _AiQuotaLabel({required this.auth});
+
+  @override
+  Widget build(BuildContext context) {
+    final limit = auth.activePlan?.aiDailyLimit;
+    final remaining = auth.aiRemainingToday;
+    if (limit == null || remaining == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: AppDimensions.space8),
+      child: Text(
+        AppStrings.aiQuotaRemaining(remaining, limit),
+        key: const Key('ai_quota'),
+        style: AppTypography.quizCaption.copyWith(
+          color: remaining == 0 ? AppColors.errorRed : AppColors.practiceTextSecondary,
+        ),
+        textAlign: TextAlign.center,
+      ),
     );
   }
 }
@@ -346,22 +374,14 @@ class _Pill extends StatelessWidget {
   final bool expand;
   final VoidCallback onTap;
 
-  const _Pill({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.expand = false,
-  });
+  const _Pill({required this.label, required this.selected, required this.onTap, this.expand = false});
 
   @override
   Widget build(BuildContext context) {
     return Material(
       color: selected ? AppColors.softBlueSurface : AppColors.white,
       shape: StadiumBorder(
-        side: BorderSide(
-          color: selected ? AppColors.primaryBlue : AppColors.borderLight,
-          width: 1.5,
-        ),
+        side: BorderSide(color: selected ? AppColors.primaryBlue : AppColors.borderLight, width: 1.5),
       ),
       child: InkWell(
         customBorder: const StadiumBorder(),
@@ -394,31 +414,26 @@ class _StepButton extends StatelessWidget {
   final String tooltip;
   final VoidCallback? onPressed;
 
-  const _StepButton({
-    required this.icon,
-    required this.tooltip,
-    required this.onPressed,
-  });
+  const _StepButton({required this.icon, required this.tooltip, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null;
     return Material(
-      color: enabled ? AppColors.primaryBlue : AppColors.borderLight,
+      color: enabled ? AppColors.white : AppColors.background,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+        side: BorderSide(color: enabled ? AppColors.primaryBlue : AppColors.borderLight),
       ),
       child: InkWell(
-        customBorder: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        ),
+        customBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimensions.radiusButton)),
         onTap: onPressed,
         child: Tooltip(
           message: tooltip,
           child: SizedBox(
             width: AppDimensions.buttonHeight,
             height: AppDimensions.buttonHeight,
-            child: Icon(icon, color: enabled ? AppColors.white : AppColors.textMuted),
+            child: Icon(icon, color: enabled ? AppColors.primaryBlue : AppColors.textMuted),
           ),
         ),
       ),
