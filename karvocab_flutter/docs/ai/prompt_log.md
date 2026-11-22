@@ -297,10 +297,12 @@
 - "Tôi không muốn phân quyền tài khoản theo Thường, Vip, Plus nữa, xoá đi; ngoài ra design lại giao diện thư viện cho đẹp."
 - "Mấy cái mục tiêu học tập hằng ngày, nhắc nhở ôn tập, ngôn ngữ giao diện có cần thiết không?" → AI đối chiếu FE spec và code, đề xuất: bỏ Ngôn ngữ (chưa có đa ngôn ngữ, chọn English không có tác dụng), nối Mục tiêu vào Trang chủ, giữ Nhắc nhở. Nhóm đồng ý.
 - "Các text 'Xin chào, Karmate!', 'Thư viện', 'Luyện tập', 'Hồ sơ cá nhân' cùng font size, cùng màu, cùng vị trí."
+- "Chỗ chi tiết từ vựng xoá cái giọng US hoặc giọng UK đi."
 
 #### 2. Kết quả & Đóng góp của AI:
 - Xoá `AccountPlan` và toàn bộ hạn mức (lượt AI / ngày, 500 từ); Màn 15 bỏ chip gói, dòng Loại tài khoản, khối Quyền lợi gói. Mã ID và ngày sinh giữ nguyên.
 - Màn 05 Thư viện làm lại: thẻ tổng quan (từ đã thuộc / tổng, số học phần), icon và màu theo chủ đề, tên học phần 2 dòng, lưới 2–3 cột trên màn rộng, trạng thái trống có linh vật + nút Tạo học phần, không tìm thấy có nút Xoá bộ lọc.
 - Cài đặt bỏ mục Ngôn ngữ giao diện; Trang chủ thêm thẻ "Mục tiêu hôm nay" (số từ đã ôn / mục tiêu, đổi màu khi đạt).
 - Widget `TabHeader` dùng chung cho 4 tab: cùng kiểu chữ `AppTypography.tabTitle`, cùng lề và chiều cao; Hồ sơ bỏ AppBar.
+- Màn 07 bỏ 2 nút chọn giọng UK / US (nút loa đọc giọng UK mặc định); xoá token không còn dùng.
 - `flutter analyze` 0 error / 0 warning; `flutter test` 140/140 pass.
