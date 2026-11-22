@@ -264,3 +264,25 @@
 - Splash: logo 184dp, chữ ExtraBold; `kotlin.incremental=false` sửa lỗi build khi project và pub cache khác ổ đĩa.
 - Dọn code: xoá toàn bộ emoji, đưa chuỗi viết thẳng của Track B vào `AppStrings`, xoá file và token không dùng, sắp xếp import.
 - `flutter analyze` 0 error / 0 warning; `flutter test` 126/126 pass.
+
+---
+
+### Phiên làm việc ngày 22/11/2026 (tối): Hồ sơ, loại tài khoản, Chi tiết từ, rà soát giao diện
+
+> Công cụ: Claude Code (Anthropic).
+
+#### 1. Yêu cầu đầu vào (Prompts):
+- "Giao diện huy hiệu thành tựu có nên bỏ không" → nhóm quyết định bỏ.
+- "Sửa giao diện hồ sơ cá nhân": ảnh đại diện, mã ID `KM` + YYMMDD + số thứ tự (không sửa được), email (không sửa được), ngày sinh DD/MM/YYYY, loại tài khoản Thường / Plus / Vip kèm hạn mức. AI hỏi lại 3 điểm, nhóm chọn: số thứ tự quá 99 thì thành 3 chữ số; hỏi ngày sinh khi đăng ký, sửa được ở Cài đặt; hiển thị và chặn hạn mức ngay trong app.
+- "Hãy chỉ ra những giao diện thiết kế kém chuyên nghiệp và sửa lại", "sửa tiếp cả 4 mục".
+- "Sửa lại giao diện tạo từ thủ công đang không responsive, sửa giao diện chi tiết từ và chỉnh sửa" (kèm prompt tham khảo 393 × 852).
+- "Hạn chế các title nhỏ giải thích cho tên lớn"; "thêm ô từ đồng nghĩa / trái nghĩa, nhấn cách thì thành thẻ có dấu × để xoá".
+
+#### 2. Kết quả & Đóng góp của AI:
+- Màn 15 Hồ sơ làm lại: bỏ huy hiệu (`BadgeRules`), thêm khối Thông tin tài khoản, Quyền lợi gói (lượt AI hôm nay, số từ đã lưu), Thành tựu. `AccountPlan` (Thường 3 lượt AI/ngày + 500 từ, Plus dùng thử 30 ngày + 10 lượt, Vip không giới hạn), `MemberId.generate`, `AuthRepository.updateBirthDate` / `recordAiGeneration` / `wordLimitError`.
+- Màn 03 Đăng ký: thêm ô ngày sinh bắt buộc, nối nút Đăng ký (trước đây chưa có hành động). Cài đặt thêm dòng Ngày sinh. Màn 13 / 14 / 24 chặn khi hết lượt AI hoặc vượt 500 từ. Backend cần thêm `birthDate`, `memberId`, `plan`, `planExpiresAt`, bộ đếm lượt AI và tự kiểm tra lại hạn mức.
+- Rà soát 12 màn bằng ảnh chụp: sửa tràn 36px ở Cài đặt, bỏ chữ kỹ thuật ("Localization", "Rubric INT1449", "MVP"), nút Đăng xuất đỏ đồng bộ, từ loại thống nhất nhãn tiếng Việt, ẩn công tắc "Mô phỏng lỗi AI" ở bản phát hành.
+- Thống nhất một màu nút chính `AppColors.actionPrimary` (#0066CC, tương phản 5,6:1 với chữ trắng); gộp thẻ nhắc ôn tập và nút "Bắt đầu ôn tập" ở Trang chủ; tiêu đề màn con căn giữa qua `AppTheme`; thêm font `NotoSansIPA` (bản rút gọn, giấy phép OFL) làm font dự phòng để phiên âm hiện đủ ký tự.
+- Màn 07 Chi tiết từ làm lại (thẻ từ, nút phát âm vuông, nghĩa, ví dụ, đồng nghĩa / trái nghĩa, nút xoá dạng chữ); Màn 09 / 24 dùng chung đầu trang, giãn theo chiều rộng (tối đa 600px), thêm ô thẻ đồng nghĩa / trái nghĩa (`TagInputField`).
+- Bỏ các dòng mô tả lặp lại tiêu đề (thẻ trò chơi, Cài đặt, Hồ sơ, đầu trang màn từ vựng).
+- `flutter analyze` 0 error / 0 warning; `flutter test` 140/140 pass.
