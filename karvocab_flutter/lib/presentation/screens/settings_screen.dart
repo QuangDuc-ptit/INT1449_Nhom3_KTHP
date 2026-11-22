@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
-import '../../core/constants/app_durations.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/date_format.dart';
@@ -39,7 +38,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late int _dailyGoal;
   late bool _isNotifEnabled;
   late String _reminderTime;
-  String _selectedLanguage = 'vi'; // 'vi' hoặc 'en'
 
   AuthRepository get _auth => widget.authRepository ?? AuthRepository.instance;
   ReminderService get _reminders => widget.reminderService ?? ReminderService.instance;
@@ -162,9 +160,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Số từ cần ôn mỗi ngày', style: AppTypography.bodyBold),
-                          ],
+                          children: [Text('Số từ cần ôn mỗi ngày', style: AppTypography.bodyBold)],
                         ),
                       ),
 
@@ -286,52 +282,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             const SizedBox(height: AppDimensions.space24),
 
-            // Section 3: Ngôn ngữ & Giao diện (Điểm cộng Rubric +2)
-            _buildSectionHeader('Ngôn ngữ giao diện'),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space16, vertical: AppDimensions.space8),
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-                border: Border.all(color: AppColors.borderLight),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.language_rounded, color: AppColors.primaryBlue),
-                      const SizedBox(width: AppDimensions.space12),
-                      Text('Ngôn ngữ hiển thị', style: AppTypography.bodyBold),
-                    ],
-                  ),
-                  DropdownButton<String>(
-                    value: _selectedLanguage,
-                    underline: const SizedBox(),
-                    items: const [
-                      DropdownMenuItem(value: 'vi', child: Text('Tiếng Việt')),
-                      DropdownMenuItem(value: 'en', child: Text('English')),
-                    ],
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() => _selectedLanguage = val);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(val == 'vi' ? 'Đã chọn Tiếng Việt' : 'Switched to English language'),
-                            duration: AppDurations.snackShort,
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: AppDimensions.space24),
-
-            // Section 4: Tài khoản & Bảo mật
+            // Section 3: Tài khoản & Bảo mật
             _buildSectionHeader('Tài khoản & Bảo mật'),
             // Material (thay vì Container có màu nền) để ListTile vẽ được hiệu ứng bấm
             Material(
