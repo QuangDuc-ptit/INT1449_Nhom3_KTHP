@@ -34,6 +34,9 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  audioplayers: ^6.8.1
+  flutter_tts: ^4.2.5
+  speech_to_text: ^7.5.0
 
 dev_dependencies:
   flutter_test:
@@ -86,6 +89,8 @@ flutter:
   # Logo app (linh vật Axolotl) — dùng cho màn khởi động
   assets:
     - assets/images/logoapp.webp
+    # Âm thanh phản hồi đúng / sai khi làm quiz (tự tạo bằng script, không bản quyền)
+    - assets/sounds/
 
   # Font Nunito (Google Fonts, giấy phép OFL — xem assets/fonts/OFL.txt).
   # Tên family "Nunito" trùng với AppTypography.fontFamily.

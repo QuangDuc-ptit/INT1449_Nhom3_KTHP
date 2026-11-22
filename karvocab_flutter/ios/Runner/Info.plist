@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>KarVocab cần micro để chấm điểm phát âm của bạn.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>KarVocab dùng nhận dạng giọng nói để kiểm tra bạn phát âm đúng từ.</string>
 </dict>
 </plist>

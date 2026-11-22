@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Game "Luyện phát âm": thu giọng để nhận dạng (speech_to_text). -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <application
         android:label="karvocab_flutter"
         android:name="${applicationName}"
@@ -40,6 +42,13 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- Android 11+: cần khai báo để tìm được dịch vụ nhận dạng giọng nói và đọc văn bản. -->
+        <intent>
+            <action android:name="android.speech.RecognitionService"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE"/>
         </intent>
     </queries>
 </manifest>
