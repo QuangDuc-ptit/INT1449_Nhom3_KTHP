@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+
+import '../../core/constants/app_assets.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_durations.dart';
@@ -13,7 +16,7 @@ import 'main_shell_screen.dart';
 ///
 /// Gồm 2 lớp nối tiếp nhau:
 /// 1. Splash native của Android (androidx core-splashscreen, xem
-///    MainActivity.kt + res/values/styles.xml): nền #F5FAFE, logo 160dp ở giữa.
+///    MainActivity.kt + res/values/styles.xml): nền #F5FAFE, logo 184dp ở giữa.
 /// 2. Màn này: cùng nền, logo cùng vị trí/kích thước, thêm chữ "KarVocab"
 ///    gần đáy — nên khi native splash biến mất, logo không bị nhảy.
 ///
@@ -24,10 +27,11 @@ class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   /// Đường dẫn asset logo, khai báo trong pubspec.yaml
-  static const String logoAsset = 'assets/images/logoapp.webp';
+  static const String logoAsset = AppAssets.logo;
 
-  /// Logo rộng 160dp — khớp với res/drawable/splash_icon.xml (288dp − 2×64dp)
-  static const double logoSize = 160;
+  /// Logo rộng 184dp — khớp với res/drawable/splash_icon.xml (khung 288dp, lề 52dp mỗi bên).
+  /// Không nên vượt ~189dp: Android 12+ chỉ hiện icon splash trong vòng tròn 192dp.
+  static const double logoSize = 184;
 
   /// Thời gian hiển thị tối thiểu
   static const Duration minDisplay = Duration(milliseconds: 1500);

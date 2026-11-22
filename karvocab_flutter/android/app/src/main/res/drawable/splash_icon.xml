@@ -2,7 +2,7 @@
 <!-- Icon cho Android SplashScreen API (Màn 01 · Splash native).
      Hệ thống vẽ icon (không có icon background) trong khung 288dp × 288dp.
      splash_logo.png (864px = 288dp @3x, drawable-nodpi) đã chừa sẵn lề trong
-     suốt: logo ở giữa rộng 160dp, trùng SplashScreen.logoSize bên Flutter để
+     suốt: logo ở giữa rộng 184dp (≤ vòng tròn hiển thị 192dp), trùng SplashScreen.logoSize bên Flutter để
      logo không bị nhảy khi chuyển từ splash native sang splash Flutter.
      Ảnh được tạo từ drawable/logoapp.webp — đổi logo thì tạo lại ảnh này. -->
 <bitmap xmlns:android="http://schemas.android.com/apk/res/android"

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Màn 01 · Splash native (androidx core-splashscreen, chạy cả Android < 12).
-         Nền #F5FAFE, logo 160dp ở giữa. MainActivity giữ splash này đến khi
+         Nền #F5FAFE, logo 184dp ở giữa. MainActivity giữ splash này đến khi
          Flutter vẽ xong frame đầu (đã có logo cùng vị trí) rồi mới ẩn. -->
     <style name="LaunchTheme" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
