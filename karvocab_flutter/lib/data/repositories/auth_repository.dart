@@ -48,6 +48,10 @@ class AuthRepository extends ChangeNotifier {
   static const String demoEmail = 'learner@karvocab.com';
   static const String demoPassword = 'Karvocab1';
 
+  /// Tài khoản test nội bộ của nhóm (không hiển thị trên giao diện).
+  static const String testEmail = 'admin@123';
+  static const String testPassword = '123456';
+
   /// Thời hạn hiệu lực của mã OTP.
   static const Duration otpLifetime = Duration(minutes: 5);
 
@@ -56,6 +60,7 @@ class AuthRepository extends ChangeNotifier {
 
   final Map<String, _Account> _accounts = {
     demoEmail: _Account(fullName: 'Nguyễn Văn A', password: demoPassword),
+    testEmail: _Account(fullName: 'Admin', password: testPassword),
   };
   final Map<String, _OtpTicket> _otpTickets = {};
 
@@ -193,7 +198,8 @@ class AuthRepository extends ChangeNotifier {
   void debugReset() {
     _accounts
       ..clear()
-      ..[demoEmail] = _Account(fullName: 'Nguyễn Văn A', password: demoPassword);
+      ..[demoEmail] = _Account(fullName: 'Nguyễn Văn A', password: demoPassword)
+      ..[testEmail] = _Account(fullName: 'Admin', password: testPassword);
     _otpTickets.clear();
     _currentUser = null;
     _isDemo = false;

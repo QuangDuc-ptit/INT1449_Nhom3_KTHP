@@ -187,3 +187,57 @@
 - `lib/data/repositories/`: `quiz_question_factory`, `dashboard_store` (SM-2 theo BE-SPEC 4.1), `ai_vocab_repository` (mock + công tắc giả lập lỗi), `collection_bridge`.
 - `lib/presentation/quiz/`, `dashboard/`, `ai_vocab/`; `test/track_b_quiz_test.dart` (14 test).
 - Sửa duy nhất 1 file chung: `main_shell_screen.dart` (thay 2 placeholder bằng `HomeScreen` và `PracticeModeScreen`).
+
+---
+
+### Phiên làm việc ngày 20/11/2026 (Phiên 7): Thiết kế lại màn Thư viện (Màn 05)
+
+> Công cụ: Claude Code (Anthropic).
+
+#### 1. Yêu cầu đầu vào (Prompts):
+- Thiết kế lại tab Thư viện theo mô tả chi tiết của nhóm (gọn, ít chữ): tiêu đề, ô tìm kiếm có nút xoá, hàng chip lọc cuộn ngang lấy từ `categories`, thẻ học phần (icon sách · tên + trình độ + số từ · vòng tiến độ %), 2 trạng thái trống. Chỉ frontend; không hardcode; màn nhận `LibraryUiState(query, categories, selectedCategoryId, courses)`; lọc làm ở state holder; dữ liệu mẫu riêng `LibrarySampleData`; 3 Preview.
+- Nhóm chốt (AI hỏi lại trước khi làm): thêm trường `level` cho học phần; giữ Loading (khung xương) + Error ("Thử lại") theo rubric; giữ nút "+" tạo học phần cạnh tiêu đề.
+
+#### 2. Kết quả & Đóng góp của AI:
+- `CollectionModel` thêm `level` (mặc định B1, dữ liệu mẫu B2/A2/B1).
+- Tạo `library_ui_state.dart` (`Category`, `Course.progressPercent`, `LibraryUiState` + trạng thái tải), `library_sample_data.dart`, `library_controller.dart` (lọc qua `store.search`, debounce 300ms, xoá chữ thì hiện lại ngay), widget `CourseProgressRing` (vẽ bằng CustomPainter).
+- `library_screen.dart` tách `LibraryScreen` (nối store, điều hướng, Màn 22) và `LibraryView` (chỉ UI), 3 `@Preview`. Chip cao 36dp nhưng vùng chạm 48dp.
+- Sửa 2 test Màn 05 fail từ trước: nguyên nhân là `pump()` không thời lượng không chạy timer `Future.delayed(Duration.zero)` → dùng `pump(1ms)`.
+- Thêm `test/library_screen_test.dart` (10 test). `flutter analyze` 0 error / 0 warning; `flutter test` 79/79 pass.
+
+---
+
+### Phiên làm việc ngày 21/11/2026: Merge code nhóm & nối Track A (FE1) với Track B (FE2)
+
+> Công cụ: Claude Code (Anthropic).
+
+#### 1. Yêu cầu đầu vào (Prompts):
+- "Cập nhật tiếp các push của thành viên khác đã push lên" → merge `main` (backend) và `feature/fe2-track-b` vào `feature/fe1-track-a`.
+- "FE2 đã làm xong nhiệm vụ của họ chưa?" → đối chiếu code FE2 với FE spec §4, §5.2.
+- "Nối các task của FE2 với FE1 sao cho không còn bị conflict." Nhóm chốt (AI hỏi lại): giữ Trang chủ giao diện FE1; lối vào Màn 13 đặt ở nút "Thêm từ" của Màn 06.
+
+#### 2. Kết quả & Đóng góp của AI:
+- Merge: giải conflict `main_shell_screen.dart` (Trang chủ FE1 + tab Luyện tập `PracticeModeScreen` của FE2), `settings.gradle.kts` (giữ AGP 9.3.1 / Kotlin 2.4.20), `prompt_log.md` (giữ cả hai phiên).
+- `CollectionBridge` (FE2 gọi) chuyển phần bên trong sang `CollectionStore` của FE1 đúng hợp đồng §5.1, chữ ký giữ nguyên: lưu từ AI xong Thư viện cập nhật ngay, từ có id, tên học phần trùng tự thêm hậu tố.
+- `HomeStateBuilder`: Trang chủ FE1 lấy số liệu thật (tổng từ, học phần từ `CollectionStore`; streak, từ cần ôn, số từ ôn hôm nay từ `DashboardStore`). Các ngày trước trong biểu đồ tuần vẫn dùng dữ liệu mẫu vì chưa có API thống kê tuần.
+- `MainShellScreen`: "Bắt đầu ôn tập" / thẻ "Từ cần ôn" → Màn 16; bấm học phần → Màn 06.
+- Màn 06: nút "Thêm từ" mở lựa chọn Thêm thủ công (Màn 24) / Tạo bằng AI (Màn 13, chọn sẵn học phần đang xem); lưu xong quay về Màn 06 theo luồng §3.2.
+- `TrackSync` (gọi ở `main()`): mục tiêu ngày Cài đặt → `DashboardStore`; streak sau quiz → hồ sơ (Màn 15). Giới hạn mục tiêu ở Cài đặt đổi 50 → 30 cho khớp BE.
+- Sửa nhỏ trong file FE2 (chỉ thêm tham số tuỳ chọn): `AiGenerateScreen`/`AiPreviewScreen` nhận `initialCollectionId`, Màn 14 trả `true` thay vì `popUntil`; Màn 10 đổi `Row` → `Wrap` để không tràn layout.
+- Thêm `test/track_integration_test.dart` (4 test). `flutter analyze` 0 error / 0 warning; `flutter test` 105/105 pass.
+
+---
+
+### Phiên làm việc ngày 22/11/2026: Kiểm tra lỗi & thêm tài khoản test
+
+> Công cụ: Claude Code (Anthropic).
+
+#### 1. Yêu cầu đầu vào (Prompts):
+- "Còn lỗi gì không, trình chiếu giao diện lên cho tôi" → chạy `flutter analyze`, `flutter test`, mở app trên Chrome.
+- "Tạo một tài khoản test admin@123 / 123456 để đăng nhập, không cần hiện text ở giao diện đăng nhập."
+- Hỏi về phân công FE/BE: AI đối chiếu FE spec, việc tích hợp API thật thuộc FE ở Sprint 3 (`DEV1-S3-05`, `DEV2-S3-05`).
+
+#### 2. Kết quả & Đóng góp của AI:
+- `flutter analyze` 0 error / 0 warning (còn info deprecate `material.dart` của SDK mới); bỏ import thừa `foundation.dart` ở Màn 13.
+- `AuthRepository` thêm `testEmail` / `testPassword` (`admin@123` / `123456`), có cả trong `debugReset()`; màn Đăng nhập không hiển thị gợi ý.
+- Thêm 1 unit test đăng nhập bằng tài khoản test. `flutter test` 106/106 pass.
