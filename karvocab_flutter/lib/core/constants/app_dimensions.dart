@@ -24,7 +24,6 @@ class AppDimensions {
 
   // Border Radius
   static const double radiusTiny = 2.0;
-  static const double radiusXSmall = 4.0;
   static const double radiusSmall = 8.0;
   static const double radiusMedium = 12.0;
   static const double radiusButton = 16.0;
@@ -38,7 +37,6 @@ class AppDimensions {
   static const double iconSmall = 20.0;
   static const double iconSocial = 22.0;
   static const double iconMedium = 24.0;
-  static const double iconFeature = 26.0;
   static const double iconLarge = 28.0;
   static const double iconDialog = 30.0;
   static const double iconState = 40.0;
@@ -59,18 +57,12 @@ class AppDimensions {
   static const double emptyActionWidth = 220.0;
   static const double retryButtonWidth = 200.0;
 
-  // Nhãn nhỏ dạng viên thuốc (CEFR, chủ đề, cấp độ huy hiệu)
+  // Nhãn nhỏ dạng viên thuốc (CEFR, chủ đề)
   static const double chipPaddingH = space10;
   static const double chipPaddingV = space3;
 
   // Ô icon / avatar
-  static const double badgeIconBoxSize = 48.0;
   static const double dialogIconBoxSize = 56.0;
-  static const double avatarSize = 72.0;
-  static const double audioButtonSize = 52.0;
-
-  // Thanh tiến độ / độ mạnh mật khẩu
-  static const double badgeProgressHeight = 5.0;
 
   // Sóng âm (SoundWaveIndicator)
   static const double soundWaveBarWidth = 3.0;
@@ -152,12 +144,6 @@ class AppDimensions {
   // Độ mờ (alpha) dùng chung
   /// Nền nhạt phía sau icon (ô icon lỗi, ô icon thống kê, hộp thoại xoá).
   static const double tintOpacity = 0.12;
-  /// Viền nhấn mạnh nhạt (thẻ huy hiệu đã mở khoá).
-  static const double accentBorderOpacity = 0.3;
-  /// Nền ô icon huy hiệu chưa mở khoá.
-  static const double halfOpacity = 0.5;
-  /// Nền thẻ huy hiệu chưa mở khoá.
-  static const double lockedSurfaceOpacity = 0.6;
   /// Độ mờ thấp nhất của hiệu ứng nhấp nháy skeleton.
   static const double skeletonMinOpacity = 0.45;
 
@@ -261,7 +247,9 @@ class AppDimensions {
   // Màn 09 · Sửa từ vựng / Màn 24 · Thêm từ vựng (thiết kế gốc 393 × 852)
   // ---------------------------------------------------------------------------
   /// Trên màn rộng, form căn giữa với bề rộng tối đa bằng khung thiết kế.
-  static const double wordFormMaxWidth = 393.0;
+  /// Màn Thêm/Sửa/Chi tiết từ: điện thoại dùng hết chiều rộng, máy tính bảng/web
+  /// giới hạn để dòng chữ và ô nhập không bị kéo quá dài.
+  static const double wordFormMaxWidth = 600.0;
   static const double wordFormHorizontalPadding = 22.0;
   static const double wordFormFieldHeight = 52.0;
   static const double wordFormFieldRadius = 14.0;
@@ -274,4 +262,46 @@ class AppDimensions {
   static const double wordFormSaveRadius = 16.0;
   /// Khoảng trống dưới nút lưu.
   static const double wordFormBottomSpace = 32.0;
+
+  // ---------------------------------------------------------------------------
+  // Màn 15 · Hồ sơ cá nhân
+  // ---------------------------------------------------------------------------
+  static const double profileMaxWidth = 600.0;
+  static const double profileAvatarSize = 88.0;
+  static const double profileAvatarBorder = 3.0;
+  static const double profileRowMinHeight = 56.0;
+  static const double profileUsageBarHeight = 6.0;
+  static const double profileStatIconBox = 36.0;
+
+  // ---------------------------------------------------------------------------
+  // Màn 07 · Chi tiết từ vựng
+  // ---------------------------------------------------------------------------
+  static const double wordDetailCardRadius = 20.0;
+  static const double wordDetailCardPadding = 20.0;
+  static const double wordDetailSpeakSize = 56.0;
+  static const double wordDetailSpeakRadius = 16.0;
+  static const double wordDetailSectionGap = 30.0;
+  static const double wordDetailBlockGap = 20.0;
+  static const double wordDetailExamplePadding = 18.0;
+  static const double wordDetailChipRadius = 10.0;
+  static const double wordDetailChipHeight = 36.0;
+
+  // Ô nhập dạng thẻ (đồng nghĩa / trái nghĩa)
+  static const double tagHeight = 32.0;
+  static const double tagCloseIcon = 16.0;
+  static const double tagInputMinWidth = 80.0;
+
+  // Token cũ còn được màn hình chưa cập nhật dùng; xoá ở commit dọn dẹp.
+  static const double radiusXSmall = 4.0;
+  static const double iconFeature = 26.0;
+  static const double badgeIconBoxSize = 48.0;
+  static const double avatarSize = 72.0;
+  static const double audioButtonSize = 52.0;
+  static const double badgeProgressHeight = 5.0;
+  /// Viền nhấn mạnh nhạt (thẻ huy hiệu đã mở khoá).
+  static const double accentBorderOpacity = 0.3;
+  /// Nền ô icon huy hiệu chưa mở khoá.
+  static const double halfOpacity = 0.5;
+  /// Nền thẻ huy hiệu chưa mở khoá.
+  static const double lockedSurfaceOpacity = 0.6;
 }

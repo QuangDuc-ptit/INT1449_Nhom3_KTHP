@@ -46,7 +46,7 @@ class AppStrings {
   static const String navProfile = 'Cá nhân';
 
   // Màn 04 · Trang chủ
-  static String homeGreeting(String userName) => 'Xin chào, $userName!';
+  static const String homeGreetingPrefix = 'Xin chào,';
   static const String homeNotificationsTooltip = 'Thông báo';
 
   static const String homeStatTotalWords = 'Tổng số từ';
@@ -118,6 +118,57 @@ class AppStrings {
   static const String practiceOrderRandom = 'Ngẫu nhiên';
   static const String practiceGamesTitle = 'Danh sách trò chơi';
   static const String practiceSheetDone = 'Xong';
+  // Màn 15 · Hồ sơ cá nhân
+  static const String profileTitle = 'Hồ sơ cá nhân';
+  static const String profileSettingsTooltip = 'Cài đặt tài khoản';
+  static const String profileAccountInfo = 'Thông tin tài khoản';
+  static const String profileMemberId = 'Mã ID';
+  static const String profileEmail = 'Email';
+  static const String profileBirthDate = 'Ngày sinh';
+  static const String profilePlan = 'Loại tài khoản';
+  static const String profileLocked = 'Không thể thay đổi';
+  static const String profileCopyId = 'Sao chép mã ID';
+  static const String profileIdCopied = 'Đã sao chép mã ID';
+  static const String profileNoBirthDate = 'Chưa cập nhật';
+  static const String profileNoMemberId = 'Cập nhật ngày sinh để nhận mã ID';
+  static const String profileEditBirthDate = 'Sửa ngày sinh';
+  static const String profileBirthDateSaved = 'Đã cập nhật ngày sinh';
+  static const String profileBirthDateHelp = 'Chọn ngày sinh';
+  static const String profilePlanBenefits = 'Quyền lợi gói';
+  static const String profileAiToday = 'Tạo từ bằng AI hôm nay';
+  static const String profileSavedWords = 'Từ vựng đã lưu';
+  static const String profileUnlimited = 'Không giới hạn';
+  static String profileUsage(int used, int limit) => '$used/$limit';
+  static String profilePlanExpires(String date, int days) => 'Dùng thử đến $date · còn $days ngày';
+  static const String profileAchievements = 'Thành tựu';
+  static const String profileWordsLearned = 'Từ đã học';
+  static const String profileStreak = 'Chuỗi ngày';
+  static const String profileStreakUnit = 'ngày';
+  static const String profileCollections = 'Học phần';
+  static const String profileMore = 'Tùy chọn khác';
+  static const String profileOpenSettings = 'Cài đặt tài khoản & Mục tiêu';
+  static const String profileHelp = 'Hướng dẫn & Trợ giúp';
+  static const String profileHelpMessage = 'Hệ thống học từ vựng Spaced Repetition (SM-2) KarVocab.';
+
+  // Loại tài khoản
+  static const String planStandard = 'Thường';
+  static const String planPlus = 'Plus';
+  static const String planVip = 'Vip';
+  static String aiQuotaRemaining(int remaining, int limit) => 'Còn $remaining/$limit lượt tạo từ bằng AI hôm nay';
+  static String aiQuotaExceeded(int limit) =>
+      'Bạn đã dùng hết $limit lượt tạo từ bằng AI hôm nay. Hãy quay lại vào ngày mai.';
+  static String wordLimitReached(int limit) =>
+      'Gói Thường chỉ lưu tối đa $limit từ. Hãy xoá bớt từ cũ để thêm từ mới.';
+  static String wordLimitExceeded(int remaining, int limit) =>
+      'Gói Thường chỉ lưu tối đa $limit từ, bạn còn lưu được $remaining từ.';
+
+  // Màn 03 · Đăng ký
+  static const String registerBirthDate = 'Ngày sinh';
+  static const String registerBirthDateHint = 'DD/MM/YYYY';
+  static const String registerBirthDateRequired = 'Vui lòng chọn ngày sinh';
+  static const String registerEmailTaken = 'Email này đã được đăng ký';
+  static const String registerButton = 'Đăng ký';
+
   // Màn 09 · Sửa từ vựng & Màn 24 · Thêm từ vựng
   static const String wordFormEditTitle = 'Sửa từ vựng';
   static const String wordFormAddTitle = 'Thêm từ vựng';
@@ -132,18 +183,36 @@ class AppStrings {
   static const String wordFormExampleHint = 'She stayed resilient through challenges.';
   static const String wordFormLevel = 'Trình độ';
   static const String wordFormNote = 'Ghi chú';
+  static const String wordFormSynonyms = 'Từ đồng nghĩa';
+  static const String wordFormAntonyms = 'Từ trái nghĩa';
+  static const String wordFormTagHint = 'Gõ từ rồi nhấn dấu cách';
+  static String tagRemove(String word) => 'Xoá "$word"';
   static const String wordFormNoteHint = 'Gợi nhớ: đứng dậy sau những khó khăn.';
   static const String wordFormSaveChanges = 'Lưu thay đổi';
   static const String wordFormMeaningRequired = 'Vui lòng nhập nghĩa tiếng Việt';
   static String wordFormDuplicate(String term) => 'Từ "$term" đã có trong học phần này';
-  static const String wordDetailNote = 'Ghi chú';
+
+  // Màn 07 · Chi tiết từ vựng
+  static const String wordDetailTitle = 'Chi tiết từ vựng';
+  static const String wordDetailEdit = 'Sửa từ vựng';
+  static const String wordDetailMeaning = 'NGHĨA TIẾNG VIỆT';
+  static const String wordDetailExample = 'VÍ DỤ SỬ DỤNG';
+  static const String wordDetailNoteLabel = 'GHI CHÚ';
+  static const String wordDetailSynonyms = 'Từ đồng nghĩa';
+  static const String wordDetailAntonyms = 'Từ trái nghĩa';
+  static const String wordDetailDelete = 'Xóa từ vựng';
+  static String wordDetailSpeak(String term) => 'Phát âm từ $term';
+  static String wordDetailAccent(String label) => 'Giọng $label';
+  static String wordDetailUpdated(String term) => 'Đã cập nhật từ "$term"';
+  static String wordDetailDeleted(String term) => 'Đã xoá từ "$term"';
+  static const String wordDetailUndo = 'Hoàn tác';
 
   /// Tên tiếng Việt của các cấp CEFR.
   static const Map<String, String> cefrNames = {
     'A1': 'Mới bắt đầu',
     'A2': 'Sơ cấp',
     'B1': 'Trung cấp',
-    'B2': 'Trung cao cấp',
+    'B2': 'Trên trung cấp',
     'C1': 'Cao cấp',
   };
   static String cefrOption(String level) => '$level · ${cefrNames[level] ?? ''}';
@@ -153,26 +222,16 @@ class AppStrings {
   static const String practiceNoWords = 'Không có từ phù hợp. Hãy đổi học phần hoặc trạng thái từ.';
 
   static const String gamePronunciation = 'Luyện phát âm';
-  static const String gamePronunciationDesc = 'Luyện phát âm bằng AI';
   static const String gameListenType = modeListenType;
-  static const String gameListenTypeDesc = 'Nghe và viết lại từ';
   static const String gameListenChoose = 'Nghe và chọn từ';
-  static const String gameListenChooseDesc = 'Nghe và chọn đáp án';
   static const String gameChooseMeaning = modeMeaningChoose;
-  static const String gameChooseMeaningDesc = modeMeaningChoose;
   static const String gameSynonymAntonym = 'Đồng nghĩa và trái nghĩa';
-  static const String gameSynonymAntonymDesc = 'Phân biệt đồng nghĩa và trái nghĩa';
   static const String gameRecallType = modeRecallType;
-  static const String gameRecallTypeDesc = 'Xem nghĩa và viết lại từ';
 
   static const String modeListenChoose = 'Nghe chọn từ';
   static const String modeListenType = 'Nghe và điền từ';
   static const String modeMeaningChoose = 'Chọn nghĩa đúng';
   static const String modeRecallType = 'Nhớ từ qua nghĩa';
-  static const String modeListenChooseDesc = 'Nghe phát âm rồi chọn từ đúng trong 4 đáp án.';
-  static const String modeListenTypeDesc = 'Nghe phát âm và gõ chính xác chính tả của từ.';
-  static const String modeMeaningChooseDesc = 'Xem từ tiếng Anh, chọn nghĩa tiếng Việt chính xác.';
-  static const String modeRecallTypeDesc = 'Đọc nghĩa tiếng Việt, gõ lại từ tiếng Anh tương ứng.';
 
   // Màn 08 / 19 / 20 / 25 · Làm bài
   static const String quizExitTooltip = 'Thoát';
@@ -181,7 +240,6 @@ class AppStrings {
   static const String quizExitStay = 'Tiếp tục học';
   static const String quizExitLeave = 'Thoát';
   static String quizProgress(int current, int total) => '$current/$total';
-  static const String quizRetryBanner = 'Luyện lại các từ đã làm sai';
   static const String quizNoQuestionsTitle = 'Chưa có câu hỏi nào';
   static const String quizNoQuestionsMessage =
       'Hãy thêm từ vựng vào học phần rồi quay lại luyện tập nhé.';
@@ -211,7 +269,6 @@ class AppStrings {
   static const String speakPermissionDenied = 'Hãy cho phép KarVocab dùng micro để luyện phát âm.';
   static const String speakNoSpeech = 'Chưa nghe rõ, bạn hãy thử nói lại nhé.';
   static const String speakSkip = 'Bỏ qua câu này';
-  static const String feedbackYouSaid = 'Bạn đã nói:';
 
   // Game Đồng nghĩa và trái nghĩa
   static const String quizPromptSynonymAntonym = 'Hai từ này có quan hệ gì với nhau?';
@@ -320,4 +377,20 @@ class AppStrings {
   static String reviewOverdueHours(int h) => 'Quá hạn $h giờ';
   static String reviewOverdueDays(int d) => 'Quá hạn $d ngày';
   static String reviewStart(int count) => 'Bắt đầu ôn $count từ';
+
+  // Token cũ còn được màn hình chưa cập nhật dùng; xoá ở commit dọn dẹp.
+  static String homeGreeting(String userName) => 'Xin chào, $userName!';
+  static const String wordDetailNote = 'Ghi chú';
+  static const String gamePronunciationDesc = 'Luyện phát âm bằng AI';
+  static const String gameListenTypeDesc = 'Nghe và viết lại từ';
+  static const String gameListenChooseDesc = 'Nghe và chọn đáp án';
+  static const String gameChooseMeaningDesc = modeMeaningChoose;
+  static const String gameSynonymAntonymDesc = 'Phân biệt đồng nghĩa và trái nghĩa';
+  static const String gameRecallTypeDesc = 'Xem nghĩa và viết lại từ';
+  static const String modeListenChooseDesc = 'Nghe phát âm rồi chọn từ đúng trong 4 đáp án.';
+  static const String modeListenTypeDesc = 'Nghe phát âm và gõ chính xác chính tả của từ.';
+  static const String modeMeaningChooseDesc = 'Xem từ tiếng Anh, chọn nghĩa tiếng Việt chính xác.';
+  static const String modeRecallTypeDesc = 'Đọc nghĩa tiếng Việt, gõ lại từ tiếng Anh tương ứng.';
+  static const String quizRetryBanner = 'Luyện lại các từ đã làm sai';
+  static const String feedbackYouSaid = 'Bạn đã nói:';
 }

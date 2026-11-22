@@ -6,6 +6,9 @@ import '../constants/app_colors.dart';
 class AppTypography {
   static const String fontFamily = 'Nunito';
 
+  /// Font dự phòng cho ký tự Nunito không có, chủ yếu là phiên âm IPA.
+  static const List<String> fontFamilyFallback = ['NotoSansIPA'];
+
   // Thang cỡ chữ — dùng khi cần `copyWith(fontSize: ...)` trên một style có sẵn.
   static const double fontSize11 = 11.0;
   static const double fontSize12 = 12.0;
@@ -24,6 +27,7 @@ class AppTypography {
   /// Màu tô riêng cho "Kar" / "Vocab" qua TextSpan.
   static const TextStyle brandWordmark = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 28.0,
     fontWeight: FontWeight.w800,
     height: 1.2,
@@ -32,6 +36,7 @@ class AppTypography {
   /// Chữ "KarVocab" ở Màn 02/03 · Đăng nhập / Đăng ký — cùng cỡ với splash, ExtraBold.
   static const TextStyle authWordmark = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 28.0,
     fontWeight: FontWeight.w800,
     height: 1.2,
@@ -39,6 +44,7 @@ class AppTypography {
 
   static const TextStyle displayLarge = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 30.0,
     fontWeight: FontWeight.w800,
     color: AppColors.textPrimary,
@@ -47,6 +53,7 @@ class AppTypography {
 
   static const TextStyle headingLarge = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 23.0,
     fontWeight: FontWeight.w800,
     color: AppColors.textPrimary,
@@ -55,6 +62,7 @@ class AppTypography {
 
   static const TextStyle headingMedium = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 18.0,
     fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
@@ -63,6 +71,7 @@ class AppTypography {
 
   static const TextStyle bodyLarge = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 16.0,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
@@ -71,6 +80,7 @@ class AppTypography {
 
   static const TextStyle bodyMedium = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 15.0,
     fontWeight: FontWeight.w400,
     color: AppColors.textSecondary,
@@ -79,6 +89,7 @@ class AppTypography {
 
   static const TextStyle bodyBold = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 15.0,
     fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
@@ -87,6 +98,7 @@ class AppTypography {
 
   static const TextStyle labelSmall = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 12.0,
     fontWeight: FontWeight.w700,
     color: AppColors.textMuted,
@@ -96,6 +108,7 @@ class AppTypography {
   /// Chữ nhỏ thường (dòng điều khoản cuối màn Đăng nhập / Đăng ký).
   static const TextStyle caption = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 12.0,
     fontWeight: FontWeight.w400,
     color: AppColors.textSecondary,
@@ -109,6 +122,7 @@ class AppTypography {
   /// Lời chào "Xin chào, {tên}!" — 26 ExtraBold.
   static const TextStyle homeGreeting = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 26.0,
     fontWeight: FontWeight.w800,
     color: AppColors.navyBlue,
@@ -118,6 +132,7 @@ class AppTypography {
   /// Số liệu trên thẻ thống kê — 24 Bold.
   static const TextStyle homeStatValue = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 24.0,
     fontWeight: FontWeight.w700,
     color: AppColors.navyBlue,
@@ -127,6 +142,7 @@ class AppTypography {
   /// Nhãn thẻ thống kê — 13 Regular.
   static const TextStyle homeStatLabel = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 13.0,
     fontWeight: FontWeight.w400,
     color: AppColors.homeTextSecondary,
@@ -136,6 +152,7 @@ class AppTypography {
   /// Tiêu đề mục "Học phần của bạn" — 18 Bold.
   static const TextStyle homeSectionTitle = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 18.0,
     fontWeight: FontWeight.w700,
     color: AppColors.navyBlue,
@@ -145,6 +162,7 @@ class AppTypography {
   /// Tiêu đề trong thẻ (biểu đồ tuần, tên học phần) — 16 Bold.
   static const TextStyle homeCardTitle = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 16.0,
     fontWeight: FontWeight.w700,
     color: AppColors.navyBlue,
@@ -154,6 +172,7 @@ class AppTypography {
   /// Chữ thường 14.
   static const TextStyle homeBody = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 14.0,
     fontWeight: FontWeight.w400,
     color: AppColors.homeTextSecondary,
@@ -163,6 +182,7 @@ class AppTypography {
   /// Chữ 14 Bold màu BrandDark (dòng nhắc ôn tập, phần trăm tiến độ).
   static const TextStyle homeBodyBold = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 14.0,
     fontWeight: FontWeight.w700,
     color: AppColors.navyBlue,
@@ -172,6 +192,7 @@ class AppTypography {
   /// Link "Xem tất cả" — 14 SemiBold màu BrandLight.
   static const TextStyle homeLink = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 14.0,
     fontWeight: FontWeight.w600,
     color: AppColors.primaryBlue,
@@ -181,6 +202,7 @@ class AppTypography {
   /// Chữ nhỏ 12.
   static const TextStyle homeSmall = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 12.0,
     fontWeight: FontWeight.w400,
     color: AppColors.homeTextSecondary,
@@ -190,6 +212,7 @@ class AppTypography {
   /// Nhãn trục Y biểu đồ — 11.
   static const TextStyle chartAxisLabel = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 11.0,
     fontWeight: FontWeight.w400,
     color: AppColors.homeTextSecondary,
@@ -198,6 +221,7 @@ class AppTypography {
   /// Số trên chấm thông báo — 11 Bold trắng.
   static const TextStyle notificationBadge = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 11.0,
     fontWeight: FontWeight.w700,
     color: AppColors.white,
@@ -211,6 +235,7 @@ class AppTypography {
   /// Tiêu đề thông báo CHƯA đọc — 15 Bold, BrandDark.
   static const TextStyle notificationTitleUnread = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 15.0,
     fontWeight: FontWeight.w700,
     color: AppColors.navyBlue,
@@ -220,6 +245,7 @@ class AppTypography {
   /// Tiêu đề thông báo ĐÃ đọc — 15 SemiBold, TextPrimary.
   static const TextStyle notificationTitleRead = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 15.0,
     fontWeight: FontWeight.w600,
     color: AppColors.notificationTextPrimary,
@@ -229,6 +255,7 @@ class AppTypography {
   /// Nội dung tóm tắt — 13.
   static const TextStyle notificationPreview = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 13.0,
     fontWeight: FontWeight.w400,
     color: AppColors.homeTextSecondary,
@@ -238,6 +265,7 @@ class AppTypography {
   /// Thời gian — 12 in nghiêng.
   static const TextStyle notificationTime = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 12.0,
     fontWeight: FontWeight.w400,
     fontStyle: FontStyle.italic,
@@ -248,6 +276,7 @@ class AppTypography {
   /// Chữ thanh điều hướng dưới — 12 (mục đang chọn dùng SemiBold).
   static const TextStyle bottomNavLabel = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 12.0,
     fontWeight: FontWeight.w400,
     height: 1.2,
@@ -260,6 +289,7 @@ class AppTypography {
   /// Tiêu đề màn — 24 ExtraBold, BrandDark.
   static const TextStyle authScreenTitle = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 24.0,
     fontWeight: FontWeight.w800,
     color: AppColors.navyBlue,
@@ -269,6 +299,7 @@ class AppTypography {
   /// Mô tả, ghi chú, placeholder — 14 Regular, TextSecondary.
   static const TextStyle authBody = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 14.0,
     fontWeight: FontWeight.w400,
     color: AppColors.authTextSecondary,
@@ -278,6 +309,7 @@ class AppTypography {
   /// Nhãn ô nhập — 14 Bold, TextPrimary.
   static const TextStyle authFieldLabel = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 14.0,
     fontWeight: FontWeight.w700,
     color: AppColors.authTextPrimary,
@@ -287,6 +319,7 @@ class AppTypography {
   /// Chữ nút chính cỡ lớn — 18 Bold trắng.
   static const TextStyle buttonTextLarge = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 18.0,
     fontWeight: FontWeight.w700,
     color: AppColors.white,
@@ -299,6 +332,7 @@ class AppTypography {
   /// Tiêu đề "Thư viện" — 28 ExtraBold, BrandDark.
   static const TextStyle libraryTitle = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 28.0,
     fontWeight: FontWeight.w800,
     color: AppColors.navyBlue,
@@ -308,6 +342,7 @@ class AppTypography {
   /// Chữ gõ trong ô tìm kiếm — 14, TextPrimary.
   static const TextStyle searchInput = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 14.0,
     fontWeight: FontWeight.w400,
     color: AppColors.authTextPrimary,
@@ -317,6 +352,7 @@ class AppTypography {
   /// Chữ chip lọc — 14 SemiBold (màu theo trạng thái chọn).
   static const TextStyle filterChip = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 14.0,
     fontWeight: FontWeight.w600,
     height: 1.2,
@@ -325,6 +361,7 @@ class AppTypography {
   /// Tên học phần — 16 Bold, TextPrimary.
   static const TextStyle courseTitle = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 16.0,
     fontWeight: FontWeight.w700,
     color: AppColors.authTextPrimary,
@@ -334,6 +371,7 @@ class AppTypography {
   /// Nhãn trình độ (B1, B2…) — 11 Bold, BrandDark.
   static const TextStyle levelBadge = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 11.0,
     fontWeight: FontWeight.w700,
     color: AppColors.navyBlue,
@@ -343,6 +381,7 @@ class AppTypography {
   /// Số từ của học phần — 13, TextSecondary.
   static const TextStyle courseMeta = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 13.0,
     fontWeight: FontWeight.w400,
     color: AppColors.authTextSecondary,
@@ -352,6 +391,7 @@ class AppTypography {
   /// Phần trăm giữa vòng tiến độ — 11 Bold, BrandDark.
   static const TextStyle progressPercent = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 11.0,
     fontWeight: FontWeight.w700,
     color: AppColors.navyBlue,
@@ -360,12 +400,11 @@ class AppTypography {
 
   static const TextStyle buttonText = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 16.0,
     fontWeight: FontWeight.w700,
     color: AppColors.white,
   );
-
-
 
   // ---------------------------------------------------------------------------
   // Màn 10 · Luyện tập
@@ -374,6 +413,7 @@ class AppTypography {
   /// Tiêu đề "Luyện tập" — 28 ExtraBold, xanh chính.
   static const TextStyle practiceTitle = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 28.0,
     fontWeight: FontWeight.w800,
     color: AppColors.practicePrimary,
@@ -383,6 +423,7 @@ class AppTypography {
   /// Nhãn trong khối thiết lập — 14 SemiBold.
   static const TextStyle practiceLabel = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 14.0,
     fontWeight: FontWeight.w600,
     color: AppColors.practiceTextPrimary,
@@ -392,6 +433,7 @@ class AppTypography {
   /// Giá trị trong ô chọn — 15 Medium.
   static const TextStyle practiceFieldValue = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 15.0,
     fontWeight: FontWeight.w500,
     color: AppColors.practiceTextPrimary,
@@ -401,6 +443,7 @@ class AppTypography {
   /// Dòng phụ "Chọn tối đa 3 bộ" — 12, chữ phụ.
   static const TextStyle practiceHint = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 12.0,
     fontWeight: FontWeight.w400,
     color: AppColors.practiceTextSecondary,
@@ -410,6 +453,7 @@ class AppTypography {
   /// Chữ nút thứ tự hiển thị — 14 SemiBold (màu theo trạng thái chọn).
   static const TextStyle practiceOrderOption = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 14.0,
     fontWeight: FontWeight.w600,
     height: 1.2,
@@ -418,6 +462,7 @@ class AppTypography {
   /// Tiêu đề "Danh sách trò chơi" — 20 Bold.
   static const TextStyle practiceSectionTitle = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 20.0,
     fontWeight: FontWeight.w700,
     color: AppColors.practiceTextPrimary,
@@ -427,20 +472,13 @@ class AppTypography {
   /// Tên trò chơi — 15 Bold.
   static const TextStyle practiceGameTitle = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 15.0,
     fontWeight: FontWeight.w700,
     color: AppColors.practiceTextPrimary,
     height: 1.3,
   );
 
-  /// Mô tả trò chơi — 12, chữ phụ.
-  static const TextStyle practiceGameDescription = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 12.0,
-    fontWeight: FontWeight.w400,
-    color: AppColors.practiceTextSecondary,
-    height: 1.35,
-  );
 
   // ---------------------------------------------------------------------------
   // Màn chơi (08 / 19 / 20 / 25), phản hồi (11) và kết quả (12)
@@ -449,6 +487,7 @@ class AppTypography {
   /// Bộ đếm câu "1/10" — 14 Bold.
   static const TextStyle quizCounter = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 14.0,
     fontWeight: FontWeight.w700,
     color: AppColors.practiceTextPrimary,
@@ -458,6 +497,7 @@ class AppTypography {
   /// Nhãn chế độ chơi trên chip — 12 Bold, xanh chính.
   static const TextStyle quizChip = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 12.0,
     fontWeight: FontWeight.w700,
     color: AppColors.practicePrimary,
@@ -467,6 +507,7 @@ class AppTypography {
   /// Lời nhắc đầu thẻ câu hỏi — 14 SemiBold, chữ phụ.
   static const TextStyle quizPrompt = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 14.0,
     fontWeight: FontWeight.w600,
     color: AppColors.practiceTextSecondary,
@@ -476,6 +517,7 @@ class AppTypography {
   /// Từ tiếng Anh lớn ở giữa thẻ — 32 ExtraBold.
   static const TextStyle quizTerm = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 32.0,
     fontWeight: FontWeight.w800,
     color: AppColors.practiceTextPrimary,
@@ -485,6 +527,7 @@ class AppTypography {
   /// Phiên âm IPA — 16, chữ phụ.
   static const TextStyle quizIpa = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 16.0,
     fontWeight: FontWeight.w500,
     color: AppColors.practiceTextSecondary,
@@ -494,6 +537,7 @@ class AppTypography {
   /// Nghĩa tiếng Việt (Màn 20) — 20 Bold.
   static const TextStyle quizDefinition = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 20.0,
     fontWeight: FontWeight.w700,
     color: AppColors.practiceTextPrimary,
@@ -503,6 +547,7 @@ class AppTypography {
   /// Câu ví dụ — 15 nghiêng, chữ phụ.
   static const TextStyle quizExample = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 15.0,
     fontWeight: FontWeight.w400,
     fontStyle: FontStyle.italic,
@@ -513,6 +558,7 @@ class AppTypography {
   /// Nội dung đáp án — 16 SemiBold.
   static const TextStyle quizOption = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 16.0,
     fontWeight: FontWeight.w600,
     color: AppColors.practiceTextPrimary,
@@ -522,6 +568,7 @@ class AppTypography {
   /// Chữ A/B/C/D — 14 ExtraBold.
   static const TextStyle quizOptionLetter = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 14.0,
     fontWeight: FontWeight.w800,
     height: 1.0,
@@ -530,6 +577,7 @@ class AppTypography {
   /// Chữ gõ trong ô trả lời — 18 SemiBold.
   static const TextStyle quizInput = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 18.0,
     fontWeight: FontWeight.w600,
     color: AppColors.practiceTextPrimary,
@@ -539,6 +587,7 @@ class AppTypography {
   /// Tiêu đề phản hồi "Chính xác!" — 18 ExtraBold (màu theo kết quả).
   static const TextStyle quizFeedbackTitle = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 18.0,
     fontWeight: FontWeight.w800,
     height: 1.3,
@@ -547,6 +596,7 @@ class AppTypography {
   /// Chữ nhỏ trong bảng phản hồi / kết quả — 13, chữ phụ.
   static const TextStyle quizCaption = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 13.0,
     fontWeight: FontWeight.w500,
     color: AppColors.practiceTextSecondary,
@@ -556,6 +606,7 @@ class AppTypography {
   /// Tiêu đề màn kết quả — 24 ExtraBold.
   static const TextStyle quizResultTitle = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 24.0,
     fontWeight: FontWeight.w800,
     color: AppColors.practiceTextPrimary,
@@ -565,6 +616,7 @@ class AppTypography {
   /// % chính xác trong vòng tròn — 28 ExtraBold (màu theo mức điểm).
   static const TextStyle quizResultPercent = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 28.0,
     fontWeight: FontWeight.w800,
     height: 1.1,
@@ -573,6 +625,7 @@ class AppTypography {
   /// Số liệu thống kê — 16 ExtraBold.
   static const TextStyle quizStatValue = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 16.0,
     fontWeight: FontWeight.w800,
     color: AppColors.practiceTextPrimary,
@@ -586,24 +639,18 @@ class AppTypography {
   /// Tiêu đề "Sửa từ vựng" — 20 Bold, navy.
   static const TextStyle wordFormTitle = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 20.0,
     fontWeight: FontWeight.w700,
     color: AppColors.practiceTextPrimary,
     height: 1.25,
   );
 
-  /// Tên học phần dưới tiêu đề — 13 SemiBold, xanh nhấn.
-  static const TextStyle wordFormSubtitle = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 13.0,
-    fontWeight: FontWeight.w600,
-    color: AppColors.practicePrimary,
-    height: 1.3,
-  );
 
   /// Nhãn trên ô nhập — 12 SemiBold, navy.
   static const TextStyle wordFormLabel = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 12.0,
     fontWeight: FontWeight.w600,
     color: AppColors.practiceTextPrimary,
@@ -613,6 +660,7 @@ class AppTypography {
   /// Nội dung ô nhập — 14 Medium, xanh xám đậm.
   static const TextStyle wordFormInput = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 14.0,
     fontWeight: FontWeight.w500,
     color: AppColors.wordFormInputText,
@@ -622,6 +670,7 @@ class AppTypography {
   /// Gợi ý trong ô trống (Màn 24) — 14, chữ phụ.
   static const TextStyle wordFormHint = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 14.0,
     fontWeight: FontWeight.w500,
     color: AppColors.practiceTextSecondary,
@@ -631,6 +680,7 @@ class AppTypography {
   /// Lỗi dưới ô nhập — 12, đỏ.
   static const TextStyle wordFormError = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 12.0,
     fontWeight: FontWeight.w500,
     color: AppColors.errorRed,
@@ -640,9 +690,127 @@ class AppTypography {
   /// Chữ nút "Lưu thay đổi" — 18 Bold, trắng.
   static const TextStyle wordFormSave = TextStyle(
     fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
     fontSize: 18.0,
     fontWeight: FontWeight.w700,
     color: AppColors.white,
     height: 1.2,
+  );
+
+  // ---------------------------------------------------------------------------
+  // Màn 15 · Hồ sơ cá nhân
+  // ---------------------------------------------------------------------------
+
+  /// Tên người dùng — 20 ExtraBold.
+  static const TextStyle profileName = TextStyle(
+    fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
+    fontSize: 20.0,
+    fontWeight: FontWeight.w800,
+    color: AppColors.practiceTextPrimary,
+    height: 1.25,
+  );
+
+  /// Mã ID — 15 Bold, giãn chữ để dễ đọc.
+  static const TextStyle profileMemberId = TextStyle(
+    fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
+    fontSize: 15.0,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0.8,
+    color: AppColors.practiceTextPrimary,
+    height: 1.3,
+  );
+
+  // ---------------------------------------------------------------------------
+  // Màn 07 · Chi tiết từ vựng
+  // ---------------------------------------------------------------------------
+
+  /// Từ tiếng Anh — 36 ExtraBold.
+  static const TextStyle wordDetailTerm = TextStyle(
+    fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
+    fontSize: 36.0,
+    fontWeight: FontWeight.w800,
+    color: AppColors.practiceTextPrimary,
+    height: 1.15,
+  );
+
+  /// Phiên âm — 16 Medium.
+  static const TextStyle wordDetailIpa = TextStyle(
+    fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
+    fontSize: 16.0,
+    fontWeight: FontWeight.w500,
+    color: AppColors.practiceTextSecondary,
+    height: 1.4,
+  );
+
+  /// Nhãn khối (NGHĨA TIẾNG VIỆT, VÍ DỤ SỬ DỤNG) — 12 Bold, giãn chữ.
+  static const TextStyle wordDetailLabel = TextStyle(
+    fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
+    fontSize: 12.0,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0.6,
+    color: AppColors.practiceTextSecondary,
+    height: 1.3,
+  );
+
+  /// Nghĩa tiếng Việt — 22 ExtraBold.
+  static const TextStyle wordDetailMeaning = TextStyle(
+    fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
+    fontSize: 22.0,
+    fontWeight: FontWeight.w800,
+    color: AppColors.practiceTextPrimary,
+    height: 1.3,
+  );
+
+  /// Câu ví dụ, ghi chú — 15 Medium.
+  static const TextStyle wordDetailBody = TextStyle(
+    fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
+    fontSize: 15.0,
+    fontWeight: FontWeight.w500,
+    color: AppColors.practiceTextPrimary,
+    height: 1.5,
+  );
+
+  /// Tiêu đề nhóm từ đồng nghĩa / trái nghĩa — 14 Bold.
+  static const TextStyle wordDetailGroupTitle = TextStyle(
+    fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
+    fontSize: 14.0,
+    fontWeight: FontWeight.w700,
+    color: AppColors.practiceTextPrimary,
+    height: 1.3,
+  );
+
+  /// Chữ trong chip từ — 14 SemiBold.
+  static const TextStyle wordDetailChip = TextStyle(
+    fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
+    fontSize: 14.0,
+    fontWeight: FontWeight.w600,
+    height: 1.2,
+  );
+
+  // Token cũ còn được màn hình chưa cập nhật dùng; xoá ở commit dọn dẹp.
+  /// Mô tả trò chơi — 12, chữ phụ.
+  static const TextStyle practiceGameDescription = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 12.0,
+    fontWeight: FontWeight.w400,
+    color: AppColors.practiceTextSecondary,
+    height: 1.35,
+  );
+  /// Tên học phần dưới tiêu đề — 13 SemiBold, xanh nhấn.
+  static const TextStyle wordFormSubtitle = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 13.0,
+    fontWeight: FontWeight.w600,
+    color: AppColors.practicePrimary,
+    height: 1.3,
   );
 }

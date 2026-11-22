@@ -13,8 +13,6 @@ class AppColors {
   static const Color brandVocab = navyBlue; // #0054AC
 
   // Màn 02/03 · Đăng nhập / Đăng ký
-  /// Nền nút chính "Đăng nhập" / "Đăng ký".
-  static const Color authButton = Color(0xFF0070BE);
 
   /// Link "Đăng ký ngay."
   static const Color authLink = Color(0xFF009EEA);
@@ -104,6 +102,11 @@ class AppColors {
   // ---------------------------------------------------------------------------
   static const Color practiceBackground = Color(0xFFF4FAFE);
   static const Color practicePrimary = Color(0xFF0066CC);
+
+  /// Màu duy nhất cho nút hành động chính (nền xanh, chữ trắng) trên mọi màn.
+  /// Đủ tương phản với chữ trắng (5,6:1, đạt WCAG AA); `primaryBlue` sáng hơn
+  /// (3,2:1) nên chỉ dùng cho icon và điểm nhấn, không làm nền nút có chữ.
+  static const Color actionPrimary = practicePrimary;
   static const Color practiceTextPrimary = Color(0xFF173858);
   static const Color practiceTextSecondary = Color(0xFF8191A8);
   static const Color practiceBorder = Color(0xFFC3E1FF);
@@ -127,8 +130,22 @@ class AppColors {
   // ---------------------------------------------------------------------------
   // Màn 09 · Sửa từ vựng / Màn 24 · Thêm từ vựng
   // ---------------------------------------------------------------------------
-  /// Nút "Lưu thay đổi".
-  static const Color wordFormSave = Color(0xFF0077BD);
   /// Chữ trong ô nhập: xanh xám đậm.
   static const Color wordFormInputText = Color(0xFF2E4A66);
+
+  // ---------------------------------------------------------------------------
+  // Màn 15 · Hồ sơ: màu theo loại tài khoản
+  // ---------------------------------------------------------------------------
+  static const Color planStandard = practiceTextSecondary;
+  static const Color planStandardTint = practiceBackground;
+  static const Color planPlus = Color(0xFF7C3AED);
+  static const Color planPlusTint = Color(0xFFF1EAFE);
+  static const Color planVip = Color(0xFFD97706);
+  static const Color planVipTint = Color(0xFFFEF3E2);
+
+  // Token cũ còn được màn hình chưa cập nhật dùng; xoá ở commit dọn dẹp.
+  /// Nền nút chính "Đăng nhập" / "Đăng ký".
+  static const Color authButton = Color(0xFF0070BE);
+  /// Nút "Lưu thay đổi".
+  static const Color wordFormSave = Color(0xFF0077BD);
 }
