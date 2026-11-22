@@ -154,7 +154,7 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
   }
 }
 
-/// Thẻ trắng: trình độ + từ loại, từ, IPA, chọn giọng; nút phát âm vuông bên phải.
+/// Thẻ trắng: trình độ + từ loại, từ, IPA; nút phát âm vuông bên phải.
 class _WordCard extends StatelessWidget {
   final VocabularyModel vocab;
   final PronunciationService audio;
@@ -207,19 +207,6 @@ class _WordCard extends StatelessWidget {
               _SpeakButton(term: vocab.term, isPlaying: isPlaying, onTap: () => audio.play(vocab)),
             ],
           ),
-          const SizedBox(height: AppDimensions.space12),
-          // Chọn giọng đọc cho nút phát âm (UK / US).
-          Wrap(
-            spacing: AppDimensions.space8,
-            children: [
-              for (final accent in Accent.values)
-                _AccentChip(
-                  label: AppStrings.wordDetailAccent(accent.label),
-                  selected: audio.accent == accent,
-                  onTap: () => audio.accent = accent,
-                ),
-            ],
-          ),
         ],
       ),
     );
@@ -254,49 +241,6 @@ class _SpeakButton extends StatelessWidget {
             child: isPlaying
                 ? const SoundWaveIndicator(isActive: true, color: AppColors.white)
                 : const Icon(Icons.volume_up_rounded, color: AppColors.practicePrimary, size: AppDimensions.iconMedium),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AccentChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _AccentChip({required this.label, required this.selected, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(AppDimensions.radiusPill);
-    return Semantics(
-      selected: selected,
-      button: true,
-      child: Material(
-        color: selected ? AppColors.practiceSelectedFill : AppColors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: radius,
-          side: BorderSide(color: selected ? AppColors.practicePrimary : AppColors.practiceCardBorder),
-        ),
-        child: InkWell(
-          borderRadius: radius,
-          onTap: onTap,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: AppDimensions.minTouchTarget),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space16),
-              child: Center(
-                widthFactor: 1,
-                child: Text(
-                  label,
-                  style: AppTypography.wordDetailChip.copyWith(
-                    color: selected ? AppColors.practicePrimary : AppColors.practiceTextSecondary,
-                  ),
-                ),
-              ),
-            ),
           ),
         ),
       ),

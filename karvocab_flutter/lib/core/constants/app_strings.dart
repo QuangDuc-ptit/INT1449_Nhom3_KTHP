@@ -190,7 +190,6 @@ class AppStrings {
   static const String wordDetailAntonyms = 'Từ trái nghĩa';
   static const String wordDetailDelete = 'Xóa từ vựng';
   static String wordDetailSpeak(String term) => 'Phát âm từ $term';
-  static String wordDetailAccent(String label) => 'Giọng $label';
   static String wordDetailUpdated(String term) => 'Đã cập nhật từ "$term"';
   static String wordDetailDeleted(String term) => 'Đã xoá từ "$term"';
   static const String wordDetailUndo = 'Hoàn tác';
