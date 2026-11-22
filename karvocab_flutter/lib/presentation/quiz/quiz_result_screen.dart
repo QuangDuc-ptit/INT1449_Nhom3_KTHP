@@ -135,7 +135,6 @@ class QuizResultScreen extends StatelessWidget {
                     ],
                     AppButton(
                       text: AppStrings.resultDone,
-                      backgroundColor: AppColors.practicePrimary,
                       onPressed: () => _finish(context),
                     ),
                   ],

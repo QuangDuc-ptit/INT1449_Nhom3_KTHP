@@ -112,7 +112,6 @@ class _TypingAnswerFieldState extends State<TypingAnswerField> {
           AppButton(
             text: AppStrings.quizCheck,
             onPressed: _submit,
-            backgroundColor: AppColors.practicePrimary,
             isEnabled: _controller.text.trim().isNotEmpty,
           ),
         ],

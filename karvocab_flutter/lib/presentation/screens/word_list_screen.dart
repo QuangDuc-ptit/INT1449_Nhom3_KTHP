@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/part_of_speech.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_typography.dart';
@@ -163,7 +164,7 @@ class _WordListScreenState extends State<WordListScreen> {
           ),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: _openAddMenu,
-            backgroundColor: AppColors.primaryBlue,
+            backgroundColor: AppColors.actionPrimary,
             icon: const Icon(Icons.add_rounded, color: AppColors.white),
             label: Text('Thêm từ', style: AppTypography.buttonText),
           ),
@@ -284,11 +285,8 @@ class _WordListScreenState extends State<WordListScreen> {
                           ),
                           const SizedBox(width: AppDimensions.space8),
                           Text(
-                            '[${vocab.partOfSpeech}.]',
-                            style: AppTypography.labelSmall.copyWith(
-                              color: AppColors.textSecondary,
-                              fontStyle: FontStyle.italic,
-                            ),
+                            PartOfSpeech.shortLabelOf(vocab.partOfSpeech),
+                            style: AppTypography.labelSmall.copyWith(color: AppColors.textSecondary),
                           ),
                         ],
                       ),

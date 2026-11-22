@@ -71,7 +71,7 @@ class AppButton extends StatelessWidget {
 
     switch (variant) {
       case AppButtonVariant.primary:
-        background = canPress ? (backgroundColor ?? AppColors.primaryBlue) : (disabledBackgroundColor ?? AppColors.textMuted.withValues(alpha: AppDimensions.disabledOpacity));
+        background = canPress ? (backgroundColor ?? AppColors.actionPrimary) : (disabledBackgroundColor ?? AppColors.textMuted.withValues(alpha: AppDimensions.disabledOpacity));
         textColor = AppColors.white;
         break;
       case AppButtonVariant.secondary:
@@ -80,9 +80,9 @@ class AppButton extends StatelessWidget {
         break;
       case AppButtonVariant.outline:
         background = canPress ? (backgroundColor ?? AppColors.transparent) : AppColors.transparent;
-        textColor = canPress ? (foregroundColor ?? AppColors.primaryBlue) : AppColors.textMuted;
+        textColor = canPress ? (foregroundColor ?? AppColors.actionPrimary) : AppColors.textMuted;
         borderSide = BorderSide(
-          color: canPress ? (borderColor ?? AppColors.primaryBlue) : AppColors.borderLight,
+          color: canPress ? (borderColor ?? AppColors.actionPrimary) : AppColors.borderLight,
           width: borderWidth ?? AppDimensions.borderMedium,
         );
         break;

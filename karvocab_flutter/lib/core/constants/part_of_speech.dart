@@ -42,4 +42,7 @@ class PartOfSpeech {
 
   /// Viết tắt trong ngoặc vuông, vd `[n.]`. Key lạ thì hiện nguyên key.
   static String bracket(String key) => '[${of(key)?.abbr ?? key}]';
+
+  /// Nhãn ngắn tiếng Việt theo khoá API (vd `adj` -> "Tính từ").
+  static String shortLabelOf(String key) => of(key)?.shortLabel ?? key;
 }

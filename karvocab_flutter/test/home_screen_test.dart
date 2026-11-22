@@ -20,7 +20,8 @@ void main() {
     testWidgets('Đủ dữ liệu: thẻ thống kê, nhắc ôn tập, nút chính, tối đa 3 học phần', (tester) async {
       await tester.pumpWidget(_app(const HomeScreen(state: HomeSampleData.full)));
 
-      expect(find.text('Xin chào, Minh Anh!'), findsOneWidget);
+      expect(find.text('Xin chào,'), findsOneWidget);
+      expect(find.text('Minh Anh'), findsOneWidget);
       expect(find.text('248'), findsOneWidget);
       expect(find.text('7 ngày'), findsOneWidget);
       expect(find.text('18 từ đang chờ bạn ôn tập'), findsOneWidget);
@@ -74,7 +75,7 @@ void main() {
         onSeeAllCoursesClick: () => seeAllTaps++,
       )));
 
-      await tester.tap(find.byKey(const Key('home_review_reminder')));
+      await tester.tap(find.descendant(of: find.byKey(const Key('home_review_reminder')), matching: find.byType(AppButton)));
       await tester.tap(find.text('Tổng số từ'));
       await tester.scrollUntilVisible(find.text('Xem tất cả'), 200);
       await tester.tap(find.text('Xem tất cả'));

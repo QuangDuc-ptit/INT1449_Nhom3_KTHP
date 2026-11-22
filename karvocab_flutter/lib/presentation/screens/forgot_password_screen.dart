@@ -142,7 +142,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           text: AppStrings.forgotPasswordSend,
           onPressed: widget.onSendResetLinkClick,
           isEnabled: widget.state.canSendResetLink,
-          backgroundColor: AppColors.authButton,
           borderRadius: AppDimensions.authControlRadius,
           textStyle: AppTypography.buttonTextLarge,
         ),

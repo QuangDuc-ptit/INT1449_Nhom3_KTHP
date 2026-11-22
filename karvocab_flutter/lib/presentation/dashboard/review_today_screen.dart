@@ -38,7 +38,7 @@ class ReviewTodayScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppStrings.reviewTitle, style: AppTypography.headingLarge),
+        title: Text(AppStrings.reviewTitle, style: AppTypography.headingMedium),
       ),
       body: ListenableBuilder(
         listenable: store,

@@ -71,16 +71,13 @@ class HomeScreen extends StatelessWidget {
             ),
             blockGap,
             _StatGrid(state: state, onStatClick: onStatClick),
-            if (state.wordsToReview > 0) ...[
-              blockGap,
-              _ReviewReminderCard(
-                wordsToReview: state.wordsToReview,
-                reviewMinutes: state.reviewMinutes,
-                onTap: onStartReviewClick,
-              ),
-            ],
             blockGap,
-            _StartReviewButton(wordsToReview: state.wordsToReview, onPressed: onStartReviewClick),
+            // Một khối duy nhất: thông tin phiên ôn tập + nút bắt đầu (trước đây là 2 nút cùng chức năng).
+            _ReviewPanel(
+              wordsToReview: state.wordsToReview,
+              reviewMinutes: state.reviewMinutes,
+              onStart: onStartReviewClick,
+            ),
             blockGap,
             _WeeklyActivityCard(weeklyStats: state.weeklyStats, todayIndex: state.todayIndex),
             blockGap,
@@ -113,16 +110,27 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: AppDimensions.homeHeaderHeight,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: AppDimensions.homeHeaderHeight),
       child: Row(
         children: [
+          // Lời chào 2 dòng: tên dài vẫn hiện đủ, không bị ngắt giữa chừng.
           Expanded(
-            child: Text(
-              AppStrings.homeGreeting(userName),
-              style: AppTypography.homeGreeting,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  AppStrings.homeGreetingPrefix,
+                  style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+                ),
+                Text(
+                  userName,
+                  style: AppTypography.homeGreeting,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           ),
           const SizedBox(width: AppDimensions.space12),
@@ -296,29 +304,30 @@ class _StatGrid extends StatelessWidget {
 // 3. Thẻ nhắc ôn tập & 4. Nút chính
 // -----------------------------------------------------------------------------
 
-class _ReviewReminderCard extends StatelessWidget {
+/// Khối ôn tập: có từ cần ôn thì hiện số từ + thời lượng ngay trên nút bắt đầu;
+/// không có thì chỉ còn nút bị khoá.
+class _ReviewPanel extends StatelessWidget {
   final int wordsToReview;
   final int reviewMinutes;
-  final VoidCallback? onTap;
+  final VoidCallback? onStart;
 
-  const _ReviewReminderCard({
-    required this.wordsToReview,
-    required this.reviewMinutes,
-    required this.onTap,
-  });
+  const _ReviewPanel({required this.wordsToReview, required this.reviewMinutes, required this.onStart});
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.homeSurfaceTint,
-      borderRadius: BorderRadius.circular(AppDimensions.homeCardRadius),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        key: const Key('home_review_reminder'),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(AppDimensions.homeCardPadding),
-          child: Row(
+    final button = _StartReviewButton(wordsToReview: wordsToReview, onPressed: onStart);
+    if (wordsToReview <= 0) return button;
+    return Container(
+      key: const Key('home_review_reminder'),
+      padding: const EdgeInsets.all(AppDimensions.homeCardPadding),
+      decoration: BoxDecoration(
+        color: AppColors.homeSurfaceTint,
+        borderRadius: BorderRadius.circular(AppDimensions.homeCardRadius),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
             children: [
               const Icon(Icons.schedule_rounded, size: AppDimensions.iconMedium, color: AppColors.navyBlue),
               const SizedBox(width: AppDimensions.space12),
@@ -332,11 +341,11 @@ class _ReviewReminderCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: AppDimensions.space8),
-              const Icon(Icons.arrow_forward_rounded, size: AppDimensions.iconSmall, color: AppColors.navyBlue),
             ],
           ),
-        ),
+          const SizedBox(height: AppDimensions.space16),
+          button,
+        ],
       ),
     );
   }
@@ -356,8 +365,7 @@ class _StartReviewButton extends StatelessWidget {
       // Luôn truyền callback (kể cả rỗng) để trạng thái khoá chỉ phụ thuộc số từ cần ôn.
       onPressed: onPressed ?? () {},
       isEnabled: hasWords,
-      backgroundColor: AppColors.navyBlue,
-      disabledBackgroundColor: AppColors.navyBlue.withValues(alpha: AppDimensions.disabledOpacity),
+      disabledBackgroundColor: AppColors.actionPrimary.withValues(alpha: AppDimensions.disabledOpacity),
       borderRadius: AppDimensions.reviewButtonRadius,
     );
   }
