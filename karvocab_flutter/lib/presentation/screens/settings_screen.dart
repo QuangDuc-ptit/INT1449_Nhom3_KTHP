@@ -5,6 +5,7 @@ import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_durations.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/utils/date_format.dart';
 import '../../core/utils/validators.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_text_field.dart';
@@ -12,6 +13,7 @@ import '../../core/widgets/app_toast.dart';
 import '../../data/models/user_profile_model.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/services/reminder_service.dart';
+import '../widgets/account_widgets.dart';
 import 'login_screen.dart';
 
 /// Màn 23 · Cài đặt tài khoản (Account Settings Screen)
@@ -29,6 +31,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   static const int minDailyGoal = 5;
+
   /// BE và `DashboardStore` (FE2) chỉ nhận mục tiêu 5–30 từ/ngày (FE-BE-ALIGNMENT).
   static const int maxDailyGoal = 30;
   static const int dailyGoalStep = 5;
@@ -53,11 +56,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _saveChanges() {
     if (!_auth.isLoggedIn) return;
-    _auth.updateProfile(_profile.copyWith(
-      dailyGoalWords: _dailyGoal,
-      isNotificationEnabled: _isNotifEnabled,
-      reminderTime: _reminderTime,
-    ));
+    _auth.updateProfile(
+      _profile.copyWith(
+        dailyGoalWords: _dailyGoal,
+        isNotificationEnabled: _isNotifEnabled,
+        reminderTime: _reminderTime,
+      ),
+    );
   }
 
   Future<void> _applyReminder() async {
@@ -66,6 +71,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } else {
       await _reminders.cancel();
     }
+  }
+
+  /// Sửa ngày sinh; mã ID đã cấp thì giữ nguyên.
+  Future<void> _editBirthDate() async {
+    final picked = await pickBirthDate(context, initial: _profile.birthDate);
+    if (picked == null || !mounted) return;
+    setState(() => _auth.updateBirthDate(picked));
+    AppToast.success(context, AppStrings.profileBirthDateSaved);
   }
 
   // Hộp thoại đổi mật khẩu
@@ -85,9 +98,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.cardBackground,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimensions.radiusCard)),
         title: Row(
           children: [
             const Icon(Icons.logout_rounded, color: AppColors.errorRed, size: AppDimensions.iconMedium),
@@ -103,27 +114,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(
-              'Ở lại',
-              style: AppTypography.bodyBold.copyWith(color: AppColors.textSecondary),
-            ),
+            child: Text('Ở lại', style: AppTypography.bodyBold.copyWith(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.errorRed,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimensions.radiusButton)),
             ),
             onPressed: () {
               Navigator.of(ctx).pop();
               // Xoá phiên + lịch nhắc rồi chuyển hướng về màn hình Đăng nhập
               _auth.logout();
               _reminders.cancel();
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-                (route) => false,
-              );
+              Navigator.of(context)
+                  .pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const LoginScreen()), (route) => false);
             },
             child: Text('Đăng xuất', style: AppTypography.buttonText),
           ),
@@ -136,10 +140,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.mainBackground,
-      appBar: AppBar(
-        title: Text('Cài đặt tài khoản', style: AppTypography.headingLarge),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: Text('Cài đặt tài khoản', style: AppTypography.headingMedium)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppDimensions.screenMargin),
         child: Column(
@@ -157,18 +158,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Số từ cần ôn mỗi ngày', style: AppTypography.bodyBold),
-                          const SizedBox(height: AppDimensions.space2),
-                          Text(
-                            'Duy trì mục tiêu để giữ chuỗi Streak',
-                            style: AppTypography.bodyMedium.copyWith(fontSize: AppTypography.fontSize13),
-                          ),
-                        ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Số từ cần ôn mỗi ngày', style: AppTypography.bodyBold),
+                          ],
+                        ),
                       ),
 
                       // Stepper (Tăng / Giảm số từ)
@@ -233,10 +230,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   SwitchListTile(
                     title: Text('Bật thông báo hằng ngày', style: AppTypography.bodyBold),
-                    subtitle: Text(
-                      'Nhắc ôn từ vựng theo phương pháp Spaced Repetition',
-                      style: AppTypography.bodyMedium.copyWith(fontSize: AppTypography.fontSize13),
-                    ),
                     value: _isNotifEnabled,
                     activeTrackColor: AppColors.primaryBlue,
                     onChanged: (val) {
@@ -255,7 +248,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       leading: const Icon(Icons.access_time_rounded, color: AppColors.primaryBlue),
                       title: Text('Thời gian nhắc học', style: AppTypography.bodyBold),
                       trailing: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space12, vertical: AppDimensions.space6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppDimensions.space12,
+                          vertical: AppDimensions.space6,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.softBlueSurface,
                           borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
@@ -271,10 +267,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           hour: int.tryParse(parts[0]) ?? 20,
                           minute: int.tryParse(parts[1]) ?? 0,
                         );
-                        final picked = await showTimePicker(
-                          context: context,
-                          initialTime: initialTime,
-                        );
+                        final picked = await showTimePicker(context: context, initialTime: initialTime);
                         if (picked != null && mounted) {
                           final h = picked.hour.toString().padLeft(2, '0');
                           final m = picked.minute.toString().padLeft(2, '0');
@@ -294,7 +287,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: AppDimensions.space24),
 
             // Section 3: Ngôn ngữ & Giao diện (Điểm cộng Rubric +2)
-            _buildSectionHeader('Ngôn ngữ giao diện (Localization)'),
+            _buildSectionHeader('Ngôn ngữ giao diện'),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space16, vertical: AppDimensions.space8),
               decoration: BoxDecoration(
@@ -324,9 +317,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         setState(() => _selectedLanguage = val);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(val == 'vi'
-                                ? 'Đã chọn Tiếng Việt'
-                                : 'Switched to English language'),
+                            content: Text(val == 'vi' ? 'Đã chọn Tiếng Việt' : 'Switched to English language'),
                             duration: AppDurations.snackShort,
                             behavior: SnackBarBehavior.floating,
                           ),
@@ -353,16 +344,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 children: [
                   ListTile(
+                    key: const Key('settings_birth_date'),
+                    leading: const Icon(Icons.cake_outlined, color: AppColors.primaryBlue),
+                    title: Text(AppStrings.profileBirthDate, style: AppTypography.bodyBold),
+                    subtitle: Text(
+                      _profile.birthDate == null ? AppStrings.profileNoBirthDate : formatDmy(_profile.birthDate!),
+                      style: AppTypography.bodyMedium,
+                    ),
+                    trailing: const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: AppDimensions.iconXSmall,
+                      color: AppColors.textMuted,
+                    ),
+                    onTap: _editBirthDate,
+                  ),
+                  const Divider(height: AppDimensions.dividerThickness, color: AppColors.borderLight),
+                  ListTile(
                     leading: const Icon(Icons.lock_reset_rounded, color: AppColors.primaryBlue),
                     title: Text('Đổi mật khẩu', style: AppTypography.bodyBold),
-                    trailing: const Icon(Icons.arrow_forward_ios_rounded, size: AppDimensions.iconXSmall, color: AppColors.textMuted),
+                    trailing: const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: AppDimensions.iconXSmall,
+                      color: AppColors.textMuted,
+                    ),
                     onTap: _openChangePasswordDialog,
                   ),
                   const Divider(height: AppDimensions.dividerThickness, color: AppColors.borderLight),
                   ListTile(
                     leading: const Icon(Icons.privacy_tip_outlined, color: AppColors.primaryBlue),
                     title: Text('Điều khoản & Quyền riêng tư', style: AppTypography.bodyBold),
-                    trailing: const Icon(Icons.arrow_forward_ios_rounded, size: AppDimensions.iconXSmall, color: AppColors.textMuted),
+                    trailing: const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: AppDimensions.iconXSmall,
+                      color: AppColors.textMuted,
+                    ),
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -382,6 +397,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             AppButton(
               text: 'Đăng xuất tài khoản',
               variant: AppButtonVariant.outline,
+              foregroundColor: AppColors.errorRed,
+              borderColor: AppColors.errorRed,
               icon: const Icon(Icons.logout_rounded, color: AppColors.errorRed),
               onPressed: _confirmLogout,
             ),
@@ -391,7 +408,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // Version info
             Center(
               child: Text(
-                'KarVocab Mobile · Phiên bản 1.0.0-MVP (INT1449)',
+                'KarVocab · Phiên bản 1.0.0',
                 style: AppTypography.labelSmall.copyWith(color: AppColors.textMuted),
               ),
             ),
@@ -475,9 +492,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: AppColors.cardBackground,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimensions.radiusCard)),
       title: Text('Đổi mật khẩu', style: AppTypography.headingMedium),
       content: SingleChildScrollView(
         child: Column(
@@ -518,10 +533,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
           style: TextButton.styleFrom(
             minimumSize: const Size(AppDimensions.minTouchTarget, AppDimensions.minTouchTarget),
           ),
-          child: Text(
-            AppStrings.cancel,
-            style: AppTypography.bodyBold.copyWith(color: AppColors.textSecondary),
-          ),
+          child: Text(AppStrings.cancel, style: AppTypography.bodyBold.copyWith(color: AppColors.textSecondary)),
         ),
         SizedBox(
           width: AppDimensions.dialogActionWidth,

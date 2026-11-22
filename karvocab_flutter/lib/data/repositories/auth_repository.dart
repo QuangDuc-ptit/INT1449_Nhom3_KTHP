@@ -1,6 +1,10 @@
 import 'dart:math';
+
 import 'package:flutter/foundation.dart';
+
 import '../../core/constants/app_strings.dart';
+import '../../core/utils/member_id.dart';
+import '../models/account_plan.dart';
 import '../models/user_profile_model.dart';
 
 /// Ô nhập mà lỗi xác thực gắn vào (để hiển thị lỗi ngay dưới ô đó).
@@ -22,7 +26,26 @@ enum SocialProvider { google, facebook }
 class _Account {
   String fullName;
   String password;
-  _Account({required this.fullName, required this.password});
+  DateTime? birthDate;
+  String? memberId;
+  AccountPlan plan;
+  DateTime? planExpiresAt;
+
+  _Account({
+    required this.fullName,
+    required this.password,
+    this.birthDate,
+    this.memberId,
+    this.plan = AccountPlan.standard,
+    this.planExpiresAt,
+  });
+}
+
+/// Số lần tạo từ bằng AI trong một ngày của một tài khoản.
+class _AiUsage {
+  final DateTime day;
+  int count;
+  _AiUsage(this.day, this.count);
 }
 
 class _OtpTicket {
@@ -39,8 +62,14 @@ class _OtpTicket {
 /// `/auth/forgot-password`, `/auth/reset-password` của backend (`be/develop`)
 /// và lưu refresh token vào Secure Storage — chữ ký hàm giữ nguyên.
 class AuthRepository extends ChangeNotifier {
-  AuthRepository({this.latency = const Duration(milliseconds: 600), Random? random})
-      : _random = random ?? Random();
+  AuthRepository({
+    this.latency = const Duration(milliseconds: 600),
+    Random? random,
+    DateTime Function()? clock,
+  })  : _random = random ?? Random(),
+        _clock = clock ?? DateTime.now {
+    _seedAccounts();
+  }
 
   static final AuthRepository instance = AuthRepository();
 
@@ -57,12 +86,11 @@ class AuthRepository extends ChangeNotifier {
 
   final Duration latency;
   final Random _random;
+  final DateTime Function() _clock;
 
-  final Map<String, _Account> _accounts = {
-    demoEmail: _Account(fullName: 'Nguyễn Văn A', password: demoPassword),
-    testEmail: _Account(fullName: 'Admin', password: testPassword),
-  };
+  final Map<String, _Account> _accounts = {};
   final Map<String, _OtpTicket> _otpTickets = {};
+  final Map<String, _AiUsage> _aiUsage = {};
 
   UserProfileModel? _currentUser;
   bool _isDemo = false;
@@ -89,7 +117,7 @@ class AuthRepository extends ChangeNotifier {
     if (account.password != password) {
       throw const AuthException(AppStrings.loginWrongPassword, field: AuthErrorField.password);
     }
-    return _startSession(_profileFor(key, account.fullName, isNew: false));
+    return _startSession(_profileFor(key, account, isNew: false));
   }
 
   /// Màn 02: đăng nhập Google / Facebook (verifier giả lập — backend cũng dùng mock).
@@ -98,28 +126,96 @@ class AuthRepository extends ChangeNotifier {
     final isGoogle = provider == SocialProvider.google;
     final email = isGoogle ? 'google.user@gmail.com' : 'facebook.user@facebook.com';
     final name = isGoogle ? 'Người dùng Google' : 'Người dùng Facebook';
-    _accounts.putIfAbsent(email, () => _Account(fullName: name, password: _randomPassword()));
-    return _startSession(_profileFor(email, name, isNew: false));
+    // Google / Facebook không trả ngày sinh: chưa có mã ID cho tới khi người dùng bổ sung.
+    final account = _accounts.putIfAbsent(email, () => _Account(fullName: name, password: _randomPassword()));
+    return _startSession(_profileFor(email, account, isNew: false));
   }
 
   /// Màn 02: Chế độ Dùng thử — vào thẳng app với hồ sơ mẫu, không cần mạng.
   UserProfileModel enterDemoMode() {
-    return _startSession(UserProfileModel.mockDefault(), demo: true);
+    final account = _accounts[demoEmail]!;
+    return _startSession(_profileFor(demoEmail, account, isNew: false), demo: true);
   }
 
-  /// Màn 03: đăng ký tài khoản mới rồi tự đăng nhập.
+  /// Màn 03: đăng ký tài khoản mới (gói Thường) rồi tự đăng nhập.
+  /// Có [birthDate] thì cấp mã ID ngay.
   Future<UserProfileModel> register({
     required String fullName,
     required String email,
     required String password,
+    DateTime? birthDate,
   }) async {
     await Future<void>.delayed(latency);
     final key = _normalize(email);
     if (_accounts.containsKey(key)) {
-      throw const AuthException('Email này đã được đăng ký');
+      throw const AuthException(AppStrings.registerEmailTaken, field: AuthErrorField.email);
     }
-    _accounts[key] = _Account(fullName: fullName.trim(), password: password);
-    return _startSession(_profileFor(key, fullName.trim(), isNew: true));
+    final account = _Account(fullName: fullName.trim(), password: password);
+    _accounts[key] = account;
+    if (birthDate != null) _assignBirthDate(account, birthDate);
+    return _startSession(_profileFor(key, account, isNew: true));
+  }
+
+  /// Màn 15 / 23: cập nhật ngày sinh. Lần đầu có ngày sinh thì cấp mã ID;
+  /// đã có mã thì mã giữ nguyên dù ngày sinh đổi.
+  void updateBirthDate(DateTime birthDate) {
+    final user = _currentUser;
+    if (user == null) return;
+    final account = _accounts[_normalize(user.email)];
+    if (account == null) return;
+    _assignBirthDate(account, birthDate);
+    _currentUser = user.copyWith(birthDate: account.birthDate, memberId: account.memberId);
+    notifyListeners();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Loại tài khoản & hạn mức
+  // ---------------------------------------------------------------------------
+
+  /// Gói đang có hiệu lực của người đang đăng nhập (Plus quá hạn → Thường).
+  AccountPlan? get activePlan => _currentUser?.effectivePlan(_clock());
+
+  /// Số lần đã tạo từ bằng AI hôm nay.
+  int get aiUsedToday {
+    final user = _currentUser;
+    if (user == null) return 0;
+    final usage = _aiUsage[_normalize(user.email)];
+    return usage != null && usage.day == _today() ? usage.count : 0;
+  }
+
+  /// Số lần tạo từ bằng AI còn lại hôm nay; `null` = không giới hạn
+  /// (gói Vip / Plus hoặc chưa đăng nhập).
+  int? get aiRemainingToday {
+    final limit = activePlan?.aiDailyLimit;
+    if (limit == null) return null;
+    return max(0, limit - aiUsedToday);
+  }
+
+  /// Ghi nhận một lần tạo từ bằng AI thành công.
+  void recordAiGeneration() {
+    final user = _currentUser;
+    if (user == null) return;
+    final key = _normalize(user.email);
+    final today = _today();
+    final usage = _aiUsage[key];
+    if (usage == null || usage.day != today) {
+      _aiUsage[key] = _AiUsage(today, 1);
+    } else {
+      usage.count++;
+    }
+    notifyListeners();
+  }
+
+  /// Tổng số từ được lưu; `null` = không giới hạn.
+  int? get wordLimit => activePlan?.wordLimit;
+
+  /// Thông báo lỗi nếu lưu thêm [adding] từ (đang có [currentTotal]) vượt hạn mức gói;
+  /// `null` = được lưu.
+  String? wordLimitError({required int currentTotal, required int adding}) {
+    final limit = wordLimit;
+    if (limit == null || currentTotal + adding <= limit) return null;
+    final remaining = max(0, limit - currentTotal);
+    return remaining == 0 ? AppStrings.wordLimitReached(limit) : AppStrings.wordLimitExceeded(remaining, limit);
   }
 
   /// Màn 23: đăng xuất — xoá phiên hiện tại.
@@ -196,11 +292,10 @@ class AuthRepository extends ChangeNotifier {
   /// Đưa kho về trạng thái ban đầu (dùng trong kiểm thử).
   @visibleForTesting
   void debugReset() {
-    _accounts
-      ..clear()
-      ..[demoEmail] = _Account(fullName: 'Nguyễn Văn A', password: demoPassword)
-      ..[testEmail] = _Account(fullName: 'Admin', password: testPassword);
+    _accounts.clear();
+    _seedAccounts();
     _otpTickets.clear();
+    _aiUsage.clear();
     _currentUser = null;
     _isDemo = false;
     notifyListeners();
@@ -212,6 +307,38 @@ class AuthRepository extends ChangeNotifier {
 
   String _normalize(String email) => email.trim().toLowerCase();
 
+  DateTime _today() {
+    final now = _clock();
+    return DateTime(now.year, now.month, now.day);
+  }
+
+  /// Tài khoản mẫu: tài khoản demo dùng thử gói Plus (còn 30 ngày), tài khoản test là Vip.
+  void _seedAccounts() {
+    _accounts[demoEmail] = _Account(
+      fullName: 'Nguyễn Văn A',
+      password: demoPassword,
+      birthDate: DateTime(2005, 9, 20),
+      memberId: 'KM05092000',
+      plan: AccountPlan.plus,
+      planExpiresAt: _today().add(Duration(days: AccountPlan.plus.trialDays!)),
+    );
+    _accounts[testEmail] = _Account(
+      fullName: 'Admin',
+      password: testPassword,
+      birthDate: DateTime(2000, 1, 1),
+      memberId: 'KM00010100',
+      plan: AccountPlan.vip,
+    );
+  }
+
+  void _assignBirthDate(_Account account, DateTime birthDate) {
+    account.birthDate = DateTime(birthDate.year, birthDate.month, birthDate.day);
+    account.memberId ??= MemberId.generate(
+      birthDate,
+      _accounts.values.map((a) => a.memberId).whereType<String>(),
+    );
+  }
+
   String _randomPassword() => List.generate(16, (_) => _random.nextInt(36).toRadixString(36)).join();
 
   UserProfileModel _startSession(UserProfileModel profile, {bool demo = false}) {
@@ -221,16 +348,24 @@ class AuthRepository extends ChangeNotifier {
     return profile;
   }
 
-  UserProfileModel _profileFor(String email, String fullName, {required bool isNew}) {
-    final base = UserProfileModel.mockDefault();
-    if (!isNew) return base.copyWith(email: email, fullName: fullName);
-    // Tài khoản mới: thống kê bắt đầu từ 0.
-    return base.copyWith(
+  UserProfileModel _profileFor(String email, _Account account, {required bool isNew}) {
+    final mock = UserProfileModel.mockDefault();
+    // Dựng lại để các trường có thể rỗng (mã ID, ngày sinh, hạn gói) lấy đúng của tài khoản.
+    return UserProfileModel(
+      fullName: account.fullName,
       email: email,
-      fullName: fullName,
-      totalWordsLearned: 0,
-      currentStreak: 0,
-      totalCollections: 0,
+      avatarUrl: mock.avatarUrl,
+      // Tài khoản mới: thống kê bắt đầu từ 0.
+      totalWordsLearned: isNew ? 0 : mock.totalWordsLearned,
+      currentStreak: isNew ? 0 : mock.currentStreak,
+      totalCollections: isNew ? 0 : mock.totalCollections,
+      dailyGoalWords: mock.dailyGoalWords,
+      reminderTime: mock.reminderTime,
+      isNotificationEnabled: mock.isNotificationEnabled,
+      memberId: account.memberId,
+      birthDate: account.birthDate,
+      plan: account.plan,
+      planExpiresAt: account.planExpiresAt,
     );
   }
 }

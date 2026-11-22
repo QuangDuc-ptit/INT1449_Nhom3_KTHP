@@ -78,10 +78,12 @@ void main() {
 
       await tester.tap(find.descendant(of: tabs, matching: find.text('Đăng ký')));
       await tester.pump();
-      expect(find.byType(TextField), findsNWidgets(3));
+      // Email, Ngày sinh, Mật khẩu, Xác nhận mật khẩu.
+      expect(find.byType(TextField), findsNWidgets(4));
+      expect(find.text('Ngày sinh'), findsOneWidget);
       expect(find.text('Xác nhận mật khẩu'), findsOneWidget);
       // Ô Xác nhận mật khẩu cũng nhập dạng ẩn
-      expect(tester.widget<TextField>(find.byType(TextField).at(2)).obscureText, isTrue);
+      expect(tester.widget<TextField>(find.byType(TextField).at(3)).obscureText, isTrue);
 
       await tester.tap(find.descendant(of: tabs, matching: find.text('Đăng nhập')));
       await tester.pump();

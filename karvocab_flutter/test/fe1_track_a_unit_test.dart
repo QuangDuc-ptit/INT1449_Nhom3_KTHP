@@ -1,10 +1,10 @@
 import 'dart:math';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:karvocab_flutter/core/utils/validators.dart';
 import 'package:karvocab_flutter/data/mock/mock_vocab_data.dart';
 import 'package:karvocab_flutter/data/models/vocabulary_model.dart';
 import 'package:karvocab_flutter/data/repositories/auth_repository.dart';
-import 'package:karvocab_flutter/data/repositories/badge_rules.dart';
 import 'package:karvocab_flutter/data/repositories/collection_store.dart';
 import 'package:karvocab_flutter/data/services/pronunciation_service.dart';
 import 'package:karvocab_flutter/data/services/reminder_service.dart';
@@ -226,18 +226,6 @@ void main() {
       expect(auth.isLoggedIn, isFalse);
       expect(auth.isDemo, isFalse);
       expect(await auth.restoreSession(), isFalse);
-    });
-  });
-
-  group('BadgeRules (Màn 15)', () {
-    test('mở khoá khi đạt ngưỡng, tiến độ được giới hạn trong [0, target]', () {
-      final badges = BadgeRules.evaluate(currentStreak: 7, wordsLearned: 42, collectionCount: 9);
-      final byCode = {for (final b in badges) b.code: b};
-      expect(byCode['streak_7']!.isUnlocked, isTrue);
-      expect(byCode['first_100']!.isUnlocked, isFalse);
-      expect(byCode['first_100']!.currentProgress, 42);
-      expect(byCode['word_explorer']!.isUnlocked, isTrue);
-      expect(byCode['word_explorer']!.currentProgress, BadgeRules.collectionsTarget);
     });
   });
 

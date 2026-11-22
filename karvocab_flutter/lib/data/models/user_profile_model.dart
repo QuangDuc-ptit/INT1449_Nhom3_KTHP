@@ -1,25 +1,4 @@
-/// Model Huy hiệu thành tựu (Achievement Badge)
-class BadgeModel {
-  final String id;
-  final String code;
-  final String title;
-  final String description;
-  final String iconName;
-  final bool isUnlocked;
-  final int currentProgress;
-  final int maxProgress;
-
-  const BadgeModel({
-    required this.id,
-    required this.code,
-    required this.title,
-    required this.description,
-    required this.iconName,
-    required this.isUnlocked,
-    required this.currentProgress,
-    required this.maxProgress,
-  });
-}
+import 'account_plan.dart';
 
 /// Model Thông tin người học & Thống kê cá nhân
 class UserProfileModel {
@@ -32,7 +11,15 @@ class UserProfileModel {
   final int dailyGoalWords;
   final String reminderTime;
   final bool isNotificationEnabled;
-  final List<BadgeModel> badges;
+
+  /// Mã ID (vd `KM05092000`), cấp khi có ngày sinh; không sửa được.
+  /// `null` = tài khoản Google / Facebook chưa bổ sung ngày sinh.
+  final String? memberId;
+  final DateTime? birthDate;
+  final AccountPlan plan;
+
+  /// Ngày hết hạn gói Plus (gói trải nghiệm); `null` với Thường và Vip.
+  final DateTime? planExpiresAt;
 
   const UserProfileModel({
     required this.fullName,
@@ -44,8 +31,18 @@ class UserProfileModel {
     required this.dailyGoalWords,
     required this.reminderTime,
     required this.isNotificationEnabled,
-    required this.badges,
+    this.memberId,
+    this.birthDate,
+    this.plan = AccountPlan.standard,
+    this.planExpiresAt,
   });
+
+  /// Gói đang có hiệu lực: Plus quá hạn thì quay về Thường.
+  AccountPlan effectivePlan(DateTime now) {
+    final expires = planExpiresAt;
+    if (expires != null && !now.isBefore(expires)) return AccountPlan.standard;
+    return plan;
+  }
 
   UserProfileModel copyWith({
     String? fullName,
@@ -57,7 +54,10 @@ class UserProfileModel {
     int? dailyGoalWords,
     String? reminderTime,
     bool? isNotificationEnabled,
-    List<BadgeModel>? badges,
+    String? memberId,
+    DateTime? birthDate,
+    AccountPlan? plan,
+    DateTime? planExpiresAt,
   }) {
     return UserProfileModel(
       fullName: fullName ?? this.fullName,
@@ -69,13 +69,16 @@ class UserProfileModel {
       dailyGoalWords: dailyGoalWords ?? this.dailyGoalWords,
       reminderTime: reminderTime ?? this.reminderTime,
       isNotificationEnabled: isNotificationEnabled ?? this.isNotificationEnabled,
-      badges: badges ?? this.badges,
+      memberId: memberId ?? this.memberId,
+      birthDate: birthDate ?? this.birthDate,
+      plan: plan ?? this.plan,
+      planExpiresAt: planExpiresAt ?? this.planExpiresAt,
     );
   }
 
   // Dữ liệu mẫu khởi tạo ban đầu
   static UserProfileModel mockDefault() {
-    return const UserProfileModel(
+    return UserProfileModel(
       fullName: 'Nguyễn Văn A',
       email: 'learner@karvocab.com',
       avatarUrl: '',
@@ -85,38 +88,8 @@ class UserProfileModel {
       dailyGoalWords: 10,
       reminderTime: '20:00',
       isNotificationEnabled: true,
-      badges: [
-        BadgeModel(
-          id: 'b-1',
-          code: 'streak_7',
-          title: 'Chuỗi 7 Ngày',
-          description: 'Học từ vựng liên tục 7 ngày không gián đoạn',
-          iconName: 'local_fire_department_rounded',
-          isUnlocked: true,
-          currentProgress: 7,
-          maxProgress: 7,
-        ),
-        BadgeModel(
-          id: 'b-2',
-          code: 'word_explorer',
-          title: 'Nhà Thám Hiểm',
-          description: 'Tạo hoặc tham gia từ 3 học phần trở lên',
-          iconName: 'explore_rounded',
-          isUnlocked: true,
-          currentProgress: 3,
-          maxProgress: 3,
-        ),
-        BadgeModel(
-          id: 'b-3',
-          code: 'first_100',
-          title: 'Bách Khoa 100 Từ',
-          description: 'Làm chủ và ghi nhớ thành thạo 100 từ vựng',
-          iconName: 'military_tech_rounded',
-          isUnlocked: false,
-          currentProgress: 42,
-          maxProgress: 100,
-        ),
-      ],
+      memberId: 'KM05092000',
+      birthDate: DateTime(2005, 9, 20),
     );
   }
 }

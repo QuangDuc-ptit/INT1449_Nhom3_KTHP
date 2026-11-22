@@ -6,10 +6,13 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/utils/date_format.dart';
+import '../../core/utils/validators.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../forgot_password/forgot_password_ui_state.dart';
+import '../widgets/account_widgets.dart';
 import 'forgot_password_screen.dart';
 import 'main_shell_screen.dart';
 
@@ -38,11 +41,18 @@ class _LoginScreenState extends State<LoginScreen> {
   final _registerEmailController = TextEditingController();
   final _registerPasswordController = TextEditingController();
   final _registerConfirmController = TextEditingController();
+  final _registerBirthDateController = TextEditingController();
 
   late int _tab = widget.initialTab;
 
   String? _loginEmailError;
   String? _loginPasswordError;
+
+  DateTime? _registerBirthDate;
+  String? _registerEmailError;
+  String? _registerPasswordError;
+  String? _registerConfirmError;
+  String? _registerBirthDateError;
 
   /// Chặn bấm "Đăng nhập" nhiều lần khi đang chờ kết quả.
   bool _isSubmitting = false;
@@ -58,6 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
     _registerEmailController.dispose();
     _registerPasswordController.dispose();
     _registerConfirmController.dispose();
+    _registerBirthDateController.dispose();
     super.dispose();
   }
 
@@ -91,6 +102,59 @@ class _LoginScreenState extends State<LoginScreen> {
     }
     if (!mounted) return;
     // Mở tab 0 · Trang chủ (MainShellScreen mặc định mở tab Thư viện).
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const MainShellScreen(initialTabIndex: 0)),
+      (route) => false,
+    );
+  }
+
+  Future<void> _pickRegisterBirthDate() async {
+    FocusScope.of(context).unfocus();
+    final picked = await pickBirthDate(context, initial: _registerBirthDate);
+    if (picked == null || !mounted) return;
+    setState(() {
+      _registerBirthDate = picked;
+      _registerBirthDateController.text = formatDmy(picked);
+      _registerBirthDateError = null;
+    });
+  }
+
+  /// Màn 03: kiểm tra form rồi tạo tài khoản (gói Thường, cấp mã ID theo ngày sinh).
+  /// Form chưa có ô họ tên nên tạm lấy phần trước "@" của email; người dùng đổi sau.
+  Future<void> _handleRegister() async {
+    if (_isSubmitting) return;
+    FocusScope.of(context).unfocus();
+    final email = _registerEmailController.text.trim();
+    final password = _registerPasswordController.text;
+    setState(() {
+      _registerEmailError = Validators.email(email);
+      _registerPasswordError = Validators.strongPassword(password);
+      _registerConfirmError = Validators.confirmPassword(_registerConfirmController.text, password);
+      _registerBirthDateError = _registerBirthDate == null ? AppStrings.registerBirthDateRequired : null;
+    });
+    if (_registerEmailError != null ||
+        _registerPasswordError != null ||
+        _registerConfirmError != null ||
+        _registerBirthDateError != null) {
+      return;
+    }
+    setState(() => _isSubmitting = true);
+    try {
+      await _auth.register(
+        fullName: email.split('@').first,
+        email: email,
+        password: password,
+        birthDate: _registerBirthDate,
+      );
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+        _registerEmailError = e.message;
+      });
+      return;
+    }
+    if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const MainShellScreen(initialTabIndex: 0)),
       (route) => false,
@@ -278,7 +342,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
       const SizedBox(height: AppDimensions.space8),
-      AppButton(text: 'Đăng nhập', onPressed: _handleLogin, backgroundColor: AppColors.authButton),
+      AppButton(text: 'Đăng nhập', onPressed: _handleLogin),
     ];
   }
 
@@ -291,6 +355,25 @@ class _LoginScreenState extends State<LoginScreen> {
         controller: _registerEmailController,
         keyboardType: TextInputType.emailAddress,
         borderColor: AppColors.softBlueSurface,
+        errorText: _registerEmailError,
+      ),
+      const SizedBox(height: AppDimensions.space16),
+      // Ngày sinh dùng để cấp mã ID (KM + YYMMDD + số thứ tự); chọn bằng lịch.
+      GestureDetector(
+        key: const ValueKey('register_birth_date'),
+        behavior: HitTestBehavior.opaque,
+        onTap: _pickRegisterBirthDate,
+        child: AbsorbPointer(
+          child: AppTextField(
+            label: AppStrings.registerBirthDate,
+            hintText: AppStrings.registerBirthDateHint,
+            controller: _registerBirthDateController,
+            isReadOnly: true,
+            borderColor: AppColors.softBlueSurface,
+            errorText: _registerBirthDateError,
+            prefixIcon: const Icon(Icons.cake_outlined, color: AppColors.textSecondary),
+          ),
+        ),
       ),
       const SizedBox(height: AppDimensions.space16),
       AppTextField(
@@ -300,6 +383,7 @@ class _LoginScreenState extends State<LoginScreen> {
         controller: _registerPasswordController,
         isPassword: true,
         borderColor: AppColors.softBlueSurface,
+        errorText: _registerPasswordError,
       ),
       const SizedBox(height: AppDimensions.space16),
       AppTextField(
@@ -310,9 +394,14 @@ class _LoginScreenState extends State<LoginScreen> {
         isPassword: true,
         textInputAction: TextInputAction.done,
         borderColor: AppColors.softBlueSurface,
+        errorText: _registerConfirmError,
       ),
       const SizedBox(height: AppDimensions.space24),
-      AppButton(text: 'Đăng ký', onPressed: _noAction, backgroundColor: AppColors.authButton),
+      AppButton(
+        text: AppStrings.registerButton,
+        onPressed: _handleRegister,
+        isLoading: _isSubmitting,
+      ),
     ];
   }
 }
