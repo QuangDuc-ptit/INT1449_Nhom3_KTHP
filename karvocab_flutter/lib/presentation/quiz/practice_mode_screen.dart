@@ -43,17 +43,17 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
   PracticeOrder _order = PracticeOrder.alphabet;
 
   static const List<_Game> _games = [
-    _Game(AppStrings.gamePronunciation, AppStrings.gamePronunciationDesc, Icons.mic_rounded,
+    _Game(AppStrings.gamePronunciation, Icons.mic_rounded,
         QuizMode.pronunciation, filledIcon: true),
-    _Game(AppStrings.gameListenType, AppStrings.gameListenTypeDesc, Icons.headphones_rounded,
+    _Game(AppStrings.gameListenType, Icons.headphones_rounded,
         QuizMode.listenType),
-    _Game(AppStrings.gameListenChoose, AppStrings.gameListenChooseDesc, Icons.headphones_rounded,
+    _Game(AppStrings.gameListenChoose, Icons.headphones_rounded,
         QuizMode.listenChoose),
-    _Game(AppStrings.gameChooseMeaning, AppStrings.gameChooseMeaningDesc, Icons.menu_book_rounded,
+    _Game(AppStrings.gameChooseMeaning, Icons.menu_book_rounded,
         QuizMode.meaningChoose),
-    _Game(AppStrings.gameSynonymAntonym, AppStrings.gameSynonymAntonymDesc, Icons.compare_arrows_rounded,
+    _Game(AppStrings.gameSynonymAntonym, Icons.compare_arrows_rounded,
         QuizMode.synonymAntonym),
-    _Game(AppStrings.gameRecallType, AppStrings.gameRecallTypeDesc, Icons.edit_note_rounded,
+    _Game(AppStrings.gameRecallType, Icons.edit_note_rounded,
         QuizMode.recallType),
   ];
 
@@ -407,7 +407,6 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
     return PracticeGameCard(
       icon: game.icon,
       title: game.title,
-      description: game.description,
       filledIcon: game.filledIcon,
       onTap: () => _openGame(game, selected),
     );
@@ -416,12 +415,11 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
 
 class _Game {
   final String title;
-  final String description;
   final IconData icon;
   final QuizMode mode;
   final bool filledIcon;
 
-  const _Game(this.title, this.description, this.icon, this.mode, {this.filledIcon = false});
+  const _Game(this.title, this.icon, this.mode, {this.filledIcon = false});
 }
 
 /// Khung bottom sheet chọn giá trị: thanh kéo, tiêu đề, danh sách lựa chọn, nút "Xong" (tuỳ chọn).

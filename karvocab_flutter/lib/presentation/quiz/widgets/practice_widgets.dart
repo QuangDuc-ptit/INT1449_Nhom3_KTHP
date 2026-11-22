@@ -117,11 +117,10 @@ class PracticeOrderButton extends StatelessWidget {
   }
 }
 
-/// Màn 10 · Thẻ trò chơi: icon (trên trái) + chevron (trên phải), tên, mô tả.
+/// Màn 10 · Thẻ trò chơi: icon (trên trái) + chevron (trên phải) và tên trò chơi.
 class PracticeGameCard extends StatelessWidget {
   final IconData icon;
   final String title;
-  final String description;
   /// true: icon trắng trên nền xanh đậm (thẻ "Luyện phát âm"); false: icon xanh trên nền xanh nhạt.
   final bool filledIcon;
   final VoidCallback onTap;
@@ -130,7 +129,6 @@ class PracticeGameCard extends StatelessWidget {
     super.key,
     required this.icon,
     required this.title,
-    required this.description,
     required this.onTap,
     this.filledIcon = false,
   });
@@ -180,8 +178,6 @@ class PracticeGameCard extends StatelessWidget {
                 ),
                 const SizedBox(height: AppDimensions.space10),
                 Text(title, style: AppTypography.practiceGameTitle),
-                const SizedBox(height: AppDimensions.space2),
-                Text(description, style: AppTypography.practiceGameDescription),
               ],
             ),
           ),

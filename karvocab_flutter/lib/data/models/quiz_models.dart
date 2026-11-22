@@ -55,23 +55,6 @@ extension QuizModeX on QuizMode {
     }
   }
 
-  String get description {
-    switch (this) {
-      case QuizMode.listenChoose:
-        return AppStrings.modeListenChooseDesc;
-      case QuizMode.listenType:
-        return AppStrings.modeListenTypeDesc;
-      case QuizMode.meaningChoose:
-        return AppStrings.modeMeaningChooseDesc;
-      case QuizMode.recallType:
-        return AppStrings.modeRecallTypeDesc;
-      case QuizMode.pronunciation:
-        return AppStrings.gamePronunciationDesc;
-      case QuizMode.synonymAntonym:
-        return AppStrings.gameSynonymAntonymDesc;
-    }
-  }
-
   /// Chế độ gõ chữ (Màn 19 & 20)
   bool get isTyping => this == QuizMode.listenType || this == QuizMode.recallType;
 }

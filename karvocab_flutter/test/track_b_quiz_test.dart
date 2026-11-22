@@ -298,8 +298,7 @@ void main() {
       expect(find.text('Luyện phát âm'), findsOneWidget);
       expect(find.text('Nghe và điền từ'), findsOneWidget);
       expect(find.text('Nghe và chọn từ'), findsOneWidget);
-      // "Chọn nghĩa đúng" vừa là tên vừa là mô tả của thẻ.
-      expect(find.text('Chọn nghĩa đúng'), findsNWidgets(2));
+      expect(find.text('Chọn nghĩa đúng'), findsOneWidget);
       expect(find.text('Đồng nghĩa và trái nghĩa'), findsOneWidget);
       expect(find.text('Nhớ từ qua nghĩa'), findsOneWidget);
     });
