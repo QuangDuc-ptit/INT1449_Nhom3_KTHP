@@ -4,7 +4,7 @@ import 'vocabulary_model.dart';
 /// Theo BE: phiên âm tách `ipaUk` / `ipaUs` (có thể null).
 class AiVocabDraft {
   final String term;
-  final String partOfSpeech; // noun | verb | adj | adv | idiom
+  final String partOfSpeech; // key trong PartOfSpeech.values (core/constants/part_of_speech.dart)
   final String? ipaUk;
   final String? ipaUs;
   final String definitionEn;

@@ -150,6 +150,7 @@ void main() {
       final store = _freshStore();
       await tester.pumpWidget(_app(WordFormScreen(collectionId: 'col-1', store: store)));
 
+      await tester.ensureVisible(find.widgetWithText(AppButton, 'Lưu vào học phần'));
       await tester.tap(find.widgetWithText(AppButton, 'Lưu vào học phần'));
       await tester.pump();
       expect(find.text('Vui lòng nhập từ tiếng Anh'), findsOneWidget);
@@ -157,6 +158,7 @@ void main() {
 
       await tester.enterText(find.byType(TextField).at(0), 'Coherent');
       await tester.enterText(find.byType(TextField).at(2), 'mạch lạc');
+      await tester.ensureVisible(find.widgetWithText(AppButton, 'Lưu vào học phần'));
       await tester.tap(find.widgetWithText(AppButton, 'Lưu vào học phần'));
       await tester.pump();
       expect(find.text('Từ "Coherent" đã có trong học phần này'), findsOneWidget);
@@ -171,6 +173,7 @@ void main() {
       await tester.enterText(find.byType(TextField).at(0), 'resilient');
       await tester.enterText(find.byType(TextField).at(1), 'rɪˈzɪliənt');
       await tester.enterText(find.byType(TextField).at(2), 'kiên cường');
+      await tester.ensureVisible(find.widgetWithText(AppButton, 'Lưu vào học phần'));
       await tester.tap(find.widgetWithText(AppButton, 'Lưu vào học phần'));
       await tester.pumpAndSettle();
 

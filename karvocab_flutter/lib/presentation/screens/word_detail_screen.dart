@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_durations.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/constants/part_of_speech.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/app_button.dart';
@@ -37,12 +40,6 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
   CollectionStore get _store => widget.store ?? CollectionStore.instance;
   PronunciationService get _audio => widget.pronunciation ?? PronunciationService.instance;
 
-  static const Map<String, String> _posLabels = {
-    'noun': 'n.',
-    'verb': 'v.',
-    'adj': 'adj.',
-    'adv': 'adv.',
-  };
 
   Future<void> _openEdit(VocabularyModel vocab) async {
     final saved = await Navigator.of(context).push<VocabularyModel>(
@@ -118,7 +115,7 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
                 _buildHeaderCard(vocab, isPlaying),
                 const SizedBox(height: AppDimensions.space20),
                 _buildSection(
-                  title: 'Nghĩa tiếng Việt',
+                  title: AppStrings.aiMeaningLabel,
                   icon: Icons.translate_rounded,
                   child: Text(
                     vocab.definitionVi,
@@ -139,6 +136,14 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
                     title: 'Ví dụ câu ngữ cảnh',
                     icon: Icons.format_quote_rounded,
                     child: HighlightedSentence(sentence: vocab.exampleSentence, keyword: vocab.term),
+                  ),
+                ],
+                if (vocab.note.isNotEmpty) ...[
+                  const SizedBox(height: AppDimensions.space16),
+                  _buildSection(
+                    title: AppStrings.wordDetailNote,
+                    icon: Icons.sticky_note_2_outlined,
+                    child: Text(vocab.note, style: AppTypography.bodyMedium),
                   ),
                 ],
                 const SizedBox(height: AppDimensions.space32),
@@ -178,7 +183,7 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
                   borderRadius: BorderRadius.circular(AppDimensions.radiusSmall),
                 ),
                 child: Text(
-                  '[${_posLabels[vocab.partOfSpeech] ?? vocab.partOfSpeech}]',
+                  PartOfSpeech.bracket(vocab.partOfSpeech),
                   style: AppTypography.labelSmall.copyWith(
                     color: AppColors.navyBlue,
                     fontWeight: FontWeight.w800,

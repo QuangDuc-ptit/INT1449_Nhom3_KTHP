@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/constants/part_of_speech.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/validators.dart';
 import '../../core/widgets/app_button.dart';
-import '../../core/widgets/app_text_field.dart';
 import '../../data/models/vocabulary_model.dart';
 import '../../data/repositories/collection_store.dart';
+import '../../data/services/speech_service.dart';
 
-/// Màn 24 · Thêm từ vựng & Màn 09 · Sửa từ vựng (dùng chung một form).
-/// - Bắt buộc: Từ tiếng Anh, Nghĩa tiếng Việt. Tuỳ chọn: IPA, định nghĩa EN, câu ví dụ.
-/// - Không cho trùng từ trong cùng một học phần.
-/// - Lưu xong `pop` trả về bản ghi đã lưu.
+/// Màn 09 · Sửa từ vựng & Màn 24 · Thêm từ vựng (dùng chung một form).
+/// - Thứ tự trường: Từ tiếng Anh, IPA, Nghĩa tiếng Việt, Từ loại, Ví dụ, Trình độ, Ghi chú.
+/// - Bắt buộc: Từ tiếng Anh, Nghĩa tiếng Việt. Không cho trùng từ trong cùng một học phần.
+/// - Lưu qua [CollectionStore] (Demo Mode giữ trong bộ nhớ, Sprint 3 gọi API),
+///   xong `pop` trả về bản ghi đã lưu.
 class WordFormScreen extends StatefulWidget {
   final String collectionId;
   final VocabularyModel? initialWord;
@@ -31,20 +35,14 @@ class WordFormScreen extends StatefulWidget {
 }
 
 class _WordFormScreenState extends State<WordFormScreen> {
-  static const List<String> partsOfSpeech = ['noun', 'verb', 'adj', 'adv'];
-  static const Map<String, String> posLabels = {
-    'noun': 'Danh từ (n.)',
-    'verb': 'Động từ (v.)',
-    'adj': 'Tính từ (adj.)',
-    'adv': 'Trạng từ (adv.)',
-  };
   static const List<String> cefrLevels = ['A1', 'A2', 'B1', 'B2', 'C1'];
+  static const String defaultCefr = 'B1';
 
   late final TextEditingController _termController;
   late final TextEditingController _ipaController;
   late final TextEditingController _defViController;
-  late final TextEditingController _defEnController;
   late final TextEditingController _exampleController;
+  late final TextEditingController _noteController;
 
   late String _partOfSpeech;
   late String _cefrLevel;
@@ -53,6 +51,8 @@ class _WordFormScreenState extends State<WordFormScreen> {
 
   CollectionStore get _store => widget.store ?? CollectionStore.instance;
 
+  String get _collectionId => widget.initialWord?.collectionId ?? widget.collectionId;
+
   @override
   void initState() {
     super.initState();
@@ -60,10 +60,10 @@ class _WordFormScreenState extends State<WordFormScreen> {
     _termController = TextEditingController(text: w?.term ?? '');
     _ipaController = TextEditingController(text: w?.ipa ?? '');
     _defViController = TextEditingController(text: w?.definitionVi ?? '');
-    _defEnController = TextEditingController(text: w?.definitionEn ?? '');
     _exampleController = TextEditingController(text: w?.exampleSentence ?? '');
-    _partOfSpeech = partsOfSpeech.contains(w?.partOfSpeech) ? w!.partOfSpeech : 'noun';
-    _cefrLevel = cefrLevels.contains(w?.cefrLevel) ? w!.cefrLevel : 'B1';
+    _noteController = TextEditingController(text: w?.note ?? '');
+    _partOfSpeech = PartOfSpeech.of(w?.partOfSpeech ?? '') != null ? w!.partOfSpeech : PartOfSpeech.defaultKey;
+    _cefrLevel = cefrLevels.contains(w?.cefrLevel) ? w!.cefrLevel : defaultCefr;
   }
 
   @override
@@ -71,8 +71,8 @@ class _WordFormScreenState extends State<WordFormScreen> {
     _termController.dispose();
     _ipaController.dispose();
     _defViController.dispose();
-    _defEnController.dispose();
     _exampleController.dispose();
+    _noteController.dispose();
     super.dispose();
   }
 
@@ -88,28 +88,37 @@ class _WordFormScreenState extends State<WordFormScreen> {
     FocusScope.of(context).unfocus();
     final term = _termController.text.trim();
     var termError = Validators.term(term);
-    if (termError == null &&
-        _store.isTermTaken(widget.collectionId, term, excludeId: widget.initialWord?.id)) {
-      termError = 'Từ "$term" đã có trong học phần này';
+    if (termError == null && _store.isTermTaken(_collectionId, term, excludeId: widget.initialWord?.id)) {
+      termError = AppStrings.wordFormDuplicate(term);
     }
-    final defViError = Validators.required(_defViController.text, 'Vui lòng nhập nghĩa tiếng Việt');
+    final defViError = Validators.required(_defViController.text, AppStrings.wordFormMeaningRequired);
     setState(() {
       _termError = termError;
       _defViError = defViError;
     });
     if (termError != null || defViError != null) return;
 
-    final word = VocabularyModel(
-      id: widget.initialWord?.id ?? '',
-      collectionId: widget.initialWord?.collectionId ?? widget.collectionId,
+    // Sửa từ: giữ nguyên các trường form không hiển thị (định nghĩa EN, đồng nghĩa...).
+    final base = widget.initialWord ??
+        VocabularyModel(
+          id: '',
+          collectionId: widget.collectionId,
+          term: term,
+          partOfSpeech: _partOfSpeech,
+          ipa: '',
+          definitionVi: '',
+          definitionEn: '',
+          exampleSentence: '',
+          cefrLevel: _cefrLevel,
+        );
+    final word = base.copyWith(
       term: term,
       partOfSpeech: _partOfSpeech,
       ipa: _normalizeIpa(_ipaController.text),
       definitionVi: _defViController.text.trim(),
-      definitionEn: _defEnController.text.trim(),
       exampleSentence: _exampleController.text.trim(),
       cefrLevel: _cefrLevel,
-      isMastered: widget.initialWord?.isMastered ?? false,
+      note: _noteController.text.trim(),
     );
 
     final VocabularyModel saved;
@@ -124,151 +133,354 @@ class _WordFormScreenState extends State<WordFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final editing = widget.isEditing;
+    // Màn sửa hiện dữ liệu đã điền; màn thêm mới hiện gợi ý mẫu trong ô trống.
+    String? hint(String text) => editing ? null : text;
+
     return Scaffold(
-      backgroundColor: AppColors.mainBackground,
-      appBar: AppBar(
-        title: Text(
-          widget.isEditing ? 'Sửa từ vựng' : 'Thêm từ vựng',
-          style: AppTypography.headingMedium,
-        ),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.close_rounded),
-          tooltip: 'Huỷ',
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
+      backgroundColor: AppColors.practiceBackground,
       body: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppDimensions.screenMargin),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AppTextField(
-                      label: 'Từ tiếng Anh *',
-                      hintText: 'ví dụ: resilient',
-                      controller: _termController,
-                      maxLength: 60,
-                      autofocus: !widget.isEditing,
-                      errorText: _termError,
-                      onChanged: (_) {
-                        if (_termError != null) setState(() => _termError = null);
-                      },
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: AppDimensions.wordFormMaxWidth),
+            child: Column(
+              children: [
+                _buildHeader(),
+                Expanded(
+                  child: SingleChildScrollView(
+                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.fromLTRB(
+                      AppDimensions.wordFormHorizontalPadding,
+                      AppDimensions.space12,
+                      AppDimensions.wordFormHorizontalPadding,
+                      AppDimensions.wordFormBottomSpace,
                     ),
-                    const SizedBox(height: AppDimensions.space16),
-                    AppTextField(
-                      label: 'Phiên âm IPA',
-                      hintText: 'ví dụ: /rɪˈzɪliənt/',
-                      controller: _ipaController,
-                      maxLength: 60,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _FormGroup(
+                          label: AppStrings.wordFormTerm,
+                          child: _FormTextField(
+                            controller: _termController,
+                            hint: hint(AppStrings.wordFormTermHint),
+                            maxLength: 60,
+                            autofocus: !editing,
+                            errorText: _termError,
+                            onChanged: (_) {
+                              if (_termError != null) setState(() => _termError = null);
+                            },
+                            suffix: _buildListenButton(),
+                          ),
+                        ),
+                        _FormGroup(
+                          label: AppStrings.wordFormIpa,
+                          child: _FormTextField(
+                            controller: _ipaController,
+                            hint: hint(AppStrings.wordFormIpaHint),
+                            maxLength: 60,
+                          ),
+                        ),
+                        _FormGroup(
+                          label: AppStrings.wordFormMeaning,
+                          child: _FormTextField(
+                            controller: _defViController,
+                            hint: hint(AppStrings.wordFormMeaningHint),
+                            maxLength: 200,
+                            multiline: true,
+                            errorText: _defViError,
+                            onChanged: (_) {
+                              if (_defViError != null) setState(() => _defViError = null);
+                            },
+                          ),
+                        ),
+                        _FormGroup(
+                          label: AppStrings.wordFormPartOfSpeech,
+                          child: _FormSelect(
+                            fieldKey: const Key('word_form_pos'),
+                            value: _partOfSpeech,
+                            items: [
+                              for (final pos in PartOfSpeech.values) (pos.key, pos.label, pos.shortLabel),
+                            ],
+                            onChanged: (key) => setState(() => _partOfSpeech = key),
+                          ),
+                        ),
+                        _FormGroup(
+                          label: AppStrings.wordFormExample,
+                          child: _FormTextField(
+                            controller: _exampleController,
+                            hint: hint(AppStrings.wordFormExampleHint),
+                            maxLength: 300,
+                            multiline: true,
+                          ),
+                        ),
+                        _FormGroup(
+                          label: AppStrings.wordFormLevel,
+                          child: _FormSelect(
+                            fieldKey: const Key('word_form_level'),
+                            value: _cefrLevel,
+                            items: [
+                              for (final level in cefrLevels)
+                                (level, AppStrings.cefrOption(level), AppStrings.cefrOption(level)),
+                            ],
+                            onChanged: (level) => setState(() => _cefrLevel = level),
+                          ),
+                        ),
+                        _FormGroup(
+                          label: AppStrings.wordFormNote,
+                          last: true,
+                          child: _FormTextField(
+                            controller: _noteController,
+                            hint: hint(AppStrings.wordFormNoteHint),
+                            maxLength: 300,
+                            multiline: true,
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) => _save(),
+                          ),
+                        ),
+                        const SizedBox(height: AppDimensions.wordFormSaveGap),
+                        AppButton(
+                          text: editing ? AppStrings.wordFormSaveChanges : AppStrings.aiDestinationTitle,
+                          onPressed: _save,
+                          height: AppDimensions.wordFormFieldHeight,
+                          backgroundColor: AppColors.wordFormSave,
+                          borderRadius: AppDimensions.wordFormSaveRadius,
+                          textStyle: AppTypography.wordFormSave,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: AppDimensions.space16),
-
-                    _buildLabel('Loại từ'),
-                    _buildChoiceWrap(
-                      options: partsOfSpeech,
-                      labelOf: (pos) => posLabels[pos]!,
-                      selected: _partOfSpeech,
-                      onSelected: (pos) => setState(() => _partOfSpeech = pos),
-                    ),
-                    const SizedBox(height: AppDimensions.space16),
-
-                    AppTextField(
-                      label: 'Nghĩa tiếng Việt *',
-                      hintText: 'ví dụ: kiên cường, mau phục hồi',
-                      controller: _defViController,
-                      maxLines: 2,
-                      maxLength: 200,
-                      errorText: _defViError,
-                      onChanged: (_) {
-                        if (_defViError != null) setState(() => _defViError = null);
-                      },
-                    ),
-                    const SizedBox(height: AppDimensions.space16),
-                    AppTextField(
-                      label: 'Định nghĩa tiếng Anh',
-                      hintText: 'ví dụ: Able to recover quickly from difficulties.',
-                      controller: _defEnController,
-                      maxLines: 3,
-                      maxLength: 300,
-                    ),
-                    const SizedBox(height: AppDimensions.space16),
-                    AppTextField(
-                      label: 'Câu ví dụ',
-                      hintText: 'ví dụ: Children are often very resilient.',
-                      controller: _exampleController,
-                      maxLines: 3,
-                      maxLength: 300,
-                      textInputAction: TextInputAction.done,
-                    ),
-                    const SizedBox(height: AppDimensions.space16),
-
-                    _buildLabel('Cấp độ CEFR'),
-                    _buildChoiceWrap(
-                      options: cefrLevels,
-                      labelOf: (level) => level,
-                      selected: _cefrLevel,
-                      onSelected: (level) => setState(() => _cefrLevel = level),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppDimensions.screenMargin,
-                AppDimensions.space8,
-                AppDimensions.screenMargin,
-                AppDimensions.space16,
-              ),
-              child: AppButton(
-                text: widget.isEditing ? 'Lưu thay đổi' : 'Lưu vào học phần',
-                onPressed: _save,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildLabel(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: AppDimensions.space8),
-        child: Text(text, style: AppTypography.bodyBold.copyWith(fontSize: AppTypography.fontSize14)),
-      );
+  /// Nút quay lại (chevron) + tiêu đề + tên học phần.
+  Widget _buildHeader() {
+    final collection = _store.findCollection(_collectionId);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppDimensions.space8,
+        AppDimensions.space8,
+        AppDimensions.wordFormHorizontalPadding,
+        AppDimensions.space8,
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: AppStrings.back,
+            constraints: const BoxConstraints(
+              minWidth: AppDimensions.minTouchTarget,
+              minHeight: AppDimensions.minTouchTarget,
+            ),
+            icon: const Icon(
+              Icons.chevron_left_rounded,
+              color: AppColors.practicePrimary,
+              size: AppDimensions.iconLarge,
+            ),
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
+          const SizedBox(width: AppDimensions.space4),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Semantics(
+                  header: true,
+                  child: Text(
+                    widget.isEditing ? AppStrings.wordFormEditTitle : AppStrings.wordFormAddTitle,
+                    style: AppTypography.wordFormTitle,
+                  ),
+                ),
+                if (collection != null) ...[
+                  const SizedBox(height: AppDimensions.space4),
+                  Text(
+                    collection.title,
+                    style: AppTypography.wordFormSubtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-  Widget _buildChoiceWrap({
-    required List<String> options,
-    required String Function(String) labelOf,
-    required String selected,
-    required ValueChanged<String> onSelected,
-  }) {
-    return Wrap(
-      spacing: AppDimensions.space8,
-      runSpacing: AppDimensions.space8,
-      children: options.map((option) {
-        final isSelected = option == selected;
-        return ChoiceChip(
-          label: Text(labelOf(option)),
-          labelStyle: AppTypography.labelSmall.copyWith(
-            color: isSelected ? AppColors.white : AppColors.textSecondary,
+  /// Nghe thử phát âm từ đang nhập (TTS của máy), nằm gọn trong ô "Từ tiếng Anh".
+  Widget _buildListenButton() {
+    return ListenableBuilder(
+      listenable: _termController,
+      builder: (context, _) {
+        final term = _termController.text.trim();
+        return IconButton(
+          key: const Key('word_form_listen'),
+          tooltip: AppStrings.listenPronunciation,
+          constraints: const BoxConstraints(
+            minWidth: AppDimensions.minTouchTarget,
+            minHeight: AppDimensions.minTouchTarget,
           ),
-          selected: isSelected,
-          selectedColor: AppColors.primaryBlue,
-          backgroundColor: AppColors.white,
-          showCheckmark: false,
-          side: BorderSide(color: isSelected ? AppColors.primaryBlue : AppColors.borderLight),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
-          ),
-          materialTapTargetSize: MaterialTapTargetSize.padded,
-          onSelected: (_) => onSelected(option),
+          icon: const Icon(Icons.volume_up_rounded, size: AppDimensions.iconSmall),
+          color: AppColors.practicePrimary,
+          disabledColor: AppColors.practiceTextSecondary,
+          onPressed: term.isEmpty ? null : () => SpeechService.instance.speak(term),
         );
-      }).toList(),
+      },
+    );
+  }
+}
+
+/// Nhãn đặt phía trên ô nhập, kèm khoảng cách tới nhóm kế tiếp.
+class _FormGroup extends StatelessWidget {
+  final String label;
+  final Widget child;
+  final bool last;
+
+  const _FormGroup({required this.label, required this.child, this.last = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: last ? 0 : AppDimensions.wordFormGroupGap),
+      // Gộp nhãn với ô nhập để trình đọc màn hình đọc nhãn khi focus vào ô.
+      child: MergeSemantics(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(label, style: AppTypography.wordFormLabel),
+            const SizedBox(height: AppDimensions.wordFormLabelGap),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Viền dùng chung cho ô nhập và ô chọn: xanh rất nhạt, focus xanh đậm, lỗi đỏ.
+InputDecoration _fieldDecoration({
+  String? hint,
+  String? errorText,
+  Widget? suffix,
+  double verticalPadding = AppDimensions.space16,
+}) {
+  OutlineInputBorder border(Color color, double width) => OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppDimensions.wordFormFieldRadius),
+        borderSide: BorderSide(color: color, width: width),
+      );
+  return InputDecoration(
+    hintText: hint,
+    hintStyle: AppTypography.wordFormHint,
+    errorText: errorText,
+    errorStyle: AppTypography.wordFormError,
+    filled: true,
+    fillColor: AppColors.white,
+    isDense: true,
+    counterText: '',
+    contentPadding: EdgeInsets.symmetric(
+      horizontal: AppDimensions.wordFormFieldPaddingH,
+      vertical: verticalPadding,
+    ),
+    suffixIcon: suffix,
+    suffixIconConstraints: const BoxConstraints(
+      minWidth: AppDimensions.minTouchTarget,
+      minHeight: AppDimensions.minTouchTarget,
+    ),
+    enabledBorder: border(AppColors.practiceCardBorder, AppDimensions.borderThin),
+    focusedBorder: border(AppColors.practicePrimary, AppDimensions.borderMedium),
+    errorBorder: border(AppColors.errorRed, AppDimensions.borderThin),
+    focusedErrorBorder: border(AppColors.errorRed, AppDimensions.borderMedium),
+  );
+}
+
+class _FormTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String? hint;
+  final String? errorText;
+  final int maxLength;
+  final bool multiline;
+  final bool autofocus;
+  final Widget? suffix;
+  final TextInputAction textInputAction;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+
+  const _FormTextField({
+    required this.controller,
+    required this.maxLength,
+    this.hint,
+    this.errorText,
+    this.multiline = false,
+    this.autofocus = false,
+    this.suffix,
+    this.textInputAction = TextInputAction.next,
+    this.onChanged,
+    this.onSubmitted,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: AppDimensions.wordFormFieldHeight),
+      child: TextField(
+        controller: controller,
+        autofocus: autofocus,
+        maxLength: maxLength,
+        // Câu dài thì ô tự cao thêm (tối đa 3 dòng) thay vì bị cắt chữ.
+        minLines: 1,
+        maxLines: multiline ? 3 : 1,
+        textInputAction: textInputAction,
+        style: AppTypography.wordFormInput,
+        cursorColor: AppColors.practicePrimary,
+        onChanged: onChanged,
+        onSubmitted: onSubmitted,
+        decoration: _fieldDecoration(hint: hint, errorText: errorText, suffix: suffix),
+      ),
+    );
+  }
+}
+
+/// Ô chọn có chevron xuống. Mỗi mục là (giá trị, nhãn trong danh sách, nhãn khi đã chọn).
+class _FormSelect extends StatelessWidget {
+  final Key fieldKey;
+  final String value;
+  final List<(String, String, String)> items;
+  final ValueChanged<String> onChanged;
+
+  const _FormSelect({
+    required this.fieldKey,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      key: fieldKey,
+      initialValue: value,
+      isExpanded: true,
+      menuMaxHeight: AppDimensions.dropdownMenuMaxHeight,
+      borderRadius: BorderRadius.circular(AppDimensions.wordFormFieldRadius),
+      dropdownColor: AppColors.white,
+      style: AppTypography.wordFormInput,
+      icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.practiceTextSecondary),
+      // Dòng chữ của ô chọn cao hơn ô nhập nên dùng padding dọc riêng để cùng cao 52.
+      decoration: _fieldDecoration(verticalPadding: AppDimensions.wordFormSelectPaddingV),
+      selectedItemBuilder: (context) => [
+        for (final item in items) Text(item.$3, overflow: TextOverflow.ellipsis),
+      ],
+      items: [
+        for (final item in items) DropdownMenuItem(value: item.$1, child: Text(item.$2)),
+      ],
+      onChanged: (v) {
+        if (v != null) onChanged(v);
+      },
     );
   }
 }

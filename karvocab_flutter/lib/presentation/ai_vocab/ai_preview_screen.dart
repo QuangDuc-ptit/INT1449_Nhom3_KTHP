@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_text_field.dart';
@@ -9,6 +10,7 @@ import '../../core/widgets/cefr_badge.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../data/models/ai_vocab_draft.dart';
 import '../../data/repositories/collection_bridge.dart';
+import '../../data/services/speech_service.dart';
 
 /// Màn 14 — Xem trước & lưu từ vựng AI (checkbox, sửa inline, chọn học phần đích).
 class AiPreviewScreen extends StatefulWidget {
@@ -40,7 +42,7 @@ class _AiPreviewScreenState extends State<AiPreviewScreen> {
   void initState() {
     super.initState();
     _drafts = List.of(widget.drafts);
-    final base = 'AI · ${widget.topic}';
+    final base = AppStrings.aiNewCollectionDefault(widget.topic);
     _newCollectionName = base.length > 50 ? base.substring(0, 50) : base;
     final initial = widget.initialCollectionId;
     if (initial != null && CollectionBridge.collections.any((c) => c.id == initial)) {
@@ -52,7 +54,7 @@ class _AiPreviewScreenState extends State<AiPreviewScreen> {
   bool get _allSelected => _drafts.isNotEmpty && _selectedCount == _drafts.length;
 
   String get _destinationLabel {
-    if (_destinationId == null) return 'Tạo mới: $_newCollectionName';
+    if (_destinationId == null) return AppStrings.aiDestinationNew(_newCollectionName);
     final matches = CollectionBridge.collections.where((c) => c.id == _destinationId);
     return matches.isEmpty ? _newCollectionName : matches.first.title;
   }
@@ -107,7 +109,7 @@ class _AiPreviewScreenState extends State<AiPreviewScreen> {
       SnackBar(
         backgroundColor: AppColors.successGreen,
         behavior: SnackBarBehavior.floating,
-        content: Text('Đã thêm ${words.length} từ vào học phần'),
+        content: Text(AppStrings.aiSaved(words.length)),
       ),
     );
     // Trả `true` cho Màn 13 để nó tự đóng, quay về màn đã mở luồng AI.
@@ -118,14 +120,14 @@ class _AiPreviewScreenState extends State<AiPreviewScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Xem trước từ vựng AI', style: AppTypography.headingMedium),
+        title: Text(AppStrings.aiPreviewTitle, style: AppTypography.headingMedium),
       ),
       body: SafeArea(
         child: _drafts.isEmpty
             ? EmptyStateWidget(
-                title: 'AI chưa trả về từ nào',
-                message: 'Hãy thử lại với chủ đề khác.',
-                actionText: 'Quay lại',
+                title: AppStrings.aiPreviewEmptyTitle,
+                message: AppStrings.aiPreviewEmptyMessage,
+                actionText: AppStrings.back,
                 onAction: () => Navigator.of(context).pop(),
               )
             : Column(
@@ -138,7 +140,7 @@ class _AiPreviewScreenState extends State<AiPreviewScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            'Đã chọn $_selectedCount/${_drafts.length} từ',
+                            AppStrings.aiPreviewSelected(_selectedCount, _drafts.length),
                             style: AppTypography.bodyBold,
                           ),
                         ),
@@ -152,7 +154,7 @@ class _AiPreviewScreenState extends State<AiPreviewScreen> {
                               d.selected = target;
                             }
                           }),
-                          child: Text(_allSelected ? 'Bỏ chọn tất cả' : 'Chọn tất cả'),
+                          child: Text(_allSelected ? AppStrings.aiDeselectAll : AppStrings.aiSelectAll),
                         ),
                       ],
                     ),
@@ -229,7 +231,7 @@ class _AiPreviewScreenState extends State<AiPreviewScreen> {
                         ),
                         const SizedBox(height: AppDimensions.space12),
                         AppButton(
-                          text: 'Lưu $_selectedCount từ đã chọn',
+                          text: AppStrings.aiSaveSelected(_selectedCount),
                           isEnabled: _selectedCount > 0,
                           onPressed: _save,
                         ),
@@ -297,7 +299,7 @@ class _DraftCard extends StatelessWidget {
                       CefrBadge(level: draft.cefrLevel),
                       if (draft.existsInCollection)
                         Text(
-                          'Đã có trong học phần',
+                          AppStrings.aiAlreadyInCollection,
                           style: AppTypography.labelSmall.copyWith(
                             color: AppColors.warningOrange,
                           ),
@@ -305,7 +307,7 @@ class _DraftCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: AppDimensions.space4),
-                  Text('[${draft.partOfSpeech}.]  ${draft.ipa}',
+                  Text(AppStrings.aiDraftMeta(draft.partOfSpeech, draft.ipa),
                       style: AppTypography.labelSmall),
                   const SizedBox(height: AppDimensions.space4),
                   Text(draft.definitionVi, style: AppTypography.bodyBold),
@@ -319,7 +321,16 @@ class _DraftCard extends StatelessWidget {
             ),
           ),
           IconButton(
-            tooltip: 'Sửa từ ${draft.term}',
+            tooltip: AppStrings.listenPronunciationOf(draft.term),
+            constraints: const BoxConstraints(
+              minWidth: AppDimensions.minTouchTarget,
+              minHeight: AppDimensions.minTouchTarget,
+            ),
+            icon: const Icon(Icons.volume_up_rounded, color: AppColors.primaryBlue),
+            onPressed: () => SpeechService.instance.speak(draft.term),
+          ),
+          IconButton(
+            tooltip: AppStrings.aiEditTooltip(draft.term),
             constraints: const BoxConstraints(
               minWidth: AppDimensions.minTouchTarget,
               minHeight: AppDimensions.minTouchTarget,
@@ -363,7 +374,7 @@ class _EditDraftSheetState extends State<_EditDraftSheet> {
 
   void _apply() {
     if (_meaning.text.trim().isEmpty) {
-      setState(() => _error = 'Nghĩa tiếng Việt không được để trống');
+      setState(() => _error = AppStrings.aiMeaningRequired);
       return;
     }
     widget.draft.definitionVi = _meaning.text.trim();
@@ -385,18 +396,18 @@ class _EditDraftSheetState extends State<_EditDraftSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Sửa "${widget.draft.term}"', style: AppTypography.headingMedium),
+            Text(AppStrings.aiEditTitle(widget.draft.term), style: AppTypography.headingMedium),
             const SizedBox(height: AppDimensions.space16),
             AppTextField(
-              label: 'Nghĩa tiếng Việt',
-              hintText: 'Nhập nghĩa...',
+              label: AppStrings.aiMeaningLabel,
+              hintText: AppStrings.aiMeaningHint,
               controller: _meaning,
               errorText: _error,
             ),
             const SizedBox(height: AppDimensions.space16),
             AppTextField(
-              label: 'Câu ví dụ',
-              hintText: 'Nhập câu ví dụ...',
+              label: AppStrings.aiExampleLabel,
+              hintText: AppStrings.aiExampleHint,
               controller: _example,
               textInputAction: TextInputAction.done,
             ),
@@ -405,13 +416,13 @@ class _EditDraftSheetState extends State<_EditDraftSheet> {
               children: [
                 Expanded(
                   child: AppButton(
-                    text: 'Hủy',
+                    text: AppStrings.cancel,
                     variant: AppButtonVariant.outline,
                     onPressed: () => Navigator.of(context).pop(false),
                   ),
                 ),
                 const SizedBox(width: AppDimensions.space12),
-                Expanded(child: AppButton(text: 'Cập nhật', onPressed: _apply)),
+                Expanded(child: AppButton(text: AppStrings.aiUpdate, onPressed: _apply)),
               ],
             ),
           ],
@@ -478,7 +489,7 @@ class _DestinationSheetState extends State<_DestinationSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Lưu vào học phần', style: AppTypography.headingMedium),
+            Text(AppStrings.aiDestinationTitle, style: AppTypography.headingMedium),
             const SizedBox(height: AppDimensions.space12),
             for (final c in collections)
               ListTile(
@@ -490,21 +501,21 @@ class _DestinationSheetState extends State<_DestinationSheet> {
                   color: AppColors.primaryBlue,
                 ),
                 title: Text(c.title, style: AppTypography.bodyBold),
-                subtitle: Text('${c.totalWords} từ', style: AppTypography.labelSmall),
+                subtitle: Text(AppStrings.wordCount(c.totalWords), style: AppTypography.labelSmall),
                 onTap: () => Navigator.of(context).pop(_DestinationResult(collectionId: c.id)),
               ),
             const Divider(),
             const SizedBox(height: AppDimensions.space8),
             AppTextField(
-              label: 'Hoặc tạo học phần mới',
-              hintText: 'Tên học phần (2–50 ký tự)',
+              label: AppStrings.aiNewCollectionLabel,
+              hintText: AppStrings.aiNewCollectionHint,
               controller: _name,
               errorText: _error,
               textInputAction: TextInputAction.done,
             ),
             const SizedBox(height: AppDimensions.space16),
             AppButton(
-              text: 'Tạo học phần mới',
+              text: AppStrings.aiCreateCollection,
               variant: AppButtonVariant.secondary,
               onPressed: _createNew,
             ),
