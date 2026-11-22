@@ -8,11 +8,15 @@ import '../../core/theme/app_typography.dart';
 import '../../core/utils/validators.dart';
 import '../../core/widgets/app_button.dart';
 import '../../data/models/vocabulary_model.dart';
+import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/collection_store.dart';
 import '../../data/services/speech_service.dart';
+import '../widgets/tag_input_field.dart';
+import '../widgets/word_screen_header.dart';
 
 /// Màn 09 · Sửa từ vựng & Màn 24 · Thêm từ vựng (dùng chung một form).
-/// - Thứ tự trường: Từ tiếng Anh, IPA, Nghĩa tiếng Việt, Từ loại, Ví dụ, Trình độ, Ghi chú.
+/// - Thứ tự trường: Từ tiếng Anh, IPA, Nghĩa tiếng Việt, Từ loại, Ví dụ, Từ đồng nghĩa,
+///   Từ trái nghĩa, Trình độ, Ghi chú.
 /// - Bắt buộc: Từ tiếng Anh, Nghĩa tiếng Việt. Không cho trùng từ trong cùng một học phần.
 /// - Lưu qua [CollectionStore] (Demo Mode giữ trong bộ nhớ, Sprint 3 gọi API),
 ///   xong `pop` trả về bản ghi đã lưu.
@@ -21,12 +25,10 @@ class WordFormScreen extends StatefulWidget {
   final VocabularyModel? initialWord;
   final CollectionStore? store;
 
-  const WordFormScreen({
-    super.key,
-    required this.collectionId,
-    this.initialWord,
-    this.store,
-  });
+  /// Tài khoản đang dùng, để áp hạn mức tổng số từ theo loại tài khoản (Màn 15).
+  final AuthRepository? authRepository;
+
+  const WordFormScreen({super.key, required this.collectionId, this.initialWord, this.store, this.authRepository});
 
   bool get isEditing => initialWord != null;
 
@@ -43,6 +45,10 @@ class _WordFormScreenState extends State<WordFormScreen> {
   late final TextEditingController _defViController;
   late final TextEditingController _exampleController;
   late final TextEditingController _noteController;
+  final TextEditingController _synonymInput = TextEditingController();
+  final TextEditingController _antonymInput = TextEditingController();
+  late List<String> _synonyms;
+  late List<String> _antonyms;
 
   late String _partOfSpeech;
   late String _cefrLevel;
@@ -62,6 +68,8 @@ class _WordFormScreenState extends State<WordFormScreen> {
     _defViController = TextEditingController(text: w?.definitionVi ?? '');
     _exampleController = TextEditingController(text: w?.exampleSentence ?? '');
     _noteController = TextEditingController(text: w?.note ?? '');
+    _synonyms = List.of(w?.synonyms ?? const <String>[]);
+    _antonyms = List.of(w?.antonyms ?? const <String>[]);
     _partOfSpeech = PartOfSpeech.of(w?.partOfSpeech ?? '') != null ? w!.partOfSpeech : PartOfSpeech.defaultKey;
     _cefrLevel = cefrLevels.contains(w?.cefrLevel) ? w!.cefrLevel : defaultCefr;
   }
@@ -73,6 +81,8 @@ class _WordFormScreenState extends State<WordFormScreen> {
     _defViController.dispose();
     _exampleController.dispose();
     _noteController.dispose();
+    _synonymInput.dispose();
+    _antonymInput.dispose();
     super.dispose();
   }
 
@@ -98,8 +108,24 @@ class _WordFormScreenState extends State<WordFormScreen> {
     });
     if (termError != null || defViError != null) return;
 
-    // Sửa từ: giữ nguyên các trường form không hiển thị (định nghĩa EN, đồng nghĩa...).
-    final base = widget.initialWord ??
+    if (!widget.isEditing) {
+      final auth = widget.authRepository ?? AuthRepository.instance;
+      final limitError = auth.wordLimitError(currentTotal: _store.totalWordCount, adding: 1);
+      if (limitError != null) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(behavior: SnackBarBehavior.floating, content: Text(limitError)));
+        return;
+      }
+    }
+
+    // Chữ còn gõ dở trong ô đồng nghĩa / trái nghĩa vẫn được lưu thành thẻ.
+    _synonyms = TagInputField.commitPending(_synonyms, _synonymInput);
+    _antonyms = TagInputField.commitPending(_antonyms, _antonymInput);
+
+    // Sửa từ: giữ nguyên các trường form không hiển thị (định nghĩa tiếng Anh...).
+    final base =
+        widget.initialWord ??
         VocabularyModel(
           id: '',
           collectionId: widget.collectionId,
@@ -119,6 +145,8 @@ class _WordFormScreenState extends State<WordFormScreen> {
       exampleSentence: _exampleController.text.trim(),
       cefrLevel: _cefrLevel,
       note: _noteController.text.trim(),
+      synonyms: List.unmodifiable(_synonyms),
+      antonyms: List.unmodifiable(_antonyms),
     );
 
     final VocabularyModel saved;
@@ -139,173 +167,109 @@ class _WordFormScreenState extends State<WordFormScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.practiceBackground,
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: AppDimensions.wordFormMaxWidth),
-            child: Column(
-              children: [
-                _buildHeader(),
-                Expanded(
-                  child: SingleChildScrollView(
-                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                    padding: const EdgeInsets.fromLTRB(
-                      AppDimensions.wordFormHorizontalPadding,
-                      AppDimensions.space12,
-                      AppDimensions.wordFormHorizontalPadding,
-                      AppDimensions.wordFormBottomSpace,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _FormGroup(
-                          label: AppStrings.wordFormTerm,
-                          child: _FormTextField(
-                            controller: _termController,
-                            hint: hint(AppStrings.wordFormTermHint),
-                            maxLength: 60,
-                            autofocus: !editing,
-                            errorText: _termError,
-                            onChanged: (_) {
-                              if (_termError != null) setState(() => _termError = null);
-                            },
-                            suffix: _buildListenButton(),
-                          ),
-                        ),
-                        _FormGroup(
-                          label: AppStrings.wordFormIpa,
-                          child: _FormTextField(
-                            controller: _ipaController,
-                            hint: hint(AppStrings.wordFormIpaHint),
-                            maxLength: 60,
-                          ),
-                        ),
-                        _FormGroup(
-                          label: AppStrings.wordFormMeaning,
-                          child: _FormTextField(
-                            controller: _defViController,
-                            hint: hint(AppStrings.wordFormMeaningHint),
-                            maxLength: 200,
-                            multiline: true,
-                            errorText: _defViError,
-                            onChanged: (_) {
-                              if (_defViError != null) setState(() => _defViError = null);
-                            },
-                          ),
-                        ),
-                        _FormGroup(
-                          label: AppStrings.wordFormPartOfSpeech,
-                          child: _FormSelect(
-                            fieldKey: const Key('word_form_pos'),
-                            value: _partOfSpeech,
-                            items: [
-                              for (final pos in PartOfSpeech.values) (pos.key, pos.label, pos.shortLabel),
-                            ],
-                            onChanged: (key) => setState(() => _partOfSpeech = key),
-                          ),
-                        ),
-                        _FormGroup(
-                          label: AppStrings.wordFormExample,
-                          child: _FormTextField(
-                            controller: _exampleController,
-                            hint: hint(AppStrings.wordFormExampleHint),
-                            maxLength: 300,
-                            multiline: true,
-                          ),
-                        ),
-                        _FormGroup(
-                          label: AppStrings.wordFormLevel,
-                          child: _FormSelect(
-                            fieldKey: const Key('word_form_level'),
-                            value: _cefrLevel,
-                            items: [
-                              for (final level in cefrLevels)
-                                (level, AppStrings.cefrOption(level), AppStrings.cefrOption(level)),
-                            ],
-                            onChanged: (level) => setState(() => _cefrLevel = level),
-                          ),
-                        ),
-                        _FormGroup(
-                          label: AppStrings.wordFormNote,
-                          last: true,
-                          child: _FormTextField(
-                            controller: _noteController,
-                            hint: hint(AppStrings.wordFormNoteHint),
-                            maxLength: 300,
-                            multiline: true,
-                            textInputAction: TextInputAction.done,
-                            onSubmitted: (_) => _save(),
-                          ),
-                        ),
-                        const SizedBox(height: AppDimensions.wordFormSaveGap),
-                        AppButton(
-                          text: editing ? AppStrings.wordFormSaveChanges : AppStrings.aiDestinationTitle,
-                          onPressed: _save,
-                          height: AppDimensions.wordFormFieldHeight,
-                          backgroundColor: AppColors.wordFormSave,
-                          borderRadius: AppDimensions.wordFormSaveRadius,
-                          textStyle: AppTypography.wordFormSave,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Nút quay lại (chevron) + tiêu đề + tên học phần.
-  Widget _buildHeader() {
-    final collection = _store.findCollection(_collectionId);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppDimensions.space8,
-        AppDimensions.space8,
-        AppDimensions.wordFormHorizontalPadding,
-        AppDimensions.space8,
-      ),
-      child: Row(
+      body: WordScreenBody(
+        header: WordScreenHeader(title: editing ? AppStrings.wordFormEditTitle : AppStrings.wordFormAddTitle),
         children: [
-          IconButton(
-            tooltip: AppStrings.back,
-            constraints: const BoxConstraints(
-              minWidth: AppDimensions.minTouchTarget,
-              minHeight: AppDimensions.minTouchTarget,
+          _FormGroup(
+            label: AppStrings.wordFormTerm,
+            child: _FormTextField(
+              controller: _termController,
+              hint: hint(AppStrings.wordFormTermHint),
+              maxLength: 60,
+              autofocus: !editing,
+              errorText: _termError,
+              onChanged: (_) {
+                if (_termError != null) setState(() => _termError = null);
+              },
+              suffix: _buildListenButton(),
             ),
-            icon: const Icon(
-              Icons.chevron_left_rounded,
-              color: AppColors.practicePrimary,
-              size: AppDimensions.iconLarge,
-            ),
-            onPressed: () => Navigator.of(context).maybePop(),
           ),
-          const SizedBox(width: AppDimensions.space4),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Semantics(
-                  header: true,
-                  child: Text(
-                    widget.isEditing ? AppStrings.wordFormEditTitle : AppStrings.wordFormAddTitle,
-                    style: AppTypography.wordFormTitle,
-                  ),
-                ),
-                if (collection != null) ...[
-                  const SizedBox(height: AppDimensions.space4),
-                  Text(
-                    collection.title,
-                    style: AppTypography.wordFormSubtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ],
+          _FormGroup(
+            label: AppStrings.wordFormIpa,
+            child: _FormTextField(controller: _ipaController, hint: hint(AppStrings.wordFormIpaHint), maxLength: 60),
+          ),
+          _FormGroup(
+            label: AppStrings.wordFormMeaning,
+            child: _FormTextField(
+              controller: _defViController,
+              hint: hint(AppStrings.wordFormMeaningHint),
+              maxLength: 200,
+              multiline: true,
+              errorText: _defViError,
+              onChanged: (_) {
+                if (_defViError != null) setState(() => _defViError = null);
+              },
             ),
+          ),
+          _FormGroup(
+            label: AppStrings.wordFormPartOfSpeech,
+            child: _FormSelect(
+              fieldKey: const Key('word_form_pos'),
+              value: _partOfSpeech,
+              items: [for (final pos in PartOfSpeech.values) (pos.key, pos.label, pos.shortLabel)],
+              onChanged: (key) => setState(() => _partOfSpeech = key),
+            ),
+          ),
+          _FormGroup(
+            label: AppStrings.wordFormExample,
+            child: _FormTextField(
+              controller: _exampleController,
+              hint: hint(AppStrings.wordFormExampleHint),
+              maxLength: 300,
+              multiline: true,
+            ),
+          ),
+          _FormGroup(
+            label: AppStrings.wordFormSynonyms,
+            child: TagInputField(
+              key: const Key('word_form_synonyms'),
+              values: _synonyms,
+              controller: _synonymInput,
+              hint: AppStrings.wordFormTagHint,
+              onChanged: (v) => setState(() => _synonyms = v),
+            ),
+          ),
+          _FormGroup(
+            label: AppStrings.wordFormAntonyms,
+            child: TagInputField(
+              key: const Key('word_form_antonyms'),
+              values: _antonyms,
+              controller: _antonymInput,
+              hint: AppStrings.wordFormTagHint,
+              highlighted: false,
+              onChanged: (v) => setState(() => _antonyms = v),
+            ),
+          ),
+          _FormGroup(
+            label: AppStrings.wordFormLevel,
+            child: _FormSelect(
+              fieldKey: const Key('word_form_level'),
+              value: _cefrLevel,
+              items: [
+                for (final level in cefrLevels) (level, AppStrings.cefrOption(level), AppStrings.cefrOption(level)),
+              ],
+              onChanged: (level) => setState(() => _cefrLevel = level),
+            ),
+          ),
+          _FormGroup(
+            label: AppStrings.wordFormNote,
+            last: true,
+            child: _FormTextField(
+              controller: _noteController,
+              hint: hint(AppStrings.wordFormNoteHint),
+              maxLength: 300,
+              multiline: true,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _save(),
+            ),
+          ),
+          const SizedBox(height: AppDimensions.wordFormSaveGap),
+          AppButton(
+            text: editing ? AppStrings.wordFormSaveChanges : AppStrings.aiDestinationTitle,
+            onPressed: _save,
+            height: AppDimensions.wordFormFieldHeight,
+            borderRadius: AppDimensions.wordFormSaveRadius,
+            textStyle: AppTypography.wordFormSave,
           ),
         ],
       ),
@@ -370,9 +334,9 @@ InputDecoration _fieldDecoration({
   double verticalPadding = AppDimensions.space16,
 }) {
   OutlineInputBorder border(Color color, double width) => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.wordFormFieldRadius),
-        borderSide: BorderSide(color: color, width: width),
-      );
+    borderRadius: BorderRadius.circular(AppDimensions.wordFormFieldRadius),
+    borderSide: BorderSide(color: color, width: width),
+  );
   return InputDecoration(
     hintText: hint,
     hintStyle: AppTypography.wordFormHint,
@@ -382,10 +346,7 @@ InputDecoration _fieldDecoration({
     fillColor: AppColors.white,
     isDense: true,
     counterText: '',
-    contentPadding: EdgeInsets.symmetric(
-      horizontal: AppDimensions.wordFormFieldPaddingH,
-      vertical: verticalPadding,
-    ),
+    contentPadding: EdgeInsets.symmetric(horizontal: AppDimensions.wordFormFieldPaddingH, vertical: verticalPadding),
     suffixIcon: suffix,
     suffixIconConstraints: const BoxConstraints(
       minWidth: AppDimensions.minTouchTarget,
@@ -452,12 +413,7 @@ class _FormSelect extends StatelessWidget {
   final List<(String, String, String)> items;
   final ValueChanged<String> onChanged;
 
-  const _FormSelect({
-    required this.fieldKey,
-    required this.value,
-    required this.items,
-    required this.onChanged,
-  });
+  const _FormSelect({required this.fieldKey, required this.value, required this.items, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -472,12 +428,8 @@ class _FormSelect extends StatelessWidget {
       icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.practiceTextSecondary),
       // Dòng chữ của ô chọn cao hơn ô nhập nên dùng padding dọc riêng để cùng cao 52.
       decoration: _fieldDecoration(verticalPadding: AppDimensions.wordFormSelectPaddingV),
-      selectedItemBuilder: (context) => [
-        for (final item in items) Text(item.$3, overflow: TextOverflow.ellipsis),
-      ],
-      items: [
-        for (final item in items) DropdownMenuItem(value: item.$1, child: Text(item.$2)),
-      ],
+      selectedItemBuilder: (context) => [for (final item in items) Text(item.$3, overflow: TextOverflow.ellipsis)],
+      items: [for (final item in items) DropdownMenuItem(value: item.$1, child: Text(item.$2))],
       onChanged: (v) {
         if (v != null) onChanged(v);
       },

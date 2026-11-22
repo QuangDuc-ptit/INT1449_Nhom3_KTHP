@@ -20,9 +20,9 @@ void main() {
     ));
 
     expect(find.text('Sửa từ vựng'), findsOneWidget);
-    expect(find.text(store.findCollection('col-1')!.title), findsOneWidget);
+    expect(find.text(store.findCollection('col-1')!.title), findsNothing); // không còn dòng phụ dưới tiêu đề
     expect(find.text('Tính từ'), findsOneWidget);
-    expect(find.text('B2 · Trung cao cấp'), findsOneWidget);
+    expect(find.text('B2 · Trên trung cấp'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField).last, 'Gợi nhớ: co + here');
     final save = find.widgetWithText(AppButton, 'Lưu thay đổi');
