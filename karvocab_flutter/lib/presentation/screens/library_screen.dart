@@ -20,6 +20,7 @@ import '../library/library_ui_state.dart';
 import '../widgets/app_bottom_nav_bar.dart';
 import '../widgets/collection_form_sheet.dart';
 import '../widgets/course_progress_ring.dart';
+import '../widgets/tab_header.dart';
 import 'word_list_screen.dart';
 
 /// Màn 05 · Thư viện — nối [LibraryController] (dữ liệu) với [LibraryView]
@@ -205,10 +206,9 @@ class _LibraryViewState extends State<LibraryView> {
     final radius = BorderRadius.circular(AppDimensions.libraryCreateButtonRadius);
     return Padding(
       padding: EdgeInsets.fromLTRB(side, AppDimensions.space16, side, 0),
-      child: Row(
-        children: [
-          const Expanded(child: Text(AppStrings.libraryTitle, style: AppTypography.libraryTitle)),
-          Tooltip(
+      child: TabHeader(
+        title: AppStrings.libraryTitle,
+        trailing: Tooltip(
           message: AppStrings.libraryCreateCourse,
           child: Material(
             color: AppColors.actionPrimary,
@@ -224,7 +224,6 @@ class _LibraryViewState extends State<LibraryView> {
             ),
           ),
         ),
-        ],
       ),
     );
   }

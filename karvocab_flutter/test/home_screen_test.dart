@@ -17,8 +17,7 @@ void main() {
     testWidgets('Đủ dữ liệu: thẻ thống kê, nhắc ôn tập, nút chính, tối đa 3 học phần', (tester) async {
       await tester.pumpWidget(_app(const HomeScreen(state: HomeSampleData.full)));
 
-      expect(find.text('Xin chào,'), findsOneWidget);
-      expect(find.text('Minh Anh'), findsOneWidget);
+      expect(find.text('Xin chào, Karmate!'), findsOneWidget);
       expect(find.text('248'), findsOneWidget);
       expect(find.text('7 ngày'), findsOneWidget);
       expect(find.text('18 từ đang chờ bạn ôn tập'), findsOneWidget);

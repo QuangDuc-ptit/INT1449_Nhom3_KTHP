@@ -50,7 +50,7 @@ class AppStrings {
   static const String navProfile = 'Cá nhân';
 
   // Màn 04 · Trang chủ
-  static const String homeGreetingPrefix = 'Xin chào,';
+  static const String homeGreeting = 'Xin chào, Karmate!';
   static const String homeNotificationsTooltip = 'Thông báo';
 
   static const String homeStatTotalWords = 'Tổng số từ';

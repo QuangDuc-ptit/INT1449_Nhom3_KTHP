@@ -14,6 +14,7 @@ import '../notifications/notification_ui_state.dart';
 import '../widgets/app_bottom_nav_bar.dart';
 import '../widgets/notification_popup.dart';
 import '../widgets/stat_card.dart';
+import '../widgets/tab_header.dart';
 import '../widgets/weekly_bar_chart.dart';
 
 /// Màn 04 · Trang chủ.
@@ -65,7 +66,7 @@ class HomeScreen extends StatelessWidget {
             AppDimensions.homeBlockGap,
           ),
           children: [
-            _Header(userName: state.userName, notifications: notifications, notificationCallbacks: notificationCallbacks),
+            _Header(notifications: notifications, notificationCallbacks: notificationCallbacks),
             blockGap,
             _StatGrid(state: state, onStatClick: onStatClick),
             blockGap,
@@ -97,45 +98,16 @@ class HomeScreen extends StatelessWidget {
 // -----------------------------------------------------------------------------
 
 class _Header extends StatelessWidget {
-  final String userName;
   final ValueListenable<NotificationUiState>? notifications;
   final NotificationPopupCallbacks notificationCallbacks;
 
-  const _Header({
-    required this.userName,
-    required this.notifications,
-    required this.notificationCallbacks,
-  });
+  const _Header({required this.notifications, required this.notificationCallbacks});
 
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: AppDimensions.homeHeaderHeight),
-      child: Row(
-        children: [
-          // Lời chào 2 dòng: tên dài vẫn hiện đủ, không bị ngắt giữa chừng.
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  AppStrings.homeGreetingPrefix,
-                  style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
-                ),
-                Text(
-                  userName,
-                  style: AppTypography.homeGreeting,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppDimensions.space12),
-          _BellButton(notifications: notifications, callbacks: notificationCallbacks),
-        ],
-      ),
+    return TabHeader(
+      title: AppStrings.homeGreeting,
+      trailing: _BellButton(notifications: notifications, callbacks: notificationCallbacks),
     );
   }
 }

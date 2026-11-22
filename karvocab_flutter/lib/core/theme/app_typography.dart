@@ -119,16 +119,6 @@ class AppTypography {
   // Màn 04 · Trang chủ
   // ---------------------------------------------------------------------------
 
-  /// Lời chào "Xin chào, {tên}!" — 26 ExtraBold.
-  static const TextStyle homeGreeting = TextStyle(
-    fontFamily: fontFamily,
-    fontFamilyFallback: fontFamilyFallback,
-    fontSize: 26.0,
-    fontWeight: FontWeight.w800,
-    color: AppColors.navyBlue,
-    height: 1.2,
-  );
-
   /// Số liệu trên thẻ thống kê — 24 Bold.
   static const TextStyle homeStatValue = TextStyle(
     fontFamily: fontFamily,
@@ -329,16 +319,6 @@ class AppTypography {
   // Màn 05 · Thư viện
   // ---------------------------------------------------------------------------
 
-  /// Tiêu đề "Thư viện" — 28 ExtraBold, BrandDark.
-  static const TextStyle libraryTitle = TextStyle(
-    fontFamily: fontFamily,
-    fontFamilyFallback: fontFamilyFallback,
-    fontSize: 28.0,
-    fontWeight: FontWeight.w800,
-    color: AppColors.navyBlue,
-    height: 1.2,
-  );
-
   /// Chữ gõ trong ô tìm kiếm — 14, TextPrimary.
   static const TextStyle searchInput = TextStyle(
     fontFamily: fontFamily,
@@ -430,13 +410,13 @@ class AppTypography {
   // Màn 10 · Luyện tập
   // ---------------------------------------------------------------------------
 
-  /// Tiêu đề "Luyện tập" — 28 ExtraBold, xanh chính.
-  static const TextStyle practiceTitle = TextStyle(
+  /// Tiêu đề lớn đầu 4 tab chính (TabHeader) — 28 ExtraBold, navy.
+  static const TextStyle tabTitle = TextStyle(
     fontFamily: fontFamily,
     fontFamilyFallback: fontFamilyFallback,
     fontSize: 28.0,
     fontWeight: FontWeight.w800,
-    color: AppColors.practicePrimary,
+    color: AppColors.navyBlue,
     height: 1.2,
   );
 

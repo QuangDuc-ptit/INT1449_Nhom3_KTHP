@@ -120,7 +120,6 @@ class AppDimensions {
   static const double homeCardPadding = 16.0;
   static const double homeCardBorderWidth = 1.0;
   static const double homeGoalBarHeight = 8.0;
-  static const double homeHeaderHeight = 56.0;
   static const double bellButtonSize = 44.0;
   static const double notificationBadgeSize = 18.0;
   static const double statCardHeight = 96.0;
@@ -201,7 +200,7 @@ class AppDimensions {
   static const double practiceMaxWidthDesktop = 1100.0;
   static const double practiceSettingsPanelWidth = 400.0;
   static const double practiceColumnGap = 24.0;
-  static const double practiceHorizontalPadding = 22.0;
+  static const double practiceHorizontalPadding = 20.0;
   static const double practiceHorizontalPaddingWide = 32.0;
   static const double practicePanelRadius = 20.0;
   static const double practicePanelPadding = 16.0;

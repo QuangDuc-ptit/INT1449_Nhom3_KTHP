@@ -12,6 +12,7 @@ import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/collection_store.dart';
 import '../widgets/birth_date_picker.dart';
 import 'settings_screen.dart';
+import '../widgets/tab_header.dart';
 
 /// Màn 15 · Hồ sơ cá nhân: ảnh đại diện, thông tin tài khoản (mã ID, email,
 /// ngày sinh) và thành tựu học tập.
@@ -63,23 +64,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final profile = stored.copyWith(totalCollections: _store.collections.length);
         return Scaffold(
           backgroundColor: AppColors.practiceBackground,
-          appBar: AppBar(
-            backgroundColor: AppColors.practiceBackground,
-            surfaceTintColor: AppColors.practiceBackground,
-            centerTitle: false,
-            title: const Text(AppStrings.profileTitle, style: AppTypography.practiceTitle),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.settings_outlined, color: AppColors.practicePrimary),
-                tooltip: AppStrings.profileSettingsTooltip,
-                onPressed: _openSettings,
-              ),
-            ],
-          ),
           body: SafeArea(
             bottom: false,
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(0, AppDimensions.space8, 0, AppDimensions.space32),
+              padding: const EdgeInsets.fromLTRB(0, AppDimensions.space16, 0, AppDimensions.space32),
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: AppDimensions.profileMaxWidth),
@@ -88,6 +76,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        TabHeader(
+                          title: AppStrings.profileTitle,
+                          trailing: IconButton(
+                            icon: const Icon(Icons.settings_outlined, color: AppColors.practicePrimary),
+                            tooltip: AppStrings.profileSettingsTooltip,
+                            onPressed: _openSettings,
+                          ),
+                        ),
+                        const SizedBox(height: AppDimensions.space16),
                         _IdentityCard(profile: profile),
                         const SizedBox(height: AppDimensions.space24),
                         const _SectionTitle(AppStrings.profileAccountInfo),

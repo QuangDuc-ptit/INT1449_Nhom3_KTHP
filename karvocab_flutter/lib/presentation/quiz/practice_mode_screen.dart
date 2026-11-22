@@ -11,6 +11,7 @@ import '../../data/repositories/collection_store.dart';
 import '../../data/repositories/quiz_question_factory.dart';
 import 'quiz_session_screen.dart';
 import 'widgets/practice_widgets.dart';
+import '../widgets/tab_header.dart';
 
 /// Trạng thái từ dùng để lọc nguồn luyện tập.
 enum PracticeWordStatus { unmastered, mastered, all }
@@ -43,18 +44,12 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
   PracticeOrder _order = PracticeOrder.alphabet;
 
   static const List<_Game> _games = [
-    _Game(AppStrings.gamePronunciation, Icons.mic_rounded,
-        QuizMode.pronunciation, filledIcon: true),
-    _Game(AppStrings.gameListenType, Icons.headphones_rounded,
-        QuizMode.listenType),
-    _Game(AppStrings.gameListenChoose, Icons.headphones_rounded,
-        QuizMode.listenChoose),
-    _Game(AppStrings.gameChooseMeaning, Icons.menu_book_rounded,
-        QuizMode.meaningChoose),
-    _Game(AppStrings.gameSynonymAntonym, Icons.compare_arrows_rounded,
-        QuizMode.synonymAntonym),
-    _Game(AppStrings.gameRecallType, Icons.edit_note_rounded,
-        QuizMode.recallType),
+    _Game(AppStrings.gamePronunciation, Icons.mic_rounded, QuizMode.pronunciation, filledIcon: true),
+    _Game(AppStrings.gameListenType, Icons.headphones_rounded, QuizMode.listenType),
+    _Game(AppStrings.gameListenChoose, Icons.headphones_rounded, QuizMode.listenChoose),
+    _Game(AppStrings.gameChooseMeaning, Icons.menu_book_rounded, QuizMode.meaningChoose),
+    _Game(AppStrings.gameSynonymAntonym, Icons.compare_arrows_rounded, QuizMode.synonymAntonym),
+    _Game(AppStrings.gameRecallType, Icons.edit_note_rounded, QuizMode.recallType),
   ];
 
   // ---------------------------------------------------------------------------
@@ -76,9 +71,7 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
   }
 
   List<VocabularyModel> _pool(List<String> selected) {
-    final words = [
-      for (final id in selected) ..._store.wordsOf(id),
-    ].where((w) {
+    final words = [for (final id in selected) ..._store.wordsOf(id)].where((w) {
       switch (_status) {
         case PracticeWordStatus.unmastered:
           return !w.isMastered;
@@ -139,9 +132,7 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
       _showMessage(AppStrings.practiceNoRelations);
       return;
     }
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => QuizSessionScreen(questions: questions)),
-    );
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => QuizSessionScreen(questions: questions)));
   }
 
   Future<void> _pickSources(List<CollectionModel> collections, List<String> selected) async {
@@ -166,8 +157,7 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
                   multiSelect: true,
                   selected: picked.contains(c.id),
                   // Đủ 3 bộ thì các bộ chưa chọn bị làm mờ, bỏ bớt mới chọn được bộ khác.
-                  enabled: picked.contains(c.id) ||
-                      picked.length < AppDimensions.practiceMaxCollections,
+                  enabled: picked.contains(c.id) || picked.length < AppDimensions.practiceMaxCollections,
                   onTap: () => setSheetState(() {
                     if (!picked.remove(c.id)) picked.add(c.id);
                   }),
@@ -242,11 +232,7 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
             final collections = _store.collections;
             final selected = _validSelection(collections);
             return LayoutBuilder(
-              builder: (context, constraints) => _buildResponsive(
-                constraints.maxWidth,
-                collections,
-                selected,
-              ),
+              builder: (context, constraints) => _buildResponsive(constraints.maxWidth, collections, selected),
             );
           },
         ),
@@ -261,9 +247,7 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
     final maxWidth = isDesktop
         ? AppDimensions.practiceMaxWidthDesktop
         : (isTablet ? AppDimensions.practiceMaxWidthTablet : double.infinity);
-    final horizontal = isTablet
-        ? AppDimensions.practiceHorizontalPaddingWide
-        : AppDimensions.practiceHorizontalPadding;
+    final horizontal = isTablet ? AppDimensions.practiceHorizontalPaddingWide : AppDimensions.practiceHorizontalPadding;
 
     final settings = _buildSettingsPanel(collections, selected);
     final games = Column(
@@ -285,7 +269,7 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(AppStrings.practiceTitle, style: AppTypography.practiceTitle),
+                const TabHeader(title: AppStrings.practiceTitle),
                 const SizedBox(height: AppDimensions.space16),
                 if (isDesktop)
                   Row(
@@ -337,19 +321,11 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
           const SizedBox(height: AppDimensions.space16),
           const Text(AppStrings.practiceStatusLabel, style: AppTypography.practiceLabel),
           const SizedBox(height: AppDimensions.space8),
-          PracticeSelectField(
-            key: const Key('practice_status'),
-            value: _statusLabel(_status),
-            onTap: _pickStatus,
-          ),
+          PracticeSelectField(key: const Key('practice_status'), value: _statusLabel(_status), onTap: _pickStatus),
           const SizedBox(height: AppDimensions.space16),
           const Text(AppStrings.practiceCountLabel, style: AppTypography.practiceLabel),
           const SizedBox(height: AppDimensions.space8),
-          PracticeSelectField(
-            key: const Key('practice_count'),
-            value: '$_count',
-            onTap: _pickCount,
-          ),
+          PracticeSelectField(key: const Key('practice_count'), value: '$_count', onTap: _pickCount),
           const SizedBox(height: AppDimensions.space16),
           const Text(AppStrings.practiceOrderLabel, style: AppTypography.practiceLabel),
           const SizedBox(height: AppDimensions.space4),
@@ -391,9 +367,7 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
             children: [
               for (var j = 0; j < columns; j++) ...[
                 if (j > 0) const SizedBox(width: AppDimensions.practiceGridGap),
-                Expanded(
-                  child: i + j < _games.length ? _buildGameCard(_games[i + j], selected) : const SizedBox(),
-                ),
+                Expanded(child: i + j < _games.length ? _buildGameCard(_games[i + j], selected) : const SizedBox()),
               ],
             ],
           ),
