@@ -241,3 +241,26 @@
 - `flutter analyze` 0 error / 0 warning (còn info deprecate `material.dart` của SDK mới); bỏ import thừa `foundation.dart` ở Màn 13.
 - `AuthRepository` thêm `testEmail` / `testPassword` (`admin@123` / `123456`), có cả trong `debugReset()`; màn Đăng nhập không hiển thị gợi ý.
 - Thêm 1 unit test đăng nhập bằng tài khoản test. `flutter test` 106/106 pass.
+
+---
+
+### Phiên làm việc ngày 22/11/2026 (tiếp): Luyện tập, màn chơi, phát âm, dọn code
+
+> Công cụ: Claude Code (Anthropic).
+
+#### 1. Yêu cầu đầu vào (Prompts):
+- "Thiết kế lại giao diện luyện tập" (kèm spec Figma), "giao diện luyện tập đang không responsive, thiết kế lại".
+- "Thêm 2 trò chơi Đồng nghĩa và trái nghĩa, Nhớ từ qua nghĩa"; "có âm thanh khi làm đúng và sai, bạn tự tạo âm thanh".
+- "Để từ có thể phát âm khi tạo"; "Loại từ sửa hết thành các options" (13 loại); "màn khởi động ảnh to hơn, chữ ExtraBold".
+- "App không có emoji, xoá hết, ngoài ra clean code"; "thiết kế giao diện các game sao cho chuyên nghiệp".
+- "Làm các game liên quan và liên kết với backend nếu đã có"; "Sửa lại giao diện sửa từ vựng" (kèm spec 393 × 852).
+
+#### 2. Kết quả & Đóng góp của AI:
+- Màn 10 Luyện tập: bố cục responsive theo breakpoint 600 / 1024, bottom sheet chọn học phần / số lượng / trạng thái, lưới 6 trò chơi; thanh điều hướng đổi kiểu viên thuốc.
+- Màn chơi (08 / 19 / 20 / 25), phản hồi (11), kết quả (12) thiết kế lại cùng ngôn ngữ với Màn 10; nội dung tối đa 600px trên màn rộng.
+- 2 game mới: Luyện phát âm (nhận dạng giọng nói của thiết bị qua `speech_to_text`, cho bỏ qua khi máy không hỗ trợ) và Đồng nghĩa / trái nghĩa (dữ liệu mẫu cho 12 từ). Đã kiểm tra backend: chưa có API cho 2 game này, FE chưa có lớp HTTP nên vẫn chạy Demo Mode; BE cần thêm cột `synonyms`, `antonyms`, `note` và 2 giá trị enum `QuizMode`.
+- Âm thanh đúng / sai tự tạo (`assets/sounds`), phát âm bằng TTS của thiết bị (`flutter_tts`), nút nghe thử khi thêm từ; 13 loại từ (`PartOfSpeech`).
+- Màn 09 / 24 Thêm & Sửa từ vựng làm lại theo spec: 7 trường, thêm "Ghi chú", nút "Lưu thay đổi" trong vùng cuộn.
+- Splash: logo 184dp, chữ ExtraBold; `kotlin.incremental=false` sửa lỗi build khi project và pub cache khác ổ đĩa.
+- Dọn code: xoá toàn bộ emoji, đưa chuỗi viết thẳng của Track B vào `AppStrings`, xoá file và token không dùng, sắp xếp import.
+- `flutter analyze` 0 error / 0 warning; `flutter test` 126/126 pass.
