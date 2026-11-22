@@ -134,12 +134,18 @@ class AppColors {
   static const Color wordFormInputText = Color(0xFF2E4A66);
 
   // ---------------------------------------------------------------------------
-  // Màn 15 · Hồ sơ: màu theo loại tài khoản
+  // Màn 05 · Thư viện: màu theo chủ đề học phần (icon + nền nhạt)
   // ---------------------------------------------------------------------------
-  static const Color planStandard = practiceTextSecondary;
-  static const Color planStandardTint = practiceBackground;
-  static const Color planPlus = Color(0xFF7C3AED);
-  static const Color planPlusTint = Color(0xFFF1EAFE);
-  static const Color planVip = Color(0xFFD97706);
-  static const Color planVipTint = Color(0xFFFEF3E2);
+  static const Color categoryAcademic = practicePrimary;
+  static const Color categoryAcademicTint = practiceSelectedFill;
+  static const Color categoryCareer = Color(0xFF0E8A7E);
+  static const Color categoryCareerTint = Color(0xFFE0F4F1);
+  static const Color categoryLife = Color(0xFFD9670B);
+  static const Color categoryLifeTint = Color(0xFFFFEFE0);
+  static const Color categoryTravel = Color(0xFF7C3AED);
+  static const Color categoryTravelTint = Color(0xFFF0EAFE);
+
+  /// Chữ phụ và rãnh thanh tiến độ trên nền xanh của thẻ tổng quan.
+  static const Color onPrimaryMuted = Color(0xD9FFFFFF);
+  static const Color onPrimaryTrack = Color(0x40FFFFFF);
 }

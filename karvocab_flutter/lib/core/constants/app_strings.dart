@@ -38,6 +38,10 @@ class AppStrings {
   /// Nhãn đọc cho trình đọc màn hình (không hiển thị).
   static const String libraryClearSearch = 'Xoá tìm kiếm';
   static const String libraryLoading = 'Đang tải dữ liệu';
+  static String libraryOverviewMastered(int mastered, int total) => '$mastered/$total từ đã thuộc';
+  static String libraryOverviewCourses(int count) => '$count học phần';
+  static const String libraryEmptyMessage = 'Tạo học phần đầu tiên để bắt đầu lưu từ vựng.';
+  static const String libraryClearFilters = 'Xoá bộ lọc';
 
   // Thanh điều hướng dưới
   static const String navHome = 'Trang chủ';

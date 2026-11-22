@@ -90,6 +90,19 @@ class AppDimensions {
   static const double progressRingSize = 44.0;
   static const double progressRingStroke = 4.0;
   static const double libraryEmptyIconSize = 48.0;
+  static const double libraryCreateButtonRadius = 14.0;
+  static const double libraryOverviewRadius = 20.0;
+  static const double libraryOverviewLogoSize = 72.0;
+  static const double libraryOverviewBarHeight = 6.0;
+  static const double libraryEmptyLogoSize = 120.0;
+
+  /// Nội dung tối đa trên màn rộng; từ 600dp chia 2 cột, từ 960dp chia 3 cột.
+  static const double libraryContentMaxWidth = 1040.0;
+  static const double libraryTwoColumnWidth = 600.0;
+  static const double libraryThreeColumnWidth = 960.0;
+
+  /// Chiều cao thẻ học phần khi xếp lưới (tên tối đa 2 dòng).
+  static const double courseCardGridHeight = 112.0;
   /// Số thẻ khung xương khi đang tải và độ rộng 2 dòng chữ giả (theo tỉ lệ).
   static const int skeletonCardCount = 3;
   static const double skeletonTitleWidthFactor = 0.7;

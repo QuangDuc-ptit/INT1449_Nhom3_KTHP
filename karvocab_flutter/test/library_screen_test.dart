@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:karvocab_flutter/core/constants/app_strings.dart';
+import 'package:karvocab_flutter/core/widgets/app_button.dart';
 import 'package:karvocab_flutter/data/mock/mock_vocab_data.dart';
 import 'package:karvocab_flutter/data/repositories/collection_store.dart';
 import 'package:karvocab_flutter/presentation/library/library_controller.dart';
@@ -10,14 +11,8 @@ import 'package:karvocab_flutter/presentation/screens/library_screen.dart';
 
 void main() {
   group('Course.progressPercent', () {
-    Course course(int words, int mastered) => Course(
-          id: 'x',
-          name: 'x',
-          level: 'B1',
-          wordCount: words,
-          masteredCount: mastered,
-          categoryId: 'life',
-        );
+    Course course(int words, int mastered) =>
+        Course(id: 'x', name: 'x', level: 'B1', wordCount: words, masteredCount: mastered, categoryId: 'life');
 
     test('masteredCount / wordCount × 100, làm tròn; wordCount = 0 → 0%', () {
       expect(course(40, 30).progressPercent, 75);
@@ -33,6 +28,7 @@ void main() {
       ValueChanged<String>? onQueryChange,
       ValueChanged<String?>? onCategorySelect,
       ValueChanged<String>? onCourseClick,
+      VoidCallback? onCreateCourseClick,
     }) {
       return MaterialApp(
         home: LibraryView(
@@ -40,7 +36,7 @@ void main() {
           onQueryChange: onQueryChange ?? (_) {},
           onCategorySelect: onCategorySelect ?? (_) {},
           onCourseClick: onCourseClick ?? (_) {},
-          onCreateCourseClick: () {},
+          onCreateCourseClick: onCreateCourseClick ?? () {},
           onRetry: () {},
         ),
       );
@@ -52,7 +48,7 @@ void main() {
       expect(find.text(AppStrings.libraryTitle), findsOneWidget);
       expect(find.text('Học thuật & IELTS Core'), findsOneWidget);
       expect(find.text('B2'), findsOneWidget);
-      expect(find.text(AppStrings.libraryWordCount(40)), findsOneWidget);
+      expect(find.text('Học thuật · ${AppStrings.libraryWordCount(40)}'), findsOneWidget);
       expect(find.text(AppStrings.libraryProgressPercent(75)), findsOneWidget);
       expect(find.text(AppStrings.libraryProgressPercent(33)), findsOneWidget);
       expect(find.text(AppStrings.libraryProgressPercent(0)), findsOneWidget);
@@ -64,7 +60,7 @@ void main() {
       String? clicked;
       await tester.pumpWidget(view(LibrarySampleData.full, onCourseClick: (id) => clicked = id));
 
-      await tester.tap(find.text(AppStrings.libraryWordCount(24)));
+      await tester.tap(find.text('Sự nghiệp · ${AppStrings.libraryWordCount(24)}'));
       expect(clicked, 'sample-2');
     });
 
@@ -101,20 +97,64 @@ void main() {
       expect(field.textInputAction, TextInputAction.search);
 
       await tester.pumpWidget(
-        view(const LibraryUiState(query: 'ielts', categories: LibrarySampleData.categories), onQueryChange: queries.add),
+        view(
+          const LibraryUiState(query: 'ielts', categories: LibrarySampleData.categories),
+          onQueryChange: queries.add,
+        ),
       );
       await tester.tap(find.byKey(const Key('library_search_clear')));
       expect(queries, ['']);
     });
 
-    testWidgets('Trạng thái trống: chưa có học phần / không tìm thấy', (tester) async {
-      await tester.pumpWidget(view(LibrarySampleData.empty));
-      expect(find.text(AppStrings.libraryEmpty), findsOneWidget);
-      expect(find.byIcon(Icons.menu_book_rounded), findsOneWidget);
+    testWidgets('Thẻ tổng quan: số từ đã thuộc / tổng số từ và số học phần; ẩn khi đang lọc', (tester) async {
+      await tester.pumpWidget(view(LibrarySampleData.full));
+      expect(find.byKey(const Key('library_overview')), findsOneWidget);
+      expect(find.text(AppStrings.libraryOverviewMastered(38, 64)), findsOneWidget);
+      expect(find.text(AppStrings.libraryOverviewCourses(3)), findsOneWidget);
 
-      await tester.pumpWidget(view(const LibraryUiState(query: 'zzz', categories: LibrarySampleData.categories)));
+      await tester.pumpWidget(view(LibrarySampleData.filtered));
+      expect(find.byKey(const Key('library_overview')), findsNothing);
+    });
+
+    testWidgets('Thẻ học phần hiện chủ đề cạnh số từ', (tester) async {
+      await tester.pumpWidget(view(LibrarySampleData.full));
+      expect(find.text('Học thuật · ${AppStrings.libraryWordCount(40)}'), findsOneWidget);
+    });
+
+    testWidgets('Trống: linh vật + nút tạo học phần; không tìm thấy: nút xoá bộ lọc', (tester) async {
+      var created = 0;
+      final queries = <String>[];
+      final selected = <String?>[];
+      await tester.pumpWidget(view(LibrarySampleData.empty, onCreateCourseClick: () => created++));
+      expect(find.text(AppStrings.libraryEmpty), findsOneWidget);
+      expect(find.byType(Image), findsOneWidget);
+      await tester.tap(find.widgetWithText(AppButton, AppStrings.libraryCreateCourse));
+      expect(created, 1);
+
+      await tester.pumpWidget(
+        view(
+          const LibraryUiState(query: 'zzz', categories: LibrarySampleData.categories, selectedCategoryId: 'life'),
+          onQueryChange: queries.add,
+          onCategorySelect: selected.add,
+        ),
+      );
       expect(find.text(AppStrings.libraryNoResults), findsOneWidget);
       expect(find.text(AppStrings.libraryEmpty), findsNothing);
+      await tester.tap(find.widgetWithText(AppButton, AppStrings.libraryClearFilters));
+      expect(queries, ['']);
+      expect(selected, [null]);
+    });
+
+    testWidgets('Màn rộng: thẻ học phần xếp 2 cột', (tester) async {
+      tester.view.physicalSize = const Size(820, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(view(LibrarySampleData.full));
+
+      final first = tester.getTopLeft(find.byType(CourseCard).at(0));
+      final second = tester.getTopLeft(find.byType(CourseCard).at(1));
+      expect(second.dy, first.dy);
+      expect(second.dx, greaterThan(first.dx));
     });
   });
 

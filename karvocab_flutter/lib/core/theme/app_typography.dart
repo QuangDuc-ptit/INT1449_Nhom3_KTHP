@@ -358,6 +358,26 @@ class AppTypography {
     height: 1.2,
   );
 
+  /// Dòng chính thẻ tổng quan "x/y từ đã thuộc" — 18 ExtraBold, trắng.
+  static const TextStyle libraryOverviewTitle = TextStyle(
+    fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
+    fontSize: 18.0,
+    fontWeight: FontWeight.w800,
+    color: AppColors.white,
+    height: 1.3,
+  );
+
+  /// Dòng phụ thẻ tổng quan "3 học phần" — 13 SemiBold, trắng mờ.
+  static const TextStyle libraryOverviewMeta = TextStyle(
+    fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
+    fontSize: 13.0,
+    fontWeight: FontWeight.w600,
+    color: AppColors.onPrimaryMuted,
+    height: 1.3,
+  );
+
   /// Tên học phần — 16 Bold, TextPrimary.
   static const TextStyle courseTitle = TextStyle(
     fontFamily: fontFamily,

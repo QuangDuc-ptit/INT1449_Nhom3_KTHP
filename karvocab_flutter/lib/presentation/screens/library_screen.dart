@@ -1,13 +1,17 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/widget_previews.dart';
 
+import '../../core/constants/app_assets.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_durations.dart';
 import '../../core/constants/app_strings.dart';
-import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_toast.dart';
+import '../../core/widgets/cefr_badge.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../data/repositories/collection_store.dart';
 import '../library/library_controller.dart';
@@ -58,7 +62,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final collection = _store.findCollection(id);
     if (collection == null) return;
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => WordListScreen(collection: collection, store: widget.store)),
+      MaterialPageRoute(
+        builder: (_) => WordListScreen(collection: collection, store: widget.store),
+      ),
     );
   }
 
@@ -89,7 +95,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
 /// Giao diện Màn 05 · Thư viện: chỉ đọc [state], mọi thao tác đưa ra callback.
 ///
 /// Thanh điều hướng dưới do `MainShellScreen` vẽ chung cho các tab
-/// (`AppBottomNavBar`), nên màn này không tự vẽ.
+/// (`AppBottomNavBar`), nên màn này không tự vẽ. Màn rộng: nội dung tối đa
+/// 1040dp, thẻ học phần chia 2 cột từ 600dp và 3 cột từ 960dp.
 class LibraryView extends StatefulWidget {
   final LibraryUiState state;
   final ValueChanged<String> onQueryChange;
@@ -119,10 +126,14 @@ class LibraryView extends StatefulWidget {
 }
 
 class _LibraryViewState extends State<LibraryView> {
-  /// Nút "+" có vùng chạm 48dp, icon 28dp: lùi sang phải phần đệm này để icon thẳng lề 20dp.
-  static const double _createButtonInset = (AppDimensions.minTouchTarget - AppDimensions.iconLarge) / 2;
-
   late final TextEditingController _searchController = TextEditingController(text: widget.state.query);
+  final FocusNode _searchFocus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _searchFocus.addListener(() => setState(() {}));
+  }
 
   @override
   void didUpdateWidget(covariant LibraryView oldWidget) {
@@ -138,90 +149,170 @@ class _LibraryViewState extends State<LibraryView> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
+  void _clearFilters() {
+    widget.onQueryChange('');
+    widget.onCategorySelect(null);
+  }
+
+  /// Thẻ tổng quan chỉ hiện khi đang xem toàn bộ thư viện (không tìm / lọc).
+  bool get _showOverview =>
+      widget.state.status == LibraryLoadStatus.ready && !widget.state.isFiltering && widget.state.courses.isNotEmpty;
+
   @override
   Widget build(BuildContext context) {
-    final scrollView = CustomScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      slivers: [
-        SliverToBoxAdapter(child: _buildHeader()),
-        SliverToBoxAdapter(child: _buildSearchField()),
-        SliverToBoxAdapter(child: _buildCategoryChips()),
-        ..._buildContent(),
-      ],
-    );
-
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.practiceBackground,
       body: SafeArea(
         bottom: false,
-        child: widget.onRefresh == null
-            ? scrollView
-            : RefreshIndicator(onRefresh: widget.onRefresh!, child: scrollView),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Lề hai bên: tối thiểu 20dp, màn rộng thì căn giữa khối nội dung 1040dp.
+            final side = math.max(
+              AppDimensions.libraryHorizontalPadding,
+              (constraints.maxWidth - AppDimensions.libraryContentMaxWidth) / 2,
+            );
+            final contentWidth = constraints.maxWidth - side * 2;
+            final columns = contentWidth >= AppDimensions.libraryThreeColumnWidth
+                ? 3
+                : contentWidth >= AppDimensions.libraryTwoColumnWidth
+                ? 2
+                : 1;
+            final scrollView = CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(child: _buildHeader(side)),
+                if (_showOverview) SliverToBoxAdapter(child: _buildOverview(side)),
+                SliverToBoxAdapter(child: _buildSearchField(side)),
+                SliverToBoxAdapter(child: _buildCategoryChips(side)),
+                ..._buildContent(side, columns),
+              ],
+            );
+            return widget.onRefresh == null
+                ? scrollView
+                : RefreshIndicator(onRefresh: widget.onRefresh!, child: scrollView);
+          },
+        ),
       ),
     );
   }
 
   // 1. Tiêu đề "Thư viện" + nút "+" tạo học phần.
-  Widget _buildHeader() {
+  Widget _buildHeader(double side) {
+    final radius = BorderRadius.circular(AppDimensions.libraryCreateButtonRadius);
     return Padding(
-      padding: const EdgeInsets.only(
-        left: AppDimensions.libraryHorizontalPadding,
-        right: AppDimensions.libraryHorizontalPadding - _createButtonInset,
-        top: AppDimensions.space12,
-      ),
+      padding: EdgeInsets.fromLTRB(side, AppDimensions.space16, side, 0),
       child: Row(
         children: [
           const Expanded(child: Text(AppStrings.libraryTitle, style: AppTypography.libraryTitle)),
-          IconButton(
-            key: const Key('library_create_course'),
-            onPressed: widget.onCreateCourseClick,
-            tooltip: AppStrings.libraryCreateCourse,
-            icon: const Icon(
-              Icons.add_circle_outline_rounded,
-              color: AppColors.navyBlue,
-              size: AppDimensions.iconLarge,
+          Tooltip(
+          message: AppStrings.libraryCreateCourse,
+          child: Material(
+            color: AppColors.actionPrimary,
+            borderRadius: radius,
+            child: InkWell(
+              key: const Key('library_create_course'),
+              borderRadius: radius,
+              onTap: widget.onCreateCourseClick,
+              child: const SizedBox.square(
+                dimension: AppDimensions.minTouchTarget,
+                child: Icon(Icons.add_rounded, color: AppColors.white, size: AppDimensions.iconLarge),
+              ),
             ),
           ),
+        ),
         ],
       ),
     );
   }
 
-  // 2. Ô tìm kiếm.
-  Widget _buildSearchField() {
-    final hasText = widget.state.query.isNotEmpty;
+  // 2. Thẻ tổng quan: số từ đã thuộc / tổng số từ, số học phần, thanh tiến độ.
+  Widget _buildOverview(double side) {
+    final courses = widget.state.courses;
+    final total = courses.fold<int>(0, (sum, c) => sum + c.wordCount);
+    final mastered = courses.fold<int>(0, (sum, c) => sum + c.masteredCount);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppDimensions.libraryHorizontalPadding,
-        AppDimensions.space16,
-        AppDimensions.libraryHorizontalPadding,
-        0,
-      ),
+      padding: EdgeInsets.fromLTRB(side, AppDimensions.space20, side, 0),
       child: Container(
+        key: const Key('library_overview'),
+        padding: const EdgeInsets.fromLTRB(
+          AppDimensions.space20,
+          AppDimensions.space16,
+          AppDimensions.space12,
+          AppDimensions.space16,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.actionPrimary,
+          borderRadius: BorderRadius.circular(AppDimensions.libraryOverviewRadius),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(AppStrings.libraryOverviewMastered(mastered, total), style: AppTypography.libraryOverviewTitle),
+                  const SizedBox(height: AppDimensions.space4),
+                  Text(AppStrings.libraryOverviewCourses(courses.length), style: AppTypography.libraryOverviewMeta),
+                  const SizedBox(height: AppDimensions.space12),
+                  _ProgressBar(value: total == 0 ? 0 : mastered / total),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppDimensions.space12),
+            Image.asset(
+              AppAssets.logo,
+              width: AppDimensions.libraryOverviewLogoSize,
+              height: AppDimensions.libraryOverviewLogoSize,
+              excludeFromSemantics: true,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 3. Ô tìm kiếm.
+  Widget _buildSearchField(double side) {
+    final hasText = widget.state.query.isNotEmpty;
+    final focused = _searchFocus.hasFocus;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(side, AppDimensions.space20, side, 0),
+      child: AnimatedContainer(
+        duration: AppDurations.fast,
         height: AppDimensions.searchFieldHeight,
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: BorderRadius.circular(AppDimensions.searchFieldRadius),
-          border: Border.all(color: AppColors.divider, width: AppDimensions.borderThin),
+          border: Border.all(
+            color: focused ? AppColors.actionPrimary : AppColors.practiceCardBorder,
+            width: focused ? AppDimensions.borderMedium : AppDimensions.borderThin,
+          ),
         ),
         child: Row(
           children: [
             const SizedBox(width: AppDimensions.space12),
-            const Icon(Icons.search_rounded, size: AppDimensions.iconSmall, color: AppColors.authTextSecondary),
+            Icon(
+              Icons.search_rounded,
+              size: AppDimensions.iconSmall,
+              color: focused ? AppColors.actionPrimary : AppColors.practiceTextSecondary,
+            ),
             Expanded(
               child: TextField(
                 key: const Key('library_search'),
                 controller: _searchController,
+                focusNode: _searchFocus,
                 onChanged: widget.onQueryChange,
                 // Nút Search trên bàn phím: Flutter tự đóng bàn phím khi bấm.
                 textInputAction: TextInputAction.search,
                 style: AppTypography.searchInput,
+                cursorColor: AppColors.actionPrimary,
                 decoration: const InputDecoration(
                   hintText: AppStrings.librarySearchHint,
-                  hintStyle: AppTypography.authBody,
+                  hintStyle: AppTypography.wordFormHint,
                   border: InputBorder.none,
                   isDense: true,
                   contentPadding: EdgeInsets.symmetric(horizontal: AppDimensions.space8),
@@ -233,7 +324,11 @@ class _LibraryViewState extends State<LibraryView> {
                 key: const Key('library_search_clear'),
                 onPressed: () => widget.onQueryChange(''),
                 tooltip: AppStrings.libraryClearSearch,
-                icon: const Icon(Icons.close_rounded, size: AppDimensions.iconSmall, color: AppColors.authTextSecondary),
+                icon: const Icon(
+                  Icons.close_rounded,
+                  size: AppDimensions.iconSmall,
+                  color: AppColors.practiceTextSecondary,
+                ),
               ),
           ],
         ),
@@ -241,26 +336,26 @@ class _LibraryViewState extends State<LibraryView> {
     );
   }
 
-  // 3. Hàng chip lọc: "Tất cả" + các nhóm trong categories.
-  Widget _buildCategoryChips() {
+  // 4. Hàng chip lọc: "Tất cả" + các nhóm trong categories.
+  Widget _buildCategoryChips(double side) {
     final categories = widget.state.categories;
     return Padding(
-      // Chip cao 36dp nhưng vùng chạm 48dp → trừ phần đệm để khoảng cách nhìn thấy đúng 12dp / 20dp.
+      // Chip cao 36dp nhưng vùng chạm 48dp → trừ phần đệm để khoảng cách nhìn thấy đúng 12dp.
       padding: const EdgeInsets.only(top: AppDimensions.space12 - AppDimensions.filterChipTouchInset),
       child: SizedBox(
         height: AppDimensions.minTouchTarget,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: AppDimensions.libraryHorizontalPadding),
+          padding: EdgeInsets.symmetric(horizontal: side),
           itemCount: categories.length + 1,
           separatorBuilder: (_, _) => const SizedBox(width: AppDimensions.space8),
           itemBuilder: (context, index) {
-            final id = index == 0 ? null : categories[index - 1].id;
-            final label = index == 0 ? AppStrings.libraryAllCategories : categories[index - 1].name;
+            final category = index == 0 ? null : categories[index - 1];
             return _FilterChip(
-              label: label,
-              selected: widget.state.selectedCategoryId == id,
-              onTap: () => widget.onCategorySelect(id),
+              label: category?.name ?? AppStrings.libraryAllCategories,
+              icon: category == null ? null : _CategoryStyle.of(category.id).icon,
+              selected: widget.state.selectedCategoryId == category?.id,
+              onTap: () => widget.onCategorySelect(category?.id),
             );
           },
         ),
@@ -268,12 +363,12 @@ class _LibraryViewState extends State<LibraryView> {
     );
   }
 
-  // 4–5. Danh sách học phần / trạng thái tải, lỗi, trống.
-  List<Widget> _buildContent() {
-    const listPadding = EdgeInsets.fromLTRB(
-      AppDimensions.libraryHorizontalPadding,
-      AppDimensions.space20 - AppDimensions.filterChipTouchInset,
-      AppDimensions.libraryHorizontalPadding,
+  // 5. Danh sách học phần / trạng thái tải, lỗi, trống.
+  List<Widget> _buildContent(double side, int columns) {
+    final listPadding = EdgeInsets.fromLTRB(
+      side,
+      AppDimensions.space16 - AppDimensions.filterChipTouchInset,
+      side,
       AppDimensions.space24,
     );
     final state = widget.state;
@@ -283,11 +378,7 @@ class _LibraryViewState extends State<LibraryView> {
         return [
           SliverPadding(
             padding: listPadding,
-            sliver: SliverList.separated(
-              itemCount: AppDimensions.skeletonCardCount,
-              separatorBuilder: (_, _) => const SizedBox(height: AppDimensions.space12),
-              itemBuilder: (_, _) => const SkeletonCard(),
-            ),
+            sliver: _cards(columns, AppDimensions.skeletonCardCount, (_) => const SkeletonCard()),
           ),
         ];
       case LibraryLoadStatus.error:
@@ -306,48 +397,101 @@ class _LibraryViewState extends State<LibraryView> {
     }
 
     if (state.courses.isEmpty) {
-      final noResults = state.isFiltering;
       return [
         SliverFillRemaining(
           hasScrollBody: false,
-          child: _EmptyMessage(
-            icon: noResults ? Icons.search_rounded : Icons.menu_book_rounded,
-            message: noResults ? AppStrings.libraryNoResults : AppStrings.libraryEmpty,
-          ),
+          child: state.isFiltering
+              ? _EmptyState(
+                  key: const Key('library_no_results'),
+                  icon: Icons.search_off_rounded,
+                  title: AppStrings.libraryNoResults,
+                  actionText: AppStrings.libraryClearFilters,
+                  onAction: _clearFilters,
+                )
+              : _EmptyState(
+                  key: const Key('library_empty'),
+                  title: AppStrings.libraryEmpty,
+                  message: AppStrings.libraryEmptyMessage,
+                  actionText: AppStrings.libraryCreateCourse,
+                  onAction: widget.onCreateCourseClick,
+                ),
         ),
       ];
     }
 
+    final labels = {for (final c in state.categories) c.id: c.name};
     return [
       SliverPadding(
         padding: listPadding,
-        sliver: SliverList.separated(
-          itemCount: state.courses.length,
-          separatorBuilder: (_, _) => const SizedBox(height: AppDimensions.space12),
-          itemBuilder: (context, index) {
-            final course = state.courses[index];
-            return CourseCard(course: course, onTap: () => widget.onCourseClick(course.id));
-          },
-        ),
+        sliver: _cards(columns, state.courses.length, (index) {
+          final course = state.courses[index];
+          return CourseCard(
+            course: course,
+            categoryLabel: labels[course.categoryId],
+            onTap: () => widget.onCourseClick(course.id),
+          );
+        }),
       ),
     ];
+  }
+
+  /// 1 cột: danh sách cao theo nội dung; nhiều cột: lưới thẻ cao bằng nhau.
+  Widget _cards(int columns, int count, Widget Function(int index) builder) {
+    if (columns == 1) {
+      return SliverList.separated(
+        itemCount: count,
+        separatorBuilder: (_, _) => const SizedBox(height: AppDimensions.space12),
+        itemBuilder: (_, index) => builder(index),
+      );
+    }
+    return SliverGrid.builder(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: columns,
+        mainAxisSpacing: AppDimensions.space12,
+        crossAxisSpacing: AppDimensions.space12,
+        mainAxisExtent: AppDimensions.courseCardGridHeight,
+      ),
+      itemCount: count,
+      itemBuilder: (_, index) => builder(index),
+    );
+  }
+}
+
+/// Icon và màu riêng của từng chủ đề học phần.
+class _CategoryStyle {
+  final IconData icon;
+  final Color color;
+  final Color tint;
+
+  const _CategoryStyle(this.icon, this.color, this.tint);
+
+  static _CategoryStyle of(String categoryId) {
+    final icon = CollectionCategories.icon(CollectionStore.iconForCategory(categoryId));
+    return switch (categoryId) {
+      'career' => _CategoryStyle(icon, AppColors.categoryCareer, AppColors.categoryCareerTint),
+      'life' => _CategoryStyle(icon, AppColors.categoryLife, AppColors.categoryLifeTint),
+      'travel' => _CategoryStyle(icon, AppColors.categoryTravel, AppColors.categoryTravelTint),
+      _ => _CategoryStyle(icon, AppColors.categoryAcademic, AppColors.categoryAcademicTint),
+    };
   }
 }
 
 class _FilterChip extends StatelessWidget {
   final String label;
+  final IconData? icon;
   final bool selected;
   final VoidCallback onTap;
 
-  const _FilterChip({required this.label, required this.selected, required this.onTap});
+  const _FilterChip({required this.label, required this.selected, required this.onTap, this.icon});
 
   @override
   Widget build(BuildContext context) {
+    final foreground = selected ? AppColors.white : AppColors.practiceTextPrimary;
     final shape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
       side: selected
           ? BorderSide.none
-          : const BorderSide(color: AppColors.divider, width: AppDimensions.borderThin),
+          : const BorderSide(color: AppColors.practiceCardBorder, width: AppDimensions.borderThin),
     );
     return Semantics(
       button: true,
@@ -358,20 +502,27 @@ class _FilterChip extends StatelessWidget {
         onTap: onTap,
         child: Center(
           child: Material(
-            color: selected ? AppColors.navyBlue : AppColors.white,
+            color: selected ? AppColors.actionPrimary : AppColors.white,
             shape: shape,
             clipBehavior: Clip.antiAlias,
             child: InkWell(
               onTap: onTap,
               child: Container(
                 height: AppDimensions.filterChipHeight,
-                padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space16),
+                padding: EdgeInsets.only(
+                  left: icon == null ? AppDimensions.space16 : AppDimensions.space12,
+                  right: AppDimensions.space16,
+                ),
                 alignment: Alignment.center,
-                child: Text(
-                  label,
-                  style: AppTypography.filterChip.copyWith(
-                    color: selected ? AppColors.white : AppColors.authTextSecondary,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (icon != null) ...[
+                      Icon(icon, size: AppDimensions.iconSmall, color: foreground),
+                      const SizedBox(width: AppDimensions.space6),
+                    ],
+                    Text(label, style: AppTypography.filterChip.copyWith(color: foreground)),
+                  ],
                 ),
               ),
             ),
@@ -382,85 +533,71 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-/// Thẻ học phần: ô icon sách · tên + trình độ + số từ · vòng tiến độ.
+/// Thẻ học phần: ô icon theo chủ đề · tên (tối đa 2 dòng) + trình độ, chủ đề,
+/// số từ · vòng tiến độ.
 class CourseCard extends StatelessWidget {
   final Course course;
+
+  /// Tên chủ đề hiện sau nhãn trình độ; `null` = ẩn.
+  final String? categoryLabel;
   final VoidCallback onTap;
 
-  const CourseCard({super.key, required this.course, required this.onTap});
+  const CourseCard({super.key, required this.course, required this.onTap, this.categoryLabel});
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(AppDimensions.courseCardRadius);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: radius,
-        boxShadow: AppShadows.cardSoft,
+    final style = _CategoryStyle.of(course.categoryId);
+    final meta = [?categoryLabel, AppStrings.libraryWordCount(course.wordCount)].join(' · ');
+    return Material(
+      color: AppColors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppDimensions.courseCardRadius),
+        side: const BorderSide(color: AppColors.practiceCardBorder, width: AppDimensions.borderThin),
       ),
-      child: Material(
-        color: AppColors.transparent,
-        borderRadius: radius,
-        child: InkWell(
-          borderRadius: radius,
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(AppDimensions.space16),
-            child: Row(
-              children: [
-                Container(
-                  width: AppDimensions.libraryCourseIconBoxSize,
-                  height: AppDimensions.libraryCourseIconBoxSize,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceTint,
-                    borderRadius: BorderRadius.circular(AppDimensions.courseCardIconRadius),
-                  ),
-                  child: const Icon(Icons.menu_book_rounded, size: AppDimensions.iconMedium, color: AppColors.primaryBlue),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(AppDimensions.space16),
+          child: Row(
+            children: [
+              Container(
+                width: AppDimensions.libraryCourseIconBoxSize,
+                height: AppDimensions.libraryCourseIconBoxSize,
+                decoration: BoxDecoration(
+                  color: style.tint,
+                  borderRadius: BorderRadius.circular(AppDimensions.courseCardIconRadius),
                 ),
-                const SizedBox(width: AppDimensions.space12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        course.name,
-                        style: AppTypography.courseTitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: AppDimensions.space6),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppDimensions.levelBadgePaddingH,
-                              vertical: AppDimensions.levelBadgePaddingV,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceTint,
-                              borderRadius: BorderRadius.circular(AppDimensions.levelBadgeRadius),
-                            ),
-                            child: Text(course.level, style: AppTypography.levelBadge),
+                child: Icon(style.icon, size: AppDimensions.iconMedium, color: style.color),
+              ),
+              const SizedBox(width: AppDimensions.space12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(course.name, style: AppTypography.courseTitle, maxLines: 2, overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: AppDimensions.space6),
+                    Row(
+                      children: [
+                        CefrBadge(level: course.level),
+                        const SizedBox(width: AppDimensions.space8),
+                        Flexible(
+                          child: Text(
+                            meta,
+                            style: AppTypography.courseMeta,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(width: AppDimensions.space8),
-                          Flexible(
-                            child: Text(
-                              AppStrings.libraryWordCount(course.wordCount),
-                              style: AppTypography.courseMeta,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                const SizedBox(width: AppDimensions.space12),
-                CourseProgressRing(percent: course.progressPercent),
-              ],
-            ),
+              ),
+              const SizedBox(width: AppDimensions.space12),
+              CourseProgressRing(percent: course.progressPercent),
+            ],
           ),
         ),
       ),
@@ -468,11 +605,51 @@ class CourseCard extends StatelessWidget {
   }
 }
 
-class _EmptyMessage extends StatelessWidget {
-  final IconData icon;
-  final String message;
+/// Thanh tiến độ trắng trên nền xanh của thẻ tổng quan.
+class _ProgressBar extends StatelessWidget {
+  /// 0 … 1.
+  final double value;
 
-  const _EmptyMessage({required this.icon, required this.message});
+  const _ProgressBar({required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+      child: SizedBox(
+        height: AppDimensions.libraryOverviewBarHeight,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            const ColoredBox(color: AppColors.onPrimaryTrack),
+            FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: value.clamp(0.0, 1.0),
+              child: const ColoredBox(color: AppColors.white),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Trạng thái trống: linh vật Axolotl (hoặc icon khi không tìm thấy) + nút hành động.
+class _EmptyState extends StatelessWidget {
+  final IconData? icon;
+  final String title;
+  final String? message;
+  final String actionText;
+  final VoidCallback onAction;
+
+  const _EmptyState({
+    super.key,
+    required this.title,
+    required this.actionText,
+    required this.onAction,
+    this.icon,
+    this.message,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -482,9 +659,29 @@ class _EmptyMessage extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: AppDimensions.libraryEmptyIconSize, color: AppColors.authTextSecondary),
-            const SizedBox(height: AppDimensions.space12),
-            Text(message, style: AppTypography.authBody, textAlign: TextAlign.center),
+            if (icon == null)
+              Image.asset(
+                AppAssets.logo,
+                width: AppDimensions.libraryEmptyLogoSize,
+                height: AppDimensions.libraryEmptyLogoSize,
+                excludeFromSemantics: true,
+              )
+            else
+              Icon(icon, size: AppDimensions.libraryEmptyIconSize, color: AppColors.practiceTextSecondary),
+            const SizedBox(height: AppDimensions.space16),
+            Text(title, style: AppTypography.headingMedium, textAlign: TextAlign.center),
+            if (message != null) ...[
+              const SizedBox(height: AppDimensions.space8),
+              Text(message!, style: AppTypography.bodyMedium, textAlign: TextAlign.center),
+            ],
+            const SizedBox(height: AppDimensions.space20),
+            // Rộng tối thiểu 220dp, chữ dài thì nút giãn theo (không tràn).
+            ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: AppDimensions.emptyActionWidth),
+              child: IntrinsicWidth(
+                child: AppButton(text: actionText, onPressed: onAction),
+              ),
+            ),
           ],
         ),
       ),
@@ -502,10 +699,8 @@ class SkeletonCard extends StatefulWidget {
 }
 
 class _SkeletonCardState extends State<SkeletonCard> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: AppDurations.pulse,
-  )..repeat(reverse: true);
+  late final AnimationController _controller = AnimationController(vsync: this, duration: AppDurations.pulse)
+    ..repeat(reverse: true);
 
   @override
   void dispose() {
@@ -524,13 +719,19 @@ class _SkeletonCardState extends State<SkeletonCard> with SingleTickerProviderSt
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: BorderRadius.circular(AppDimensions.courseCardRadius),
+            border: Border.all(color: AppColors.practiceCardBorder, width: AppDimensions.borderThin),
           ),
           child: Row(
             children: [
-              _block(AppDimensions.libraryCourseIconBoxSize, AppDimensions.libraryCourseIconBoxSize, AppDimensions.courseCardIconRadius),
+              _block(
+                AppDimensions.libraryCourseIconBoxSize,
+                AppDimensions.libraryCourseIconBoxSize,
+                AppDimensions.courseCardIconRadius,
+              ),
               const SizedBox(width: AppDimensions.space12),
               Expanded(
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     FractionallySizedBox(
@@ -549,7 +750,7 @@ class _SkeletonCardState extends State<SkeletonCard> with SingleTickerProviderSt
               Container(
                 width: AppDimensions.progressRingSize,
                 height: AppDimensions.progressRingSize,
-                decoration: const BoxDecoration(color: AppColors.surfaceTint, shape: BoxShape.circle),
+                decoration: const BoxDecoration(color: AppColors.practiceSelectedFill, shape: BoxShape.circle),
               ),
             ],
           ),
@@ -562,10 +763,7 @@ class _SkeletonCardState extends State<SkeletonCard> with SingleTickerProviderSt
     return Container(
       width: width,
       height: height,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceTint,
-        borderRadius: BorderRadius.circular(radius),
-      ),
+      decoration: BoxDecoration(color: AppColors.practiceSelectedFill, borderRadius: BorderRadius.circular(radius)),
     );
   }
 }
