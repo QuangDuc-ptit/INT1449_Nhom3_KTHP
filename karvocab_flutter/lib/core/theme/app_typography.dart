@@ -368,15 +368,6 @@ class AppTypography {
     height: 1.3,
   );
 
-  /// Nhãn trình độ (B1, B2…) — 11 Bold, BrandDark.
-  static const TextStyle levelBadge = TextStyle(
-    fontFamily: fontFamily,
-    fontFamilyFallback: fontFamilyFallback,
-    fontSize: 11.0,
-    fontWeight: FontWeight.w700,
-    color: AppColors.navyBlue,
-    height: 1.2,
-  );
 
   /// Số từ của học phần — 13, TextSecondary.
   static const TextStyle courseMeta = TextStyle(

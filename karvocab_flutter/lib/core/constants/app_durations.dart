@@ -9,8 +9,6 @@ class AppDurations {
   /// Một chu kỳ nhấp nháy skeleton / sóng âm.
   static const Duration pulse = Duration(milliseconds: 900);
 
-  /// Toast / SnackBar ngắn (đổi ngôn ngữ).
-  static const Duration snackShort = Duration(seconds: 1);
 
   /// Toast mặc định.
   static const Duration toast = Duration(seconds: 3);

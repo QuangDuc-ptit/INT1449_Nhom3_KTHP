@@ -85,8 +85,6 @@ class AppDimensions {
   static const double libraryCourseIconBoxSize = 48.0;
   static const double courseCardIconRadius = 12.0;
   static const double levelBadgeRadius = 6.0;
-  static const double levelBadgePaddingH = 6.0;
-  static const double levelBadgePaddingV = 2.0;
   static const double progressRingSize = 44.0;
   static const double progressRingStroke = 4.0;
   static const double libraryEmptyIconSize = 48.0;
