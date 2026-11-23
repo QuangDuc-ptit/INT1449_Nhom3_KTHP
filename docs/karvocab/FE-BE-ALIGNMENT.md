@@ -12,7 +12,6 @@ Mọi API trả về dạng bọc:
 ```
 
 Lỗi:
-
 ```json
 { "success": false, "data": null, "message": "Thông báo tiếng Việt", "errorCode": "MA_LOI", "errors": [{ "field": "password", "message": "..." }], "timestamp": "..." }
 ```
