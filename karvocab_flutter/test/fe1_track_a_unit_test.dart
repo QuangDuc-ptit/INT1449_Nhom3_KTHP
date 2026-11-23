@@ -176,10 +176,9 @@ void main() {
       expect(await auth.restoreSession(), isTrue);
     });
 
-    test('login: tài khoản test admin@123 / 123456 đăng nhập được', () async {
-      final profile = await auth.login('admin@123', '123456');
-      expect(auth.isLoggedIn, isTrue);
-      expect(profile.email, AuthRepository.testEmail);
+    test('login: tài khoản test cũ admin@123 đã bị xoá', () async {
+      await expectLater(auth.login('admin@123', '123456'), throwsA(isA<AuthException>()));
+      expect(auth.isLoggedIn, isFalse);
     });
 
     test('register: tạo tài khoản mới, chặn email đã tồn tại', () async {

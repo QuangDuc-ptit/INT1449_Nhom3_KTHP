@@ -61,10 +61,6 @@ class AuthRepository extends ChangeNotifier {
   static const String demoEmail = 'learner@karvocab.com';
   static const String demoPassword = 'Karvocab1';
 
-  /// Tài khoản test nội bộ của nhóm (không hiển thị trên giao diện).
-  static const String testEmail = 'admin@123';
-  static const String testPassword = '123456';
-
   /// Thời hạn hiệu lực của mã OTP.
   static const Duration otpLifetime = Duration(minutes: 5);
 
@@ -238,19 +234,13 @@ class AuthRepository extends ChangeNotifier {
 
   String _normalize(String email) => email.trim().toLowerCase();
 
-  /// Tài khoản mẫu: tài khoản demo và tài khoản test nội bộ.
+  /// Tài khoản mẫu: chỉ có tài khoản demo.
   void _seedAccounts() {
     _accounts[demoEmail] = _Account(
       fullName: 'Nguyễn Văn A',
       password: demoPassword,
       birthDate: DateTime(2005, 9, 20),
       memberId: 'KM05092000',
-    );
-    _accounts[testEmail] = _Account(
-      fullName: 'Admin',
-      password: testPassword,
-      birthDate: DateTime(2000, 1, 1),
-      memberId: 'KM00010100',
     );
   }
 
