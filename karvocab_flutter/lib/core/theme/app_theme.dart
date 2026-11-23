@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../constants/app_colors.dart';
+import '../constants/app_dimensions.dart';
 import 'app_typography.dart';
 
 /// Theme chung của app; dùng cho `MaterialApp` và các bản xem thử giao diện.
@@ -28,6 +29,14 @@ class AppTheme {
           centerTitle: true,
           titleTextStyle: AppTypography.headingMedium,
           iconTheme: IconThemeData(color: AppColors.textPrimary),
+        ),
+        // Nút quay lại của AppBar giống WordScreenHeader: chevron xanh.
+        actionIconTheme: ActionIconThemeData(
+          backButtonIconBuilder: (_) => const Icon(
+            Icons.chevron_left_rounded,
+            color: AppColors.practicePrimary,
+            size: AppDimensions.iconLarge,
+          ),
         ),
       );
 }

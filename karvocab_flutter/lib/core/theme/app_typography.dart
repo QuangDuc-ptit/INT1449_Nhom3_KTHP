@@ -618,17 +618,6 @@ class AppTypography {
   // Màn 09 · Sửa từ vựng / Màn 24 · Thêm từ vựng
   // ---------------------------------------------------------------------------
 
-  /// Tiêu đề "Sửa từ vựng" — 20 Bold, navy.
-  static const TextStyle wordFormTitle = TextStyle(
-    fontFamily: fontFamily,
-    fontFamilyFallback: fontFamilyFallback,
-    fontSize: 20.0,
-    fontWeight: FontWeight.w700,
-    color: AppColors.practiceTextPrimary,
-    height: 1.25,
-  );
-
-
   /// Nhãn trên ô nhập — 12 SemiBold, navy.
   static const TextStyle wordFormLabel = TextStyle(
     fontFamily: fontFamily,

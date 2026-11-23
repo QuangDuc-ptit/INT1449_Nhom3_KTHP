@@ -6,7 +6,8 @@ import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
 
 /// Đầu trang dùng chung cho Màn 07 (Chi tiết), 09 (Sửa) và 24 (Thêm từ):
-/// chevron quay lại, tiêu đề 20px và nút tuỳ chọn bên phải.
+/// chevron quay lại, tiêu đề căn giữa và nút tuỳ chọn bên phải. Cùng kiểu với
+/// AppBar của các màn con khác (xem `AppTheme.light`).
 class WordScreenHeader extends StatelessWidget {
   final String title;
   final Widget? trailing;
@@ -16,12 +17,7 @@ class WordScreenHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppDimensions.space8,
-        AppDimensions.space8,
-        AppDimensions.space12,
-        AppDimensions.space8,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space4, vertical: AppDimensions.space4),
       child: Row(
         children: [
           IconButton(
@@ -37,11 +33,20 @@ class WordScreenHeader extends StatelessWidget {
             ),
             onPressed: () => Navigator.of(context).maybePop(),
           ),
-          const SizedBox(width: AppDimensions.space4),
           Expanded(
-            child: Semantics(header: true, child: Text(title, style: AppTypography.wordFormTitle)),
+            child: Semantics(
+              header: true,
+              child: Text(
+                title,
+                style: AppTypography.headingMedium,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ),
-          ?trailing,
+          // Giữ chỗ bằng nút quay lại để tiêu đề nằm đúng giữa màn hình.
+          trailing ?? const SizedBox(width: AppDimensions.minTouchTarget),
         ],
       ),
     );
