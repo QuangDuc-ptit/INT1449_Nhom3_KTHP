@@ -76,14 +76,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        TabHeader(
-                          title: AppStrings.profileTitle,
-                          trailing: IconButton(
-                            icon: const Icon(Icons.settings_outlined, color: AppColors.practicePrimary),
-                            tooltip: AppStrings.profileSettingsTooltip,
-                            onPressed: _openSettings,
-                          ),
-                        ),
+                        // Lối vào Cài đặt nằm ở mục "Tùy chọn khác" bên dưới.
+                        const TabHeader(title: AppStrings.profileTitle),
                         const SizedBox(height: AppDimensions.space16),
                         _IdentityCard(profile: profile),
                         const SizedBox(height: AppDimensions.space24),

@@ -138,7 +138,6 @@ class AppStrings {
   static const String practiceSheetDone = 'Xong';
   // Màn 15 · Hồ sơ cá nhân
   static const String profileTitle = 'Hồ sơ cá nhân';
-  static const String profileSettingsTooltip = 'Cài đặt tài khoản';
   static const String profileAccountInfo = 'Thông tin tài khoản';
   static const String profileMemberId = 'Mã ID';
   static const String profileEmail = 'Email';
