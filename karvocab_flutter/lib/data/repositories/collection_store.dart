@@ -140,7 +140,7 @@ class CollectionStore extends ChangeNotifier {
   CollectionModel createCollection({
     required String title,
     String description = '',
-    String category = 'academic',
+    String category = CollectionModel.defaultCategory,
   }) {
     final cleanTitle = title.trim();
     if (isTitleTaken(cleanTitle)) {
@@ -165,7 +165,7 @@ class CollectionStore extends ChangeNotifier {
     String id, {
     required String title,
     String description = '',
-    String category = 'academic',
+    String category = CollectionModel.defaultCategory,
   }) {
     final index = _collections.indexWhere((c) => c.id == id);
     if (index == -1) return null;
@@ -205,7 +205,7 @@ class CollectionStore extends ChangeNotifier {
       case 'career':
         return 'work_outline_rounded';
       default:
-        return 'folder_special_rounded';
+        return 'folder_rounded';
     }
   }
 

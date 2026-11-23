@@ -140,6 +140,8 @@ class AppColors {
   static const Color categoryLifeTint = Color(0xFFFFEFE0);
   static const Color categoryTravel = Color(0xFF7C3AED);
   static const Color categoryTravelTint = Color(0xFFF0EAFE);
+  static const Color categoryOther = Color(0xFF52667A);
+  static const Color categoryOtherTint = Color(0xFFEEF2F6);
 
   /// Chữ phụ và rãnh thanh tiến độ trên nền xanh của thẻ tổng quan.
   static const Color onPrimaryMuted = Color(0xD9FFFFFF);

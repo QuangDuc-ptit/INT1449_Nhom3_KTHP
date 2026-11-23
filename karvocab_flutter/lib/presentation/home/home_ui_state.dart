@@ -51,7 +51,7 @@ class HomeCourse {
   /// Chủ đề học phần (academic, career, life, travel) — quyết định icon và màu.
   final String categoryId;
 
-  const HomeCourse({required this.id, required this.name, required this.wordCount, this.categoryId = 'academic'});
+  const HomeCourse({required this.id, required this.name, required this.wordCount, this.categoryId = 'other'});
 }
 
 /// Thẻ thống kê được bấm (tham số của `onStatClick`).

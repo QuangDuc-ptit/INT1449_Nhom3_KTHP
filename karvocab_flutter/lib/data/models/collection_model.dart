@@ -3,7 +3,7 @@ class CollectionModel {
   final String id;
   final String title;
   final String description;
-  final String category; // 'academic', 'career', 'life', 'travel'
+  final String category; // 'academic', 'career', 'life', 'travel', 'other'
   final String iconName;
   final int totalWords;
 
@@ -12,6 +12,9 @@ class CollectionModel {
 
   /// Trình độ mặc định khi tạo học phần mới (form Màn 22 chưa có ô chọn trình độ).
   static const String defaultLevel = 'B1';
+
+  /// Chủ đề mặc định khi tạo học phần mà không chọn: "Khác" (khớp BE).
+  static const String defaultCategory = 'other';
 
   const CollectionModel({
     required this.id,

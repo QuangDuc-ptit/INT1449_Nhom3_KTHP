@@ -84,6 +84,10 @@ void main() {
     });
 
     testWidgets('Chip lấy từ categories, "Tất cả" đứng đầu và trả về null', (tester) async {
+      // Đủ rộng để cả 6 chip cùng hiện (hàng chip cuộn ngang).
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
       final selected = <String?>[];
       await tester.pumpWidget(view(LibrarySampleData.filtered, onCategorySelect: selected.add));
 
@@ -194,6 +198,12 @@ void main() {
       // Giữ nguyên tên của chính nó thì không bị coi là trùng.
       expect(store.updateCollection(first.id, title: 'tên mới'), isNotNull);
       expect(() => store.updateCollection(first.id, title: second.title), throwsArgumentError);
+    });
+
+    test('Tạo học phần không chọn chủ đề thì vào "Khác" (other), lọc được theo Khác', () {
+      final created = store.createCollection(title: 'Từ linh tinh');
+      expect(created.category, 'other');
+      expect(store.search(category: 'other').map((c) => c.id), [created.id]);
     });
 
     test('deleteCollection xoá học phần và các từ trong đó', () {

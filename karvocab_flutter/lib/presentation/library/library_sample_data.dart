@@ -9,6 +9,7 @@ class LibrarySampleData {
     Category(id: 'career', name: 'Sự nghiệp'),
     Category(id: 'life', name: 'Đời sống'),
     Category(id: 'travel', name: 'Du lịch'),
+    Category(id: 'other', name: 'Khác'),
   ];
 
   /// 3 học phần với tiến độ khác nhau (75%, 33%, 0%).

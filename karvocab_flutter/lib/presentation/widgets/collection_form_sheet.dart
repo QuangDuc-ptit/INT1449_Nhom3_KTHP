@@ -10,7 +10,8 @@ import '../../core/widgets/app_text_field.dart';
 import '../../data/models/collection_model.dart';
 import '../../data/repositories/collection_store.dart';
 
-/// Các chủ đề học phần (đặc tả Màn 05: Học thuật, Sự nghiệp, Đời sống + Du lịch từ Figma).
+/// Các chủ đề học phần (đặc tả Màn 05: Học thuật, Sự nghiệp, Đời sống + Du lịch từ Figma)
+/// và "Khác" (`other`, BE dùng làm mặc định khi không chọn — FE-BE-ALIGNMENT).
 class CollectionCategories {
   CollectionCategories._();
 
@@ -19,6 +20,7 @@ class CollectionCategories {
     'career': 'Sự nghiệp',
     'life': 'Đời sống',
     'travel': 'Du lịch',
+    'other': 'Khác',
   };
 
   static IconData icon(String iconName) {
@@ -31,6 +33,8 @@ class CollectionCategories {
         return Icons.chat_bubble_outline_rounded;
       case 'work_outline_rounded':
         return Icons.work_outline_rounded;
+      case 'folder_rounded':
+        return Icons.folder_rounded;
       default:
         return Icons.folder_rounded;
     }
@@ -70,7 +74,7 @@ class CollectionFormSheet extends StatefulWidget {
 class _CollectionFormSheetState extends State<CollectionFormSheet> {
   late final _titleController = TextEditingController(text: widget.initial?.title);
   late final _descController = TextEditingController(text: widget.initial?.description);
-  late String _category = widget.initial?.category ?? 'academic';
+  late String _category = widget.initial?.category ?? CollectionModel.defaultCategory;
   String? _titleError;
 
   @override
