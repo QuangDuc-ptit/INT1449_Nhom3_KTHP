@@ -298,6 +298,8 @@
 - "Mấy cái mục tiêu học tập hằng ngày, nhắc nhở ôn tập, ngôn ngữ giao diện có cần thiết không?" → AI đối chiếu FE spec và code, đề xuất: bỏ Ngôn ngữ (chưa có đa ngôn ngữ, chọn English không có tác dụng), nối Mục tiêu vào Trang chủ, giữ Nhắc nhở. Nhóm đồng ý.
 - "Các text 'Xin chào, Karmate!', 'Thư viện', 'Luyện tập', 'Hồ sơ cá nhân' cùng font size, cùng màu, cùng vị trí."
 - "Chỗ chi tiết từ vựng xoá cái giọng US hoặc giọng UK đi."
+- "Thiết kế lại các giao diện học phần, chỉ cần tên và số từ, thêm 1 icon; ngoài ra có tính năng sửa, xoá các bộ học phần."
+- "Thẻ học phần có nhất thiết phân theo chủ đề không, hơi ít chủ đề" → AI đối chiếu spec (FR-VOCAB-01/02, DEV1-S4-02, BE `category`), khuyên giữ và thêm "Khác" (`other` BE đã có). Nhóm đồng ý.
 
 #### 2. Kết quả & Đóng góp của AI:
 - Xoá `AccountPlan` và toàn bộ hạn mức (lượt AI / ngày, 500 từ); Màn 15 bỏ chip gói, dòng Loại tài khoản, khối Quyền lợi gói. Mã ID và ngày sinh giữ nguyên.
@@ -305,4 +307,5 @@
 - Cài đặt bỏ mục Ngôn ngữ giao diện; Trang chủ thêm thẻ "Mục tiêu hôm nay" (số từ đã ôn / mục tiêu, đổi màu khi đạt).
 - Widget `TabHeader` dùng chung cho 4 tab: cùng kiểu chữ `AppTypography.tabTitle`, cùng lề và chiều cao; Hồ sơ bỏ AppBar.
 - Màn 07 bỏ 2 nút chọn giọng UK / US (nút loa đọc giọng UK mặc định); xoá token không còn dùng.
+- Thẻ học phần (Thư viện, Trang chủ) chỉ còn icon theo chủ đề, tên, số từ; thêm sửa / xoá học phần (`updateCollection`, `deleteCollection`, menu ⋮ ở Màn 05 và 06, xoá phải xác nhận); thêm chủ đề "Khác" làm mặc định. `flutter test` 145/145 pass.
 - `flutter analyze` 0 error / 0 warning; `flutter test` 140/140 pass.
