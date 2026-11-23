@@ -53,8 +53,6 @@ class AppColors {
   static const Color authDivider = homeDivider;
 
   // Bảng màu của các mô tả thiết kế mới (Thư viện …) — trỏ tới màu đã có.
-  /// Divider #E6EDF5.
-  static const Color divider = homeDivider;
 
   // Background Surfaces
   /// Màu nền chung của toàn app (#F5FAFE). Theme dùng màu này làm

@@ -43,12 +43,7 @@ class HomeStateBuilder {
             id: c.id,
             name: c.title,
             wordCount: c.totalWords,
-            progressPercent: c.totalWords == 0
-                ? 0
-                : (collections.wordsOf(c.id).where((w) => w.isMastered).length * 100 / c.totalWords).round().clamp(
-                    0,
-                    100,
-                  ),
+            categoryId: c.category,
           ),
       ],
     );

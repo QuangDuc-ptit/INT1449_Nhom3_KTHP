@@ -85,8 +85,6 @@ class AppDimensions {
   static const double libraryCourseIconBoxSize = 48.0;
   static const double courseCardIconRadius = 12.0;
   static const double levelBadgeRadius = 6.0;
-  static const double progressRingSize = 44.0;
-  static const double progressRingStroke = 4.0;
   static const double libraryEmptyIconSize = 48.0;
   static const double libraryCreateButtonRadius = 14.0;
   static const double libraryOverviewRadius = 20.0;
@@ -127,9 +125,6 @@ class AppDimensions {
   /// Cột rộng 60% khoảng của mỗi ngày.
   static const double chartBarWidthFactor = 0.6;
   static const double chartGridLineWidth = 1.0;
-  static const double courseIconBoxSize = 44.0;
-  static const double courseIconBoxRadius = 12.0;
-  static const double progressBarHeight = 6.0;
 
   // Popup thông báo (Màn 04)
   /// Cách mép trái/phải màn hình → popup rộng = màn hình − 32dp.

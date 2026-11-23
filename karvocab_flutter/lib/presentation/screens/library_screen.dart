@@ -11,7 +11,6 @@ import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_toast.dart';
-import '../../core/widgets/cefr_badge.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../data/repositories/collection_store.dart';
 import '../library/library_controller.dart';
@@ -19,7 +18,8 @@ import '../library/library_sample_data.dart';
 import '../library/library_ui_state.dart';
 import '../widgets/app_bottom_nav_bar.dart';
 import '../widgets/collection_form_sheet.dart';
-import '../widgets/course_progress_ring.dart';
+import '../widgets/collection_actions.dart';
+import '../widgets/course_icon.dart';
 import '../widgets/tab_header.dart';
 import 'word_list_screen.dart';
 
@@ -69,6 +69,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
     );
   }
 
+  Future<void> _openCourseMenu(String id) async {
+    final collection = _store.findCollection(id);
+    if (collection == null) return;
+    await showCollectionActions(context, collection: collection, store: _store);
+  }
+
   Future<void> _createCourse() async {
     final created = await showCollectionFormSheet(context, store: _store);
     if (created == null || !mounted) return;
@@ -85,6 +91,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         onQueryChange: _controller.onQueryChange,
         onCategorySelect: _controller.onCategorySelect,
         onCourseClick: _openCourse,
+        onCourseMenuClick: _openCourseMenu,
         onCreateCourseClick: _createCourse,
         onRetry: _controller.retry,
         onRefresh: _controller.refresh,
@@ -105,6 +112,9 @@ class LibraryView extends StatefulWidget {
   /// `null` = chip "Tất cả".
   final ValueChanged<String?> onCategorySelect;
   final ValueChanged<String> onCourseClick;
+
+  /// Nút ⋮ trên thẻ (Sửa / Xoá học phần); `null` = ẩn nút.
+  final ValueChanged<String>? onCourseMenuClick;
   final VoidCallback onCreateCourseClick;
   final VoidCallback onRetry;
 
@@ -119,6 +129,7 @@ class LibraryView extends StatefulWidget {
     required this.onCourseClick,
     required this.onCreateCourseClick,
     required this.onRetry,
+    this.onCourseMenuClick,
     this.onRefresh,
   });
 
@@ -352,7 +363,7 @@ class _LibraryViewState extends State<LibraryView> {
             final category = index == 0 ? null : categories[index - 1];
             return _FilterChip(
               label: category?.name ?? AppStrings.libraryAllCategories,
-              icon: category == null ? null : _CategoryStyle.of(category.id).icon,
+              icon: category == null ? null : CategoryStyle.of(category.id).icon,
               selected: widget.state.selectedCategoryId == category?.id,
               onTap: () => widget.onCategorySelect(category?.id),
             );
@@ -418,16 +429,16 @@ class _LibraryViewState extends State<LibraryView> {
       ];
     }
 
-    final labels = {for (final c in state.categories) c.id: c.name};
     return [
       SliverPadding(
         padding: listPadding,
         sliver: _cards(columns, state.courses.length, (index) {
           final course = state.courses[index];
+          final onMenu = widget.onCourseMenuClick;
           return CourseCard(
             course: course,
-            categoryLabel: labels[course.categoryId],
             onTap: () => widget.onCourseClick(course.id),
+            onMenu: onMenu == null ? null : () => onMenu(course.id),
           );
         }),
       ),
@@ -453,25 +464,6 @@ class _LibraryViewState extends State<LibraryView> {
       itemCount: count,
       itemBuilder: (_, index) => builder(index),
     );
-  }
-}
-
-/// Icon và màu riêng của từng chủ đề học phần.
-class _CategoryStyle {
-  final IconData icon;
-  final Color color;
-  final Color tint;
-
-  const _CategoryStyle(this.icon, this.color, this.tint);
-
-  static _CategoryStyle of(String categoryId) {
-    final icon = CollectionCategories.icon(CollectionStore.iconForCategory(categoryId));
-    return switch (categoryId) {
-      'career' => _CategoryStyle(icon, AppColors.categoryCareer, AppColors.categoryCareerTint),
-      'life' => _CategoryStyle(icon, AppColors.categoryLife, AppColors.categoryLifeTint),
-      'travel' => _CategoryStyle(icon, AppColors.categoryTravel, AppColors.categoryTravelTint),
-      _ => _CategoryStyle(icon, AppColors.categoryAcademic, AppColors.categoryAcademicTint),
-    };
   }
 }
 
@@ -532,21 +524,18 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-/// Thẻ học phần: ô icon theo chủ đề · tên (tối đa 2 dòng) + trình độ, chủ đề,
-/// số từ · vòng tiến độ.
+/// Thẻ học phần: icon theo chủ đề · tên (tối đa 2 dòng) + số từ · nút ⋮ (Sửa / Xoá).
 class CourseCard extends StatelessWidget {
   final Course course;
-
-  /// Tên chủ đề hiện sau nhãn trình độ; `null` = ẩn.
-  final String? categoryLabel;
   final VoidCallback onTap;
 
-  const CourseCard({super.key, required this.course, required this.onTap, this.categoryLabel});
+  /// Nút ⋮; `null` = ẩn.
+  final VoidCallback? onMenu;
+
+  const CourseCard({super.key, required this.course, required this.onTap, this.onMenu});
 
   @override
   Widget build(BuildContext context) {
-    final style = _CategoryStyle.of(course.categoryId);
-    final meta = [?categoryLabel, AppStrings.libraryWordCount(course.wordCount)].join(' · ');
     return Material(
       color: AppColors.white,
       shape: RoundedRectangleBorder(
@@ -557,18 +546,15 @@ class CourseCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(AppDimensions.space16),
+          padding: EdgeInsets.only(
+            left: AppDimensions.space16,
+            top: AppDimensions.space16,
+            bottom: AppDimensions.space16,
+            right: onMenu == null ? AppDimensions.space16 : AppDimensions.space4,
+          ),
           child: Row(
             children: [
-              Container(
-                width: AppDimensions.libraryCourseIconBoxSize,
-                height: AppDimensions.libraryCourseIconBoxSize,
-                decoration: BoxDecoration(
-                  color: style.tint,
-                  borderRadius: BorderRadius.circular(AppDimensions.courseCardIconRadius),
-                ),
-                child: Icon(style.icon, size: AppDimensions.iconMedium, color: style.color),
-              ),
+              CourseIcon(categoryId: course.categoryId),
               const SizedBox(width: AppDimensions.space12),
               Expanded(
                 child: Column(
@@ -576,26 +562,18 @@ class CourseCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(course.name, style: AppTypography.courseTitle, maxLines: 2, overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: AppDimensions.space6),
-                    Row(
-                      children: [
-                        CefrBadge(level: course.level),
-                        const SizedBox(width: AppDimensions.space8),
-                        Flexible(
-                          child: Text(
-                            meta,
-                            style: AppTypography.courseMeta,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
+                    const SizedBox(height: AppDimensions.space4),
+                    Text(AppStrings.libraryWordCount(course.wordCount), style: AppTypography.courseMeta),
                   ],
                 ),
               ),
-              const SizedBox(width: AppDimensions.space12),
-              CourseProgressRing(percent: course.progressPercent),
+              if (onMenu != null)
+                IconButton(
+                  key: Key('course_menu_${course.id}'),
+                  onPressed: onMenu,
+                  tooltip: AppStrings.collectionMenu,
+                  icon: const Icon(Icons.more_vert_rounded, color: AppColors.practiceTextSecondary),
+                ),
             ],
           ),
         ),
@@ -744,12 +722,6 @@ class _SkeletonCardState extends State<SkeletonCard> with SingleTickerProviderSt
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(width: AppDimensions.space12),
-              Container(
-                width: AppDimensions.progressRingSize,
-                height: AppDimensions.progressRingSize,
-                decoration: const BoxDecoration(color: AppColors.practiceSelectedFill, shape: BoxShape.circle),
               ),
             ],
           ),

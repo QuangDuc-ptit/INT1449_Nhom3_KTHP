@@ -379,15 +379,6 @@ class AppTypography {
     height: 1.3,
   );
 
-  /// Phần trăm giữa vòng tiến độ — 11 Bold, BrandDark.
-  static const TextStyle progressPercent = TextStyle(
-    fontFamily: fontFamily,
-    fontFamilyFallback: fontFamilyFallback,
-    fontSize: 11.0,
-    fontWeight: FontWeight.w700,
-    color: AppColors.navyBlue,
-    height: 1.0,
-  );
 
   static const TextStyle buttonText = TextStyle(
     fontFamily: fontFamily,

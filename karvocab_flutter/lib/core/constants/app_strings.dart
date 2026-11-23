@@ -87,7 +87,6 @@ class AppStrings {
   static const String homeYourCourses = 'Học phần của bạn';
   static const String homeSeeAll = 'Xem tất cả';
   static String homeCourseWordCount(int words) => '$words từ';
-  static String homeCourseProgress(int percent) => '$percent%';
   static const String homeNoCourses = 'Bạn chưa có học phần nào';
 
   // Popup thông báo (Màn 04)

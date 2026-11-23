@@ -12,6 +12,7 @@ import '../home/home_ui_state.dart';
 import '../notifications/notification_sample_data.dart';
 import '../notifications/notification_ui_state.dart';
 import '../widgets/app_bottom_nav_bar.dart';
+import '../widgets/course_icon.dart';
 import '../widgets/notification_popup.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/tab_header.dart';
@@ -483,42 +484,23 @@ class _CourseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress = (course.progressPercent.clamp(0, 100)) / 100;
     return _HomeCard(
       onTap: onTap,
       child: Row(
         children: [
-          Container(
-            width: AppDimensions.courseIconBoxSize,
-            height: AppDimensions.courseIconBoxSize,
-            decoration: BoxDecoration(
-              color: AppColors.homeSurfaceTint,
-              borderRadius: BorderRadius.circular(AppDimensions.courseIconBoxRadius),
-            ),
-            child: const Icon(Icons.menu_book_outlined, size: AppDimensions.iconMedium, color: AppColors.primaryBlue),
-          ),
+          CourseIcon(categoryId: course.categoryId),
           const SizedBox(width: AppDimensions.space12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(course.name, style: AppTypography.homeCardTitle, maxLines: 1, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: AppDimensions.space2),
                 Text(AppStrings.homeCourseWordCount(course.wordCount), style: AppTypography.homeSmall),
-                const SizedBox(height: AppDimensions.space8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: AppDimensions.progressBarHeight,
-                    backgroundColor: AppColors.homeDivider,
-                    color: AppColors.primaryBlue,
-                  ),
-                ),
               ],
             ),
           ),
-          const SizedBox(width: AppDimensions.space12),
-          Text(AppStrings.homeCourseProgress(course.progressPercent), style: AppTypography.homeBodyBold),
+          const Icon(Icons.chevron_right_rounded, color: AppColors.navInactive),
         ],
       ),
     );

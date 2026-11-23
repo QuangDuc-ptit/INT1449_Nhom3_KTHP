@@ -17,10 +17,10 @@ class HomeSampleData {
     reviewedToday: 6,
     dailyGoal: 10,
     courses: [
-      HomeCourse(id: 'c1', name: 'Học thuật & IELTS Core', wordCount: 120, progressPercent: 65),
-      HomeCourse(id: 'c2', name: 'Tiếng Anh Du lịch & Trải nghiệm', wordCount: 80, progressPercent: 40),
-      HomeCourse(id: 'c3', name: 'Tiếng Anh Công việc', wordCount: 48, progressPercent: 15),
-      HomeCourse(id: 'c4', name: 'Từ vựng hằng ngày', wordCount: 30, progressPercent: 90),
+      HomeCourse(id: 'c1', name: 'Học thuật & IELTS Core', wordCount: 120, categoryId: 'academic'),
+      HomeCourse(id: 'c2', name: 'Tiếng Anh Du lịch & Trải nghiệm', wordCount: 80, categoryId: 'travel'),
+      HomeCourse(id: 'c3', name: 'Tiếng Anh Công việc', wordCount: 48, categoryId: 'career'),
+      HomeCourse(id: 'c4', name: 'Từ vựng hằng ngày', wordCount: 30),
     ],
   );
 

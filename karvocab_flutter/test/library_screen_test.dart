@@ -42,25 +42,44 @@ void main() {
       );
     }
 
-    testWidgets('Thẻ học phần: tên, trình độ, số từ, phần trăm; không có mô tả', (tester) async {
+    testWidgets('Thẻ học phần chỉ có icon, tên và số từ', (tester) async {
       await tester.pumpWidget(view(LibrarySampleData.full));
 
       expect(find.text(AppStrings.libraryTitle), findsOneWidget);
       expect(find.text('Học thuật & IELTS Core'), findsOneWidget);
-      expect(find.text('B2'), findsOneWidget);
-      expect(find.text('Học thuật · ${AppStrings.libraryWordCount(40)}'), findsOneWidget);
-      expect(find.text(AppStrings.libraryProgressPercent(75)), findsOneWidget);
-      expect(find.text(AppStrings.libraryProgressPercent(33)), findsOneWidget);
-      expect(find.text(AppStrings.libraryProgressPercent(0)), findsOneWidget);
-      expect(find.textContaining('thành thạo'), findsNothing);
-      expect(find.byType(LinearProgressIndicator), findsNothing);
+      expect(find.text(AppStrings.libraryWordCount(40)), findsOneWidget);
+      // Không còn trình độ, chủ đề, phần trăm trên thẻ.
+      expect(find.text('B2'), findsNothing);
+      expect(find.text('Học thuật · ${AppStrings.libraryWordCount(40)}'), findsNothing);
+      expect(find.textContaining('%'), findsNothing);
+      // Không truyền onCourseMenuClick thì không có nút ⋮.
+      expect(find.byIcon(Icons.more_vert_rounded), findsNothing);
+    });
+
+    testWidgets('Nút ⋮ trên thẻ gọi onCourseMenuClick(id), không mở học phần', (tester) async {
+      final menus = <String>[];
+      final opened = <String>[];
+      await tester.pumpWidget(MaterialApp(
+        home: LibraryView(
+          state: LibrarySampleData.full,
+          onQueryChange: (_) {},
+          onCategorySelect: (_) {},
+          onCourseClick: opened.add,
+          onCourseMenuClick: menus.add,
+          onCreateCourseClick: () {},
+          onRetry: () {},
+        ),
+      ));
+      await tester.tap(find.byKey(const Key('course_menu_sample-2')));
+      expect(menus, ['sample-2']);
+      expect(opened, isEmpty);
     });
 
     testWidgets('Bấm cả thẻ gọi onCourseClick(id)', (tester) async {
       String? clicked;
       await tester.pumpWidget(view(LibrarySampleData.full, onCourseClick: (id) => clicked = id));
 
-      await tester.tap(find.text('Sự nghiệp · ${AppStrings.libraryWordCount(24)}'));
+      await tester.tap(find.text(AppStrings.libraryWordCount(24)));
       expect(clicked, 'sample-2');
     });
 
@@ -116,11 +135,6 @@ void main() {
       expect(find.byKey(const Key('library_overview')), findsNothing);
     });
 
-    testWidgets('Thẻ học phần hiện chủ đề cạnh số từ', (tester) async {
-      await tester.pumpWidget(view(LibrarySampleData.full));
-      expect(find.text('Học thuật · ${AppStrings.libraryWordCount(40)}'), findsOneWidget);
-    });
-
     testWidgets('Trống: linh vật + nút tạo học phần; không tìm thấy: nút xoá bộ lọc', (tester) async {
       var created = 0;
       final queries = <String>[];
@@ -155,6 +169,91 @@ void main() {
       final second = tester.getTopLeft(find.byType(CourseCard).at(1));
       expect(second.dy, first.dy);
       expect(second.dx, greaterThan(first.dx));
+    });
+  });
+
+  group('Sửa / xoá học phần', () {
+    late CollectionStore store;
+
+    setUp(() async {
+      store = CollectionStore(
+        collections: MockVocabData.seedCollections(),
+        vocabularies: MockVocabData.seedVocabularies(),
+        latency: Duration.zero,
+      );
+      await store.load();
+    });
+
+    test('updateCollection đổi tên, chủ đề; chặn tên trùng', () {
+      final first = store.collections.first;
+      final second = store.collections[1];
+      final updated = store.updateCollection(first.id, title: 'Tên mới', category: 'travel')!;
+      expect(updated.title, 'Tên mới');
+      expect(updated.category, 'travel');
+      expect(store.findCollection(first.id)!.title, 'Tên mới');
+      // Giữ nguyên tên của chính nó thì không bị coi là trùng.
+      expect(store.updateCollection(first.id, title: 'tên mới'), isNotNull);
+      expect(() => store.updateCollection(first.id, title: second.title), throwsArgumentError);
+    });
+
+    test('deleteCollection xoá học phần và các từ trong đó', () {
+      final target = store.collections.first;
+      final wordsBefore = store.totalWordCount;
+      final count = store.wordsOf(target.id).length;
+      expect(count, greaterThan(0));
+
+      expect(store.deleteCollection(target.id)?.id, target.id);
+      expect(store.findCollection(target.id), isNull);
+      expect(store.wordsOf(target.id), isEmpty);
+      expect(store.totalWordCount, wordsBefore - count);
+      expect(store.deleteCollection(target.id), isNull);
+    });
+
+    Future<void> openMenu(WidgetTester tester, String id) async {
+      await tester.pumpWidget(MaterialApp(home: LibraryScreen(store: store)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(Key('course_menu_$id')));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('Menu ⋮ → Sửa học phần: form điền sẵn, lưu tên mới', (tester) async {
+      final target = store.collections.first;
+      await openMenu(tester, target.id);
+      await tester.tap(find.byKey(const Key('collection_action_edit')));
+      await tester.pumpAndSettle();
+
+      expect(find.text(AppStrings.collectionEdit), findsOneWidget);
+      final titleField = find.widgetWithText(TextField, target.title);
+      expect(titleField, findsOneWidget);
+      await tester.enterText(titleField, 'IELTS nâng cao');
+      await tester.tap(find.byKey(const Key('collection_form_submit')));
+      await tester.pumpAndSettle();
+
+      expect(store.findCollection(target.id)!.title, 'IELTS nâng cao');
+      expect(find.text('IELTS nâng cao'), findsWidgets);
+      await tester.pump(const Duration(seconds: 4));
+    });
+
+    testWidgets('Menu ⋮ → Xoá học phần: hỏi xác nhận, Huỷ thì giữ, Xoá thì mất', (tester) async {
+      final target = store.collections.first;
+      await openMenu(tester, target.id);
+      await tester.tap(find.byKey(const Key('collection_action_delete')));
+      await tester.pumpAndSettle();
+      expect(find.text(AppStrings.collectionDeleteTitle(target.title)), findsOneWidget);
+      await tester.tap(find.text('Huỷ'));
+      await tester.pumpAndSettle();
+      expect(store.findCollection(target.id), isNotNull);
+
+      await tester.tap(find.byKey(Key('course_menu_${target.id}')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('collection_action_delete')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ElevatedButton, AppStrings.collectionDelete));
+      await tester.pumpAndSettle();
+
+      expect(store.findCollection(target.id), isNull);
+      expect(find.byKey(Key('course_menu_${target.id}')), findsNothing);
+      await tester.pump(const Duration(seconds: 4));
     });
   });
 

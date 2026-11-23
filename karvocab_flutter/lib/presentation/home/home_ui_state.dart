@@ -48,10 +48,10 @@ class HomeCourse {
   final String name;
   final int wordCount;
 
-  /// 0 – 100.
-  final int progressPercent;
+  /// Chủ đề học phần (academic, career, life, travel) — quyết định icon và màu.
+  final String categoryId;
 
-  const HomeCourse({required this.id, required this.name, required this.wordCount, required this.progressPercent});
+  const HomeCourse({required this.id, required this.name, required this.wordCount, this.categoryId = 'academic'});
 }
 
 /// Thẻ thống kê được bấm (tham số của `onStatClick`).
