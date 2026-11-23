@@ -43,6 +43,18 @@ class AppStrings {
   static const String libraryEmptyMessage = 'Tạo học phần đầu tiên để bắt đầu lưu từ vựng.';
   static const String libraryClearFilters = 'Xoá bộ lọc';
 
+  // Sửa / xoá học phần (Màn 05, 06, 22)
+  static const String collectionMenu = 'Tuỳ chọn học phần';
+  static const String collectionEdit = 'Sửa học phần';
+  static const String collectionDelete = 'Xoá học phần';
+  static const String collectionSave = 'Lưu thay đổi';
+  static String collectionUpdated(String title) => 'Đã lưu học phần "$title"';
+  static String collectionDeleted(String title) => 'Đã xoá học phần "$title"';
+  static String collectionDeleteTitle(String title) => 'Xoá học phần "$title"?';
+  static String collectionDeleteMessage(int words) => words == 0
+      ? 'Học phần sẽ bị xoá vĩnh viễn.'
+      : '$words từ vựng trong học phần cũng sẽ bị xoá vĩnh viễn.';
+
   // Thanh điều hướng dưới
   static const String navHome = 'Trang chủ';
   static const String navLibrary = 'Thư viện';

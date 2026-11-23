@@ -37,30 +37,40 @@ class CollectionCategories {
   }
 }
 
-/// Màn 22 · Tạo học phần (Bottom Sheet).
-/// Trả về học phần vừa tạo, hoặc `null` nếu người dùng đóng sheet.
-Future<CollectionModel?> showCollectionFormSheet(BuildContext context, {CollectionStore? store}) {
+/// Màn 22 · Tạo / sửa học phần (Bottom Sheet).
+/// [initial] khác `null` → sửa học phần đó. Trả về học phần vừa lưu, hoặc `null`
+/// nếu người dùng đóng sheet.
+Future<CollectionModel?> showCollectionFormSheet(
+  BuildContext context, {
+  CollectionStore? store,
+  CollectionModel? initial,
+}) {
   return showModalBottomSheet<CollectionModel>(
     context: context,
     isScrollControlled: true,
     backgroundColor: AppColors.transparent,
-    builder: (_) => CollectionFormSheet(store: store ?? CollectionStore.instance),
+    builder: (_) => CollectionFormSheet(store: store ?? CollectionStore.instance, initial: initial),
   );
 }
 
 class CollectionFormSheet extends StatefulWidget {
   final CollectionStore store;
 
-  const CollectionFormSheet({super.key, required this.store});
+  /// Học phần đang sửa; `null` = tạo mới.
+  final CollectionModel? initial;
+
+  const CollectionFormSheet({super.key, required this.store, this.initial});
+
+  bool get isEditing => initial != null;
 
   @override
   State<CollectionFormSheet> createState() => _CollectionFormSheetState();
 }
 
 class _CollectionFormSheetState extends State<CollectionFormSheet> {
-  final _titleController = TextEditingController();
-  final _descController = TextEditingController();
-  String _category = 'academic';
+  late final _titleController = TextEditingController(text: widget.initial?.title);
+  late final _descController = TextEditingController(text: widget.initial?.description);
+  late String _category = widget.initial?.category ?? 'academic';
   String? _titleError;
 
   @override
@@ -73,19 +83,23 @@ class _CollectionFormSheetState extends State<CollectionFormSheet> {
   void _submit() {
     final title = _titleController.text.trim();
     var error = Validators.collectionTitle(title);
-    if (error == null && widget.store.isTitleTaken(title)) {
+    if (error == null && widget.store.isTitleTaken(title, excludeId: widget.initial?.id)) {
       error = 'Bạn đã có học phần tên "$title"';
     }
     if (error != null) {
       setState(() => _titleError = error);
       return;
     }
-    final created = widget.store.createCollection(
-      title: title,
-      description: _descController.text,
-      category: _category,
-    );
-    Navigator.of(context).pop(created);
+    final initial = widget.initial;
+    final saved = initial == null
+        ? widget.store.createCollection(title: title, description: _descController.text, category: _category)
+        : widget.store.updateCollection(
+            initial.id,
+            title: title,
+            description: _descController.text,
+            category: _category,
+          );
+    Navigator.of(context).pop(saved);
   }
 
   @override
@@ -111,7 +125,10 @@ class _CollectionFormSheetState extends State<CollectionFormSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(AppStrings.libraryCreateCourse, style: AppTypography.headingMedium),
+                  Text(
+                    widget.isEditing ? AppStrings.collectionEdit : AppStrings.libraryCreateCourse,
+                    style: AppTypography.headingMedium,
+                  ),
                   IconButton(
                     icon: const Icon(Icons.close_rounded),
                     tooltip: 'Đóng',
@@ -125,7 +142,7 @@ class _CollectionFormSheetState extends State<CollectionFormSheet> {
                 hintText: 'ví dụ: Từ vựng Marketing B2',
                 controller: _titleController,
                 maxLength: 50,
-                autofocus: true,
+                autofocus: !widget.isEditing,
                 errorText: _titleError,
                 onChanged: (_) {
                   if (_titleError != null) setState(() => _titleError = null);
@@ -175,7 +192,11 @@ class _CollectionFormSheetState extends State<CollectionFormSheet> {
                 }).toList(),
               ),
               const SizedBox(height: AppDimensions.space24),
-              AppButton(text: 'Tạo học phần', onPressed: _submit),
+              AppButton(
+                key: const Key('collection_form_submit'),
+                text: widget.isEditing ? AppStrings.collectionSave : 'Tạo học phần',
+                onPressed: _submit,
+              ),
             ],
           ),
         ),

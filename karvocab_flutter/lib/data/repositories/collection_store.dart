@@ -159,6 +159,41 @@ class CollectionStore extends ChangeNotifier {
     return collection;
   }
 
+  /// Sửa tên, mô tả, chủ đề của học phần. Ném [ArgumentError] nếu tên trùng
+  /// học phần khác; trả về `null` nếu không tìm thấy.
+  CollectionModel? updateCollection(
+    String id, {
+    required String title,
+    String description = '',
+    String category = 'academic',
+  }) {
+    final index = _collections.indexWhere((c) => c.id == id);
+    if (index == -1) return null;
+    final cleanTitle = title.trim();
+    if (isTitleTaken(cleanTitle, excludeId: id)) {
+      throw ArgumentError('Tên học phần "$cleanTitle" đã tồn tại');
+    }
+    final updated = _collections[index].copyWith(
+      title: cleanTitle,
+      description: description.trim().isEmpty ? 'Bộ sưu tập từ vựng cá nhân' : description.trim(),
+      category: category,
+      iconName: iconForCategory(category),
+    );
+    _collections[index] = updated;
+    notifyListeners();
+    return updated;
+  }
+
+  /// Xoá học phần cùng toàn bộ từ vựng trong đó. Trả về học phần vừa xoá hoặc `null`.
+  CollectionModel? deleteCollection(String id) {
+    final index = _collections.indexWhere((c) => c.id == id);
+    if (index == -1) return null;
+    final removed = _collections.removeAt(index);
+    _vocabularies.removeWhere((w) => w.collectionId == id);
+    notifyListeners();
+    return removed;
+  }
+
   static String iconForCategory(String category) {
     switch (category) {
       case 'academic':

@@ -5,7 +5,24 @@ import '../../core/theme/app_typography.dart';
 
 /// Màn 28 · Hộp thoại xác nhận xoá từ vựng.
 /// Trả về `true` khi người dùng bấm "Xoá từ", `false` khi huỷ hoặc bấm ra ngoài.
-Future<bool> showDeleteWordDialog(BuildContext context, String term) async {
+Future<bool> showDeleteWordDialog(BuildContext context, String term) {
+  return showDeleteConfirmDialog(
+    context,
+    title: 'Xoá từ vựng này?',
+    message: 'Từ "$term" và toàn bộ tiến độ ôn tập của nó sẽ bị xoá khỏi học phần. '
+        'Bạn có thể hoàn tác ngay sau khi xoá.',
+    confirmText: 'Xoá từ',
+  );
+}
+
+/// Hộp thoại xác nhận xoá dùng chung (từ vựng, học phần): icon thùng rác đỏ,
+/// nút "Huỷ" và nút xoá màu đỏ. Trả về `true` khi xác nhận.
+Future<bool> showDeleteConfirmDialog(
+  BuildContext context, {
+  required String title,
+  required String message,
+  required String confirmText,
+}) async {
   final result = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
@@ -22,13 +39,8 @@ Future<bool> showDeleteWordDialog(BuildContext context, String term) async {
         ),
         child: const Icon(Icons.delete_forever_rounded, color: AppColors.errorRed, size: AppDimensions.iconDialog),
       ),
-      title: Text('Xoá từ vựng này?', style: AppTypography.headingMedium, textAlign: TextAlign.center),
-      content: Text(
-        'Từ "$term" và toàn bộ tiến độ ôn tập của nó sẽ bị xoá khỏi học phần. '
-        'Bạn có thể hoàn tác ngay sau khi xoá.',
-        style: AppTypography.bodyMedium,
-        textAlign: TextAlign.center,
-      ),
+      title: Text(title, style: AppTypography.headingMedium, textAlign: TextAlign.center),
+      content: Text(message, style: AppTypography.bodyMedium, textAlign: TextAlign.center),
       actionsPadding: const EdgeInsets.fromLTRB(
         AppDimensions.space16,
         0,
@@ -62,7 +74,7 @@ Future<bool> showDeleteWordDialog(BuildContext context, String term) async {
                     borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
                   ),
                 ),
-                child: Text('Xoá từ', style: AppTypography.buttonText),
+                child: Text(confirmText, style: AppTypography.buttonText),
               ),
             ),
           ],

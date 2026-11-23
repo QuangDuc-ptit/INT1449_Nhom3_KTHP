@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
-import '../../core/constants/part_of_speech.dart';
 import '../../core/constants/app_strings.dart';
+import '../../core/constants/part_of_speech.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/app_toast.dart';
@@ -15,6 +15,7 @@ import '../../data/models/vocabulary_model.dart';
 import '../../data/repositories/collection_store.dart';
 import '../../data/services/pronunciation_service.dart';
 import '../ai_vocab/ai_generate_screen.dart';
+import '../widgets/collection_actions.dart';
 import 'word_detail_screen.dart';
 import 'word_form_screen.dart';
 
@@ -155,6 +156,20 @@ class _WordListScreenState extends State<WordListScreen> {
               ],
             ),
             centerTitle: true,
+            actions: [
+              IconButton(
+                key: const Key('word_list_menu'),
+                tooltip: AppStrings.collectionMenu,
+                icon: const Icon(Icons.more_vert_rounded),
+                onPressed: () => showCollectionActions(
+                  context,
+                  collection: collection,
+                  store: _store,
+                  // Học phần đã bị xoá thì quay về Thư viện.
+                  onDeleted: () => Navigator.of(context).pop(),
+                ),
+              ),
+            ],
           ),
           body: Column(
             children: [
