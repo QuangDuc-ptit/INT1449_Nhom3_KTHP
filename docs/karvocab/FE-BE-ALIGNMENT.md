@@ -102,6 +102,21 @@ Lỗi:
 - **Mỗi phiên học, FE sinh một `clientSessionId` (UUID)** và gửi kèm khi nộp. Nếu mạng lỗi, gửi lại đúng request đó; server trả lại kết quả cũ, không tính hai lần.
 - Kết quả nộp bài có `streak` mới và `newBadges` để hiện popup huy hiệu (Màn 12).
 
-## 6. Tài khoản Demo / không có mạng
+## 6. Tính năng FE có nhưng BE chưa hỗ trợ (cần nhóm chốt)
+
+Các mục dưới đây đang chạy được ở Demo Mode, nhưng nối API sẽ bị BE từ chối (400) hoặc mất dữ liệu. Mỗi mục cần chốt một trong hai hướng: **BE mở rộng** hoặc **FE bỏ / ẩn**.
+
+| Chỗ trong FE | FE hiện có | BE hiện tại | Hậu quả khi nối API |
+| --- | --- | --- | --- |
+| `core/constants/part_of_speech.dart` (Màn 09, 24) | 13 loại từ: thêm `pronoun`, `preposition`, `conjunction`, `interjection`, `determiner`, `phrasal_verb`, `collocation`, `phrase` | enum `PartOfSpeech`: `noun \| verb \| adj \| adv \| idiom` | `POST /collections/:id/words`, `PUT /vocabularies/:id` trả 400 `VALIDATION_ERROR` |
+| `QuizMode.pronunciation`, `QuizMode.synonymAntonym` (Màn 10) | 2 game mới, gửi `mode` = `pronunciation`, `synonym_antonym` | enum `QuizMode` chỉ có 4 chế độ | `POST /practice/submit-session` trả 400; streak và tiến độ SM-2 của 2 game này không được ghi |
+| `VocabularyModel.synonyms`, `antonyms` | Danh sách từ đồng nghĩa / trái nghĩa (game Màn 10) | Bảng `vocabularies` không có cột | Dữ liệu bị bỏ qua khi lưu; game đồng nghĩa / trái nghĩa không có câu hỏi |
+| `VocabularyModel.note` | Ghi chú riêng của người học (Màn 09, 24) | Không có cột | Ghi chú bị mất |
+| `CollectionModel.level` | Trình độ CEFR của học phần (hiện ở Màn 05) | Bảng `collections` không có cột | FE phải tự suy ra (vd trình độ phổ biến nhất trong các từ) hoặc BE thêm cột |
+| `UserProfileModel.memberId`, `birthDate` | Mã ID dạng `KM05092000` và ngày sinh (Màn 15) | Bảng `users` không có cột; `GET /users/profile` không trả | Không hiển thị được mã ID / ngày sinh |
+
+Ghi chú khi viết `fromJson` cho Sprint 3: `description` (học phần), `definitionEn`, `exampleSentence`, `ipaUk`, `ipaUs`, `audioUkUrl`, `audioUsUrl`, `avatarUrl` đều có thể là `null`; model FE hiện khai báo `String` không null nên phải đổi sang `String?` hoặc gán mặc định `''`.
+
+## 7. Tài khoản Demo / không có mạng
 
 Backend mặc định chạy mock cho AI, TTS, email, push và đăng nhập mạng xã hội. Đăng nhập Google/Facebook ở chế độ mock nhận token dạng `mock:<id>:<email>:<họ tên>`, ví dụ `mock:demo-1:demo@karvocab.app:Demo User`.
