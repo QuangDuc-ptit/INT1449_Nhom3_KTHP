@@ -561,7 +561,7 @@ class CourseCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(course.name, style: AppTypography.courseTitle, maxLines: 2, overflow: TextOverflow.ellipsis),
+                    Text(course.name, style: AppTypography.courseTitle, maxLines: 1, overflow: TextOverflow.ellipsis),
                     const SizedBox(height: AppDimensions.space4),
                     Text(AppStrings.libraryWordCount(course.wordCount), style: AppTypography.courseMeta),
                   ],
