@@ -38,5 +38,13 @@ class AppTheme {
             size: AppDimensions.iconLarge,
           ),
         ),
+        // Mọi công tắc cùng một kiểu: bật nền xanh, tắt nền xám nhạt, không viền.
+        switchTheme: SwitchThemeData(
+          thumbColor: const WidgetStatePropertyAll(AppColors.white),
+          trackColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected) ? AppColors.primaryBlue : AppColors.borderLight,
+          ),
+          trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
+        ),
       );
 }
