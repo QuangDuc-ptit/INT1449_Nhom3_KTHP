@@ -334,3 +334,11 @@
 - Màn 14: nút loa và bút lên cùng dòng với từ, nghĩa và câu ví dụ dùng trọn bề ngang thẻ; độ dày viền dùng token `AppDimensions.borderThin` / `borderMedium`.
 - Màn 15 / 17: Ngày sinh chỉ sửa ở Hồ sơ (bỏ dòng trùng ở Cài đặt); thay icon ổ khoá cạnh Email bằng chú thích "Dùng để đăng nhập, không thể thay đổi".
 - `flutter analyze` 0 error / 0 warning; `flutter test` 167/167 pass.
+
+#### 4. Sửa tiếp nhóm mức thấp (Prompt: "sửa tiếp nhóm mức thấp"):
+- Màn 07 Chi tiết từ: thêm khối "Tiến độ học" (Chưa học / Đang học · cấp n/5 / Đã thuộc) và lịch ôn lại, đọc từ `DashboardStore` (có tham số `dashboard` để test). Sửa chính tả "Xóa" thành "Xoá" cho thống nhất.
+- Màn 12 Kết quả: mỗi từ sai hiện câu người dùng đã trả lời (hoặc "Hết giờ, chưa trả lời" / "Đã bỏ qua câu này") và lịch ôn lại theo SM-2 ("Ôn lại vào ngày mai").
+- Màn 16 Ôn tập hôm nay: nhãn theo mức gấp, có nền tint: đến hạn hôm nay (xanh), quá hạn 1–2 ngày (cam), từ 3 ngày (đỏ). Thêm token `AppColors.warningOrangeText` / `errorRedText` cho chữ nhỏ đủ tương phản.
+- Màn 05 Thư viện: nút "+" thêm chữ "Tạo mới" (giữ tooltip). Không thêm lại tiến độ vào thẻ học phần vì nhóm đã chủ động bỏ số "đã thuộc" ở Thư viện.
+- Hàm dùng chung `reviewDueText` / `calendarDaysBetween` (`core/utils/review_schedule.dart`), tính theo ngày lịch nên không lệch khi đổi giờ mùa hè.
+- Thêm `test/low_priority_ux_test.dart` (6 test). `flutter analyze` 0 error / 0 warning; `flutter test` 172/172 pass.
