@@ -239,11 +239,10 @@ class _LibraryViewState extends State<LibraryView> {
     );
   }
 
-  // 2. Thẻ tổng quan: số từ đã thuộc / tổng số từ, số học phần, thanh tiến độ.
+  // 2. Thẻ tổng quan: tổng số từ và số học phần.
   Widget _buildOverview(double side) {
     final courses = widget.state.courses;
     final total = courses.fold<int>(0, (sum, c) => sum + c.wordCount);
-    final mastered = courses.fold<int>(0, (sum, c) => sum + c.masteredCount);
     return Padding(
       padding: EdgeInsets.fromLTRB(side, AppDimensions.space20, side, 0),
       child: Container(
@@ -264,11 +263,9 @@ class _LibraryViewState extends State<LibraryView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(AppStrings.libraryOverviewMastered(mastered, total), style: AppTypography.libraryOverviewTitle),
+                  Text(AppStrings.libraryOverviewWords(total), style: AppTypography.libraryOverviewTitle),
                   const SizedBox(height: AppDimensions.space4),
                   Text(AppStrings.libraryOverviewCourses(courses.length), style: AppTypography.libraryOverviewMeta),
-                  const SizedBox(height: AppDimensions.space12),
-                  _ProgressBar(value: total == 0 ? 0 : mastered / total),
                 ],
               ),
             ),
@@ -576,35 +573,6 @@ class CourseCard extends StatelessWidget {
                 ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Thanh tiến độ trắng trên nền xanh của thẻ tổng quan.
-class _ProgressBar extends StatelessWidget {
-  /// 0 … 1.
-  final double value;
-
-  const _ProgressBar({required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
-      child: SizedBox(
-        height: AppDimensions.libraryOverviewBarHeight,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            const ColoredBox(color: AppColors.onPrimaryTrack),
-            FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: value.clamp(0.0, 1.0),
-              child: const ColoredBox(color: AppColors.white),
-            ),
-          ],
         ),
       ),
     );

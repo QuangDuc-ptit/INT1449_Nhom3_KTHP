@@ -129,10 +129,11 @@ void main() {
       expect(queries, ['']);
     });
 
-    testWidgets('Thẻ tổng quan: số từ đã thuộc / tổng số từ và số học phần; ẩn khi đang lọc', (tester) async {
+    testWidgets('Thẻ tổng quan: tổng số từ và số học phần (không còn số từ đã thuộc); ẩn khi đang lọc', (tester) async {
       await tester.pumpWidget(view(LibrarySampleData.full));
       expect(find.byKey(const Key('library_overview')), findsOneWidget);
-      expect(find.text(AppStrings.libraryOverviewMastered(38, 64)), findsOneWidget);
+      expect(find.text(AppStrings.libraryOverviewWords(64)), findsOneWidget);
+      expect(find.textContaining('đã thuộc'), findsNothing);
       expect(find.text(AppStrings.libraryOverviewCourses(3)), findsOneWidget);
 
       await tester.pumpWidget(view(LibrarySampleData.filtered));

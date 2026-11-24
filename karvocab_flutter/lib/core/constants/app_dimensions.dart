@@ -89,7 +89,6 @@ class AppDimensions {
   static const double libraryCreateButtonRadius = 14.0;
   static const double libraryOverviewRadius = 20.0;
   static const double libraryOverviewLogoSize = 72.0;
-  static const double libraryOverviewBarHeight = 6.0;
   static const double libraryEmptyLogoSize = 120.0;
 
   /// Nội dung tối đa trên màn rộng; từ 600dp chia 2 cột, từ 960dp chia 3 cột.
