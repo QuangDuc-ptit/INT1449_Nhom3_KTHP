@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:karvocab_flutter/core/constants/app_strings.dart';
+import 'package:karvocab_flutter/data/repositories/quiz_settings_store.dart';
+import 'package:karvocab_flutter/presentation/quiz/widgets/practice_widgets.dart';
+import 'package:karvocab_flutter/presentation/quiz/practice_mode_screen.dart';
 import 'package:karvocab_flutter/core/widgets/app_button.dart';
 import 'package:karvocab_flutter/data/repositories/auth_repository.dart';
 import 'package:karvocab_flutter/data/repositories/collection_store.dart';
@@ -48,6 +51,23 @@ void main() {
     expect(dashboard.dueVocabularies, isEmpty);
     expect(home.weeklyStats.whereType<int>().every((v) => v == 0), isTrue);
     expect(home.userName, isEmpty);
+  });
+
+  testWidgets('Màn 10: chưa có từ nào thì hiện Empty State (Axolotl + nút tạo từ AI), không hiện trò chơi', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PracticeModeScreen(
+          store: CollectionStore(latency: Duration.zero),
+          quizSettings: QuizSettingsStore(),
+        ),
+      ),
+    );
+    expect(find.byKey(const Key('practice_empty')), findsOneWidget);
+    expect(find.text(AppStrings.practiceEmptyTitle), findsOneWidget);
+    expect(find.text(AppStrings.homeEmptyAi), findsOneWidget);
+    expect(find.byType(PracticeGameCard), findsNothing);
   });
 
   test('Lời chào dùng tên gọi (chữ cuối họ tên); chưa có tên thì chỉ "Xin chào!"', () {

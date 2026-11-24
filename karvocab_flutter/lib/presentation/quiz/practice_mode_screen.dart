@@ -5,12 +5,14 @@ import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_durations.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/widgets/state_widgets.dart';
 import '../../data/models/collection_model.dart';
 import '../../data/models/quiz_models.dart';
 import '../../data/models/vocabulary_model.dart';
 import '../../data/repositories/collection_store.dart';
 import '../../data/repositories/quiz_question_factory.dart';
 import '../../data/repositories/quiz_settings_store.dart';
+import '../ai_vocab/ai_generate_screen.dart';
 import 'quiz_mode_views.dart';
 import 'quiz_session_screen.dart';
 import 'widgets/practice_widgets.dart';
@@ -260,6 +262,8 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
         child: ListenableBuilder(
           listenable: Listenable.merge([_store, _settings]),
           builder: (context, _) {
+            // Chưa có từ nào: Empty State thay cho danh sách trò chơi không chơi được.
+            if (_store.totalWordCount == 0) return _buildEmpty();
             final collections = _store.collections;
             final selected = _validSelection(collections);
             return LayoutBuilder(
@@ -268,6 +272,33 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildEmpty() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Padding(
+          padding: EdgeInsets.fromLTRB(
+            AppDimensions.practiceHorizontalPadding,
+            AppDimensions.space16,
+            AppDimensions.practiceHorizontalPadding,
+            0,
+          ),
+          child: TabHeader(title: AppStrings.practiceTitle),
+        ),
+        Expanded(
+          child: EmptyStateWidget(
+            key: const Key('practice_empty'),
+            mascot: true,
+            title: AppStrings.practiceEmptyTitle,
+            message: AppStrings.practiceEmptyMessage,
+            actionText: AppStrings.homeEmptyAi,
+            onAction: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const AiGenerateScreen())),
+          ),
+        ),
+      ],
     );
   }
 

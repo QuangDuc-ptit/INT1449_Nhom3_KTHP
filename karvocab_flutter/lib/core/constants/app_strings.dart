@@ -135,6 +135,8 @@ class AppStrings {
 
   // Màn 10 · Chọn chế độ luyện tập
   static const String practiceTitle = 'Luyện tập';
+  static const String practiceEmptyTitle = 'Chưa có từ để luyện tập';
+  static const String practiceEmptyMessage = 'Thêm từ vào học phần hoặc tạo bằng AI để bắt đầu.';
   static const String practiceSourceLabel = 'Nguồn học phần';
   static const String practiceSourceHint = 'Chọn tối đa 3 học phần';
   static const String practiceSourceEmpty = 'Chưa chọn học phần';
