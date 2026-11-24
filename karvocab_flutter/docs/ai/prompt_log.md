@@ -349,3 +349,32 @@
 - Dữ liệu Demo (`DashboardStore._seed`): bỏ số "đã học sáng nay" cố định (4) khiến Trang chủ ghi 4/10 trong khi Hồ sơ ghi 0 từ đã học. Nay mỗi từ mẫu có cấp SM-2 riêng (`_seedPlan`): 9 từ đã học, 1 từ đã thuộc, 3 từ mới; hôm nay chưa học nên mục tiêu 0/N khớp với streak tính tới hôm qua; từ quá hạn có đủ 3 mức màu ở Màn 16. Màn 07: từ chưa học hiện "Lịch ôn sẽ có sau lần luyện tập đầu tiên" thay vì "Ôn lại hôm nay".
 - Màn 04 Trang chủ: người dùng chưa có học phần thấy thẻ trạng thái trống (Axolotl + "Tạo học phần" + "Tạo từ vựng bằng AI") thay cho các ô số 0, nút bị khoá và biểu đồ rỗng. `MainShellScreen` nối nút tạo với sheet tạo học phần rồi mở Màn 06, nút AI mở Màn 13.
 - Thêm `test/high_priority_ux_test.dart` (3 test), cập nhật test trạng thái trống Trang chủ và test Hồ sơ theo dữ liệu mẫu mới. `flutter analyze` 0 error / 0 warning; `flutter test` 175/175 pass.
+
+#### 6. Sửa nhóm mức trung bình lần 2 (Prompt: "sửa tiếp nhóm mức trung bình"):
+- Màn 11 phản hồi sai: game trắc nghiệm đã tô xanh lựa chọn đúng nên bỏ dòng "Đáp án đúng" lặp lại; bảng phản hồi thấp hơn, không còn che lựa chọn D. Game gõ chữ vẫn hiện đáp án đúng.
+- Màn 06 học phần trống: dùng Axolotl thay icon bàn chân (thêm tham số `mascot` cho `EmptyStateWidget`), ẩn nút "Thêm từ" ở góc khi đã có nút "Thêm từ mới ngay" giữa màn. Nút trong Empty State nay giãn theo chữ (tối thiểu 220dp) nên không tràn khi cỡ chữ lớn.
+- Màn 10 danh sách trò chơi: "Nghe và điền từ" có icon bàn phím riêng; icon thẻ lấy chung từ `QuizModeIcon`; bỏ kiểu icon tô đậm ở thẻ đầu (trông như đang được chọn); tên trò luôn giữ chỗ 2 dòng để mọi thẻ cao bằng nhau.
+- Dữ liệu mẫu: bỏ / thay các cặp trái nghĩa dễ tranh cãi (explore–ignore, opportunity–obstacle, ambitious–lazy, persistent–hesitant, investment–withdrawal).
+- Thêm `test/medium_priority_ux_test.dart` (5 test), cập nhật test hết giờ ở `quiz_timer_test.dart`. `flutter analyze` 0 error / 0 warning; `flutter test` 180/180 pass.
+
+#### 7. Sửa chế độ tạo từ bằng AI (Prompt: "chế độ tạo từ bằng AI fix lại cho tôi thứ nhất khi nhập chủ đề bằng tiếng việt nó cũng tạo cho và không cần chọn level từ theo khung CEFR ngoài ra tạo từ phải chuẩn vào đừng linh tinh"):
+- Nguyên nhân "từ linh tinh": bản Demo chỉ nhận vài từ khoá tiếng Anh; chủ đề không khớp (vd tiếng Việt) thì trộn ngẫu nhiên từ của chủ đề khác cho đủ số lượng, và gán mọi từ theo cấp CEFR người dùng chọn dù trình độ thật khác.
+- Kho từ Demo mới `lib/data/mock/mock_ai_vocab_bank.dart`: 8 chủ đề × 8 từ, mỗi chủ đề có từ khoá tiếng Anh và tiếng Việt; nhận diện không phân biệt dấu (kể cả dấu tổ hợp, "khoẻ"/"khỏe") và khớp theo nguyên từ. Mỗi từ ghi trình độ CEFR thật (tham khảo Oxford 3000/5000).
+- `MockAiVocabRepository` chỉ trả từ đúng chủ đề, không chèn từ chủ đề khác; ít hơn số yêu cầu thì Màn 13 báo rõ. Chủ đề chưa có trong kho Demo → lỗi `TOPIC_UNSUPPORTED` kèm gợi ý chủ đề có sẵn.
+- CEFR không bắt buộc: `cefrLevel` của `AiVocabRepository.generate` thành `String?`; bấm lại cấp đang chọn để bỏ chọn. Có chọn cấp thì ưu tiên đúng cấp, thiếu thì lấy cấp liền kề trong cùng chủ đề. Khi nối BE cần thống nhất để `cefrLevel` được phép bỏ trống.
+- Gợi ý chủ đề và chữ mẫu trong ô nhập thêm tiếng Việt. Thêm `test/ai_generate_vocab_test.dart` (8 test). `flutter analyze` 0 error / 0 warning; `flutter test` 188/188 pass.
+
+#### 8. Thiết kế lại Màn 13 (Prompt: "Thiết kế lại giao diện tạo từ bằng AI: giữ ô chủ đề, xóa chọn CEFR, số lượng từ dạng thanh kéo ngang"):
+- Giữ nguyên ô chủ đề và gợi ý. Bỏ hẳn khối chọn CEFR (app luôn gửi `cefrLevel = null`; mỗi từ vẫn ghi đúng trình độ thật). Số lượng từ đổi từ nút cộng/trừ sang thanh kéo `Slider` 3–20, hiện số đang chọn ở góc phải.
+- Cập nhật `test/ai_generate_vocab_test.dart` (kéo thanh về 3 và 20, vùng chạm ≥ 48dp). `flutter test` 188/188 pass.
+
+#### 9. Nối app với backend (Prompt: "nối app với backend đi, gửi mặc định B1"):
+- Thêm gói `http`, `core/config/api_config.dart` (đọc `--dart-define=API_BASE_URL`, rỗng = Demo Mode offline) và `data/remote/api_client.dart` (gắn Bearer token, bóc `{ success, data }`, đổi lỗi BE thành `ApiException`, 401 thì tự gọi `/auth/refresh` một lần).
+- `AuthRepository`: đăng nhập, đăng ký, Google / Facebook (token mock của BE) và đăng xuất gọi BE khi có `API_BASE_URL`; Chế độ Dùng thử vẫn offline.
+- `RemoteAiVocabRepository` gọi `POST /ai/generate-vocab`, gửi `cefrLevel = 'B1'` vì BE bắt buộc mà app đã bỏ ô chọn cấp độ. Màn 13 tự chọn bản thật khi đã đăng nhập qua BE, ngược lại dùng kho từ mẫu.
+- Không sửa code backend; chỉ chỉnh file `.env` cục bộ (CORS cho `localhost:5173`). Thêm `test/backend_integration_test.dart` (5 test, dùng `MockClient`). `flutter test` 193/193 pass.
+
+#### 10. Gọn chữ phụ + ngọn lửa chuỗi mới (Prompt: "chỉ cần title thôi hạn chế text nhỏ bên dưới lại chỉ cần những cái cần thiết… thiết kế lại ngọn lửa chuỗi đi"):
+- Bỏ chữ phụ không cần thiết: "Một phiên ngắn · khoảng N phút" (Trang chủ), "Chọn tối đa 3 học phần" và dòng tóm tắt "Tuỳ chọn khác" (Màn 10), "N giây/câu" trên thẻ trò chơi, ghi chú dưới Email (Hồ sơ), dòng giải thích âm lượng, "Lịch ôn sẽ có sau…" khi từ chưa học. Giữ những dòng mang thông tin cần: cảnh báo thiếu từ (chỉ hiện khi thiếu), luật hết giờ, lịch ôn khi đã học.
+- `core/widgets/streak_flame.dart`: ngọn lửa vẽ bằng `CustomPainter` (lửa ngoài đỏ cam → cam vàng có lưỡi lửa phụ, lõi vàng sáng; chuỗi 0 ngày thì xám). Thêm token màu `streakFlame*`, `streakCore*`, `streakOff*`. Dùng ở thẻ Chuỗi ngày học (Trang chủ) và Thành tựu (Hồ sơ).
+- Thêm `test/streak_flame_test.dart`, sửa các test cũ còn tìm chữ đã bỏ. `flutter test` 195/195 pass.
