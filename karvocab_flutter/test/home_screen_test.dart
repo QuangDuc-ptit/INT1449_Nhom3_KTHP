@@ -22,7 +22,7 @@ void main() {
       expect(find.text('248'), findsOneWidget);
       expect(find.text('7 ngày'), findsOneWidget);
       expect(find.text('18 từ đang chờ bạn ôn tập'), findsOneWidget);
-      expect(find.text('Một phiên ngắn · khoảng 5 phút'), findsOneWidget);
+      expect(find.textContaining('phút'), findsNothing); // khung ôn tập chỉ còn tiêu đề
 
       final start = find.widgetWithText(AppButton, 'Bắt đầu ôn tập · 18 từ');
       expect(start, findsOneWidget);
@@ -114,6 +114,8 @@ void main() {
       );
       await tester.tap(find.text('Tổng số từ'));
       await tester.scrollUntilVisible(find.text('Xem tất cả'), 200);
+      await tester.ensureVisible(find.text('Xem tất cả'));
+      await tester.pump();
       await tester.tap(find.text('Xem tất cả'));
 
       expect(reviewTaps, 1);

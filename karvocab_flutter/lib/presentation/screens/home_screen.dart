@@ -8,6 +8,7 @@ import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/streak_flame.dart';
 import '../home/home_sample_data.dart';
 import '../home/home_ui_state.dart';
 import '../notifications/notification_sample_data.dart';
@@ -89,7 +90,6 @@ class HomeScreen extends StatelessWidget {
               // Một khối duy nhất: thông tin phiên ôn tập + nút bắt đầu (trước đây là 2 nút cùng chức năng).
               _ReviewPanel(
                 wordsToReview: state.wordsToReview,
-                reviewMinutes: state.reviewMinutes,
                 onStart: onStartReviewClick,
               ),
               blockGap,
@@ -292,6 +292,7 @@ class _StatGrid extends StatelessWidget {
                 label: AppStrings.homeStatStreak,
                 icon: Icons.local_fire_department_outlined,
                 iconColor: AppColors.streak,
+                iconWidget: StreakFlame(size: AppDimensions.iconLarge, lit: state.streakDays > 0),
                 onTap: _tap(HomeStat.streak),
               ),
             ),
@@ -402,10 +403,9 @@ class _DailyGoalCard extends StatelessWidget {
 /// không có thì chỉ còn nút bị khoá.
 class _ReviewPanel extends StatelessWidget {
   final int wordsToReview;
-  final int reviewMinutes;
   final VoidCallback? onStart;
 
-  const _ReviewPanel({required this.wordsToReview, required this.reviewMinutes, required this.onStart});
+  const _ReviewPanel({required this.wordsToReview, required this.onStart});
 
   @override
   Widget build(BuildContext context) {
@@ -430,8 +430,6 @@ class _ReviewPanel extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(AppStrings.homeReviewReminderTitle(wordsToReview), style: AppTypography.homeBodyBold),
-                    const SizedBox(height: AppDimensions.space4),
-                    Text(AppStrings.homeReviewReminderSubtitle(reviewMinutes), style: AppTypography.homeSmall),
                   ],
                 ),
               ),

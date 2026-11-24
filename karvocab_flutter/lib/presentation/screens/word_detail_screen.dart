@@ -184,9 +184,7 @@ class _ProgressBlock extends StatelessWidget {
       status = AppStrings.wordProgressLearning(p.repetitionLevel, Sm2Engine.maxLevel);
       color = AppColors.practicePrimary;
     }
-    final due = (p == null || p.repetitionLevel == 0)
-        ? AppStrings.wordProgressNoSchedule
-        : reviewDueText(p.nextReviewAt, DateTime.now());
+    final due = (p == null || p.repetitionLevel == 0) ? null : reviewDueText(p.nextReviewAt, DateTime.now());
 
     return _TintBlock(
       label: AppStrings.wordDetailProgress,
@@ -195,8 +193,10 @@ class _ProgressBlock extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(status, style: AppTypography.wordDetailBody.copyWith(color: color, fontWeight: FontWeight.w700)),
-          const SizedBox(height: AppDimensions.space4),
-          Text(due, style: AppTypography.wordDetailBody.copyWith(color: AppColors.practiceTextSecondary)),
+          if (due != null) ...[
+            const SizedBox(height: AppDimensions.space4),
+            Text(due, style: AppTypography.wordDetailBody.copyWith(color: AppColors.practiceTextSecondary)),
+          ],
         ],
       ),
     );

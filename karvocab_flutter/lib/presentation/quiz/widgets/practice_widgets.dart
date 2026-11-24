@@ -123,15 +123,11 @@ class PracticeGameCard extends StatelessWidget {
   final String title;
   final VoidCallback onTap;
 
-  /// Dòng phụ dưới tên trò, vd thời gian mỗi câu "35 giây/câu".
-  final String? subtitle;
-
   const PracticeGameCard({
     super.key,
     required this.icon,
     required this.title,
     required this.onTap,
-    this.subtitle,
   });
 
   @override
@@ -191,20 +187,6 @@ class PracticeGameCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: AppDimensions.space4),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.timer_outlined,
-                        size: AppDimensions.iconTiny,
-                        color: AppColors.practiceTextSecondary,
-                      ),
-                      const SizedBox(width: AppDimensions.space4),
-                      Flexible(child: Text(subtitle!, style: AppTypography.practiceHint)),
-                    ],
-                  ),
-                ],
               ],
             ),
           ),

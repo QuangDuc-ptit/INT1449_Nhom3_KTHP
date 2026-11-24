@@ -30,12 +30,12 @@ void main() {
       await tester.pump();
     }
 
-    testWidgets('Điện thoại: tuỳ chọn phụ thu gọn thành một dòng tóm tắt, báo số từ phù hợp; trò dễ lên trước',
+    testWidgets('Điện thoại: tuỳ chọn phụ thu gọn chỉ còn tiêu đề, chỉ báo khi thiếu từ; trò dễ lên trước',
         (tester) async {
       await pumpScreen(tester);
 
       expect(find.byKey(const Key('practice_status')), findsNothing);
-      expect(find.text('Chưa thuộc · 20 từ · A-Z · Có đếm giờ'), findsOneWidget);
+      expect(find.text('Chưa thuộc · 20 từ · A-Z · Có đếm giờ'), findsNothing);
       // Học phần "hằng ngày" chỉ có 3 từ trong dữ liệu mẫu → báo phiên chỉ có 3 câu
       expect(find.text(AppStrings.practicePoolInfo(3, 20)), findsOneWidget);
 
@@ -52,7 +52,7 @@ void main() {
       await expandMore(tester);
 
       expect(find.text('Giao tiếp & Đời sống hằng ngày'), findsOneWidget);
-      expect(find.text('Chọn tối đa 3 học phần'), findsOneWidget);
+      expect(find.text('Chọn tối đa 3 học phần'), findsNothing); // chỉ còn trong sheet chọn học phần
       expect(find.text('Chưa thuộc'), findsOneWidget);
       expect(find.text('20'), findsOneWidget);
 

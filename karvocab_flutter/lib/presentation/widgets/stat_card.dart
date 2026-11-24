@@ -9,6 +9,9 @@ class StatCard extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color iconColor;
+
+  /// Hình vẽ riêng thay cho [icon] (vd ngọn lửa chuỗi ngày học).
+  final Widget? iconWidget;
   final Color backgroundColor;
   final VoidCallback? onTap;
 
@@ -18,6 +21,7 @@ class StatCard extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.iconColor,
+    this.iconWidget,
     this.backgroundColor = AppColors.white,
     this.onTap,
   });
@@ -56,7 +60,7 @@ class StatCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    Icon(icon, size: AppDimensions.iconLarge, color: iconColor),
+                    iconWidget ?? Icon(icon, size: AppDimensions.iconLarge, color: iconColor),
                   ],
                 ),
                 Text(

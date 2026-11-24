@@ -324,14 +324,6 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
     );
   }
 
-  /// Dòng tóm tắt các tuỳ chọn phụ, vd "Chưa thuộc · 20 từ · A-Z · Có đếm giờ".
-  String _moreSummary() => [
-    _statusLabel(_status),
-    AppStrings.practiceCountShort(_count),
-    _order == PracticeOrder.alphabet ? AppStrings.practiceOrderAlphabetShort : AppStrings.practiceOrderRandom,
-    _settings.timerEnabled ? AppStrings.practiceTimerOnShort : AppStrings.practiceTimerOff,
-  ].join(' · ');
-
   Widget _buildMoreToggle() {
     return Semantics(
       button: true,
@@ -349,10 +341,6 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(AppStrings.practiceMoreOptions, style: AppTypography.practiceLabel),
-                    if (!_moreExpanded) ...[
-                      const SizedBox(height: AppDimensions.space4),
-                      Text(_moreSummary(), style: AppTypography.practiceHint),
-                    ],
                   ],
                 ),
               ),
@@ -387,16 +375,15 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
             value: _sourceLabel(collections, selected),
             onTap: () => _pickSources(collections, selected),
           ),
-          const SizedBox(height: AppDimensions.space6),
-          const Text(AppStrings.practiceSourceHint, style: AppTypography.practiceHint),
-          const SizedBox(height: AppDimensions.space4),
-          Text(
-            AppStrings.practicePoolInfo(available, _count),
-            key: const Key('practice_pool_info'),
-            style: AppTypography.practiceHint.copyWith(
-              color: available < _count ? AppColors.practicePrimary : AppColors.practiceTextSecondary,
+          // Chỉ báo khi số từ ít hơn số câu đã chọn.
+          if (available < _count) ...[
+            const SizedBox(height: AppDimensions.space6),
+            Text(
+              AppStrings.practicePoolInfo(available, _count),
+              key: const Key('practice_pool_info'),
+              style: AppTypography.practiceHint.copyWith(color: AppColors.practicePrimary),
             ),
-          ),
+          ],
           const SizedBox(height: AppDimensions.space16),
           const Divider(
             height: AppDimensions.borderThin,
@@ -482,7 +469,6 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
     return PracticeGameCard(
       icon: game.mode.icon,
       title: game.title,
-      subtitle: _settings.timerEnabled ? AppStrings.practiceGameSeconds(_settings.secondsFor(game.mode)) : null,
       onTap: () => _openGame(game, selected),
     );
   }

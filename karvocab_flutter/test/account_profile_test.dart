@@ -63,7 +63,6 @@ void main() {
     expect(find.text('KM05092000'), findsOneWidget);
     expect(find.text(AuthRepository.demoEmail), findsOneWidget);
     expect(find.text('20/09/2005'), findsOneWidget);
-    expect(find.text(AppStrings.profileEmailNote), findsOneWidget); // email chỉ xem, ghi rõ bằng chữ
     expect(find.text('Thành tựu'), findsOneWidget);
   });
 

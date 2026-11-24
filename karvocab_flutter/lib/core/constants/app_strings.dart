@@ -80,8 +80,6 @@ class AppStrings {
   static const String homeDailyGoalTitle = 'Mục tiêu hôm nay';
   static String homeDailyGoalProgress(int done, int goal) => '$done/$goal từ';
   static const String homeDailyGoalReached = 'Đã hoàn thành mục tiêu hôm nay';
-  static String homeReviewReminderSubtitle(int minutes) =>
-      'Một phiên ngắn · khoảng $minutes phút';
 
   static String homeStartReview(int words) => 'Bắt đầu ôn tập · $words từ';
   static const String homeNoWordsToReview = 'Không có từ cần ôn';
@@ -146,9 +144,6 @@ class AppStrings {
   static const String practiceOrderRandom = 'Ngẫu nhiên';
   static const String practiceGamesTitle = 'Danh sách trò chơi';
   static const String practiceMoreOptions = 'Tuỳ chọn khác';
-  static const String practiceOrderAlphabetShort = 'A-Z';
-  static const String practiceTimerOnShort = 'Có đếm giờ';
-  static String practiceCountShort(int count) => '$count từ';
   /// Số từ thật sự có trong nguồn đã chọn, để người dùng biết phiên dài bao nhiêu.
   static String practicePoolInfo(int available, int count) => available == 0
       ? 'Không có từ phù hợp với lựa chọn này'
@@ -164,12 +159,10 @@ class AppStrings {
   static const String practiceTimerEnable = 'Đếm ngược mỗi câu';
   static const String practiceTimerHint = 'Hết giờ sẽ tính là trả lời sai. 5 giây cuối có tiếng tích tắc.';
   static const String practiceTimerReset = 'Khôi phục mặc định';
-  static String practiceGameSeconds(int seconds) => '$seconds giây/câu';
   static String secondsShort(int seconds) => '${seconds}s';
   static String timerDecrease(String game) => 'Giảm thời gian $game';
   static String timerIncrease(String game) => 'Tăng thời gian $game';
   static const String volumeLabel = 'Âm lượng hiệu ứng';
-  static const String volumeHint = 'Tiếng đúng / sai và tiếng tích tắc đếm ngược';
   static const String volumeDecrease = 'Giảm âm lượng';
   static const String volumeIncrease = 'Tăng âm lượng';
   static const String volumeMuted = 'Tắt tiếng';
@@ -180,7 +173,6 @@ class AppStrings {
   static const String profileAccountInfo = 'Thông tin tài khoản';
   static const String profileMemberId = 'Mã ID';
   static const String profileEmail = 'Email';
-  static const String profileEmailNote = 'Dùng để đăng nhập, không thể thay đổi';
   static const String profileBirthDate = 'Ngày sinh';
   static const String profileCopyId = 'Sao chép mã ID';
   static const String profileIdCopied = 'Đã sao chép mã ID';
@@ -252,7 +244,6 @@ class AppStrings {
   static const String wordProgressNew = 'Chưa học';
   static String wordProgressLearning(int level, int max) => 'Đang học · cấp $level/$max';
   static const String wordProgressMastered = 'Đã thuộc';
-  static const String wordProgressNoSchedule = 'Lịch ôn sẽ có sau lần luyện tập đầu tiên';
   static String wordDetailSpeak(String term) => 'Phát âm từ $term';
   static String wordDetailUpdated(String term) => 'Đã cập nhật từ "$term"';
   static String wordDetailDeleted(String term) => 'Đã xoá từ "$term"';

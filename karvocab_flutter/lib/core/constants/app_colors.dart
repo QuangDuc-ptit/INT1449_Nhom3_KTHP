@@ -37,6 +37,14 @@ class AppColors {
   static const Color chartBar = Color(0xFF9FD3F7);
   static const Color chartBarToday = primaryBlue; // #0095E8
   static const Color streak = Color(0xFFFF7A1A);
+  // Ngọn lửa chuỗi ngày học (StreakFlame): lửa ngoài chuyển đỏ cam → cam vàng, lõi vàng sáng.
+  static const Color streakFlameTop = Color(0xFFFF4D1F);
+  static const Color streakFlameBottom = Color(0xFFFFA21A);
+  static const Color streakCoreTop = Color(0xFFFFD24D);
+  static const Color streakCoreBottom = Color(0xFFFFF4C2);
+  // Chuỗi = 0: lửa tắt, màu xám.
+  static const Color streakOffOuter = Color(0xFFCBD5E1);
+  static const Color streakOffCore = Color(0xFFF1F5F9);
   static const Color notificationBadge = errorRed; // #EF4444
   static const Color navInactive = Color(0xFF8A97A8);
 

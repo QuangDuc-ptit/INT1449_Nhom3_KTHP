@@ -252,7 +252,7 @@ void main() {
       expect(find.text(AppStrings.feedbackTimeUp), findsNothing);
     });
 
-    testWidgets('Màn 10: thẻ trò chơi hiện giây/câu; đổi thời gian trong sheet cập nhật ngay', (tester) async {
+    testWidgets('Màn 10: thẻ trò chơi chỉ có tên (không chữ phụ); đổi thời gian trong sheet cập nhật ngay', (tester) async {
       await tester.binding.setSurfaceSize(const Size(393, 1400));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       final settings = QuizSettingsStore();
@@ -262,7 +262,7 @@ void main() {
         latency: Duration.zero,
       );
       await tester.pumpWidget(MaterialApp(home: PracticeModeScreen(store: store, quizSettings: settings)));
-      expect(find.text(AppStrings.practiceGameSeconds(35)), findsOneWidget);
+      expect(find.textContaining('giây/câu'), findsNothing);
       await tester.tap(find.byKey(const Key('practice_more'))); // mở "Tuỳ chọn khác"
       await tester.pump();
       expect(find.text(AppStrings.practiceTimerPerGame), findsOneWidget);

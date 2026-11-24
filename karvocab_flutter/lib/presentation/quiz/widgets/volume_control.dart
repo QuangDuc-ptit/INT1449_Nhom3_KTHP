@@ -49,7 +49,6 @@ class VolumeControl extends StatelessWidget {
                 ),
               ],
             ),
-            const Text(AppStrings.volumeHint, style: AppTypography.practiceHint),
             Row(
               children: [
                 IconButton(

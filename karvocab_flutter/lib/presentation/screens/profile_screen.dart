@@ -11,6 +11,7 @@ import '../../data/models/user_profile_model.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/collection_store.dart';
 import '../../data/repositories/dashboard_store.dart';
+import '../../core/widgets/streak_flame.dart';
 import '../widgets/birth_date_picker.dart';
 import 'settings_screen.dart';
 import '../widgets/tab_header.dart';
@@ -145,7 +146,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             label: AppStrings.profileEmail,
             value: profile.email,
             // Ghi rõ bằng chữ thay cho icon ổ khoá dễ hiểu nhầm là "bảo mật".
-            note: AppStrings.profileEmailNote,
           ),
           const _RowDivider(),
           _InfoRow(
@@ -180,6 +180,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Expanded(
             child: _StatTile(
               icon: Icons.local_fire_department_rounded,
+              iconWidget: StreakFlame(size: AppDimensions.iconSmall, lit: profile.currentStreak > 0),
               color: AppColors.warningOrange,
               tint: AppColors.quizAlmostTint,
               value: '${profile.currentStreak}',
@@ -330,9 +331,6 @@ class _InfoRow extends StatelessWidget {
   final VoidCallback? onTap;
   final String? semanticsHint;
 
-  /// Dòng chú thích nhỏ dưới giá trị, vd "không thể thay đổi".
-  final String? note;
-
   const _InfoRow({
     super.key,
     required this.icon,
@@ -342,7 +340,6 @@ class _InfoRow extends StatelessWidget {
     this.trailing,
     this.onTap,
     this.semanticsHint,
-    this.note,
   });
 
   @override
@@ -371,10 +368,6 @@ class _InfoRow extends StatelessWidget {
                       Text(label, style: AppTypography.quizCaption),
                       const SizedBox(height: AppDimensions.space2),
                       Text(value, style: valueStyle ?? AppTypography.quizOption),
-                      if (note != null) ...[
-                        const SizedBox(height: AppDimensions.space2),
-                        Text(note!, style: AppTypography.quizCaption),
-                      ],
                     ],
                   ),
                 ),
@@ -390,6 +383,7 @@ class _InfoRow extends StatelessWidget {
 
 class _StatTile extends StatelessWidget {
   final IconData icon;
+  final Widget? iconWidget;
   final Color color;
   final Color tint;
   final String value;
@@ -398,6 +392,7 @@ class _StatTile extends StatelessWidget {
 
   const _StatTile({
     required this.icon,
+    this.iconWidget,
     required this.color,
     required this.tint,
     required this.value,
@@ -415,7 +410,7 @@ class _StatTile extends StatelessWidget {
             width: AppDimensions.profileStatIconBox,
             height: AppDimensions.profileStatIconBox,
             decoration: BoxDecoration(color: tint, shape: BoxShape.circle),
-            child: Icon(icon, color: color, size: AppDimensions.iconSmall),
+            child: Center(child: iconWidget ?? Icon(icon, color: color, size: AppDimensions.iconSmall)),
           ),
           const SizedBox(height: AppDimensions.space8),
           Text.rich(
