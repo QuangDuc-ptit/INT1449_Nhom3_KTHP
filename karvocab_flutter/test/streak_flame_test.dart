@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:karvocab_flutter/core/widgets/streak_flame.dart';
-import 'package:karvocab_flutter/presentation/home/home_sample_data.dart';
+import 'fixtures/home_sample_data.dart';
 import 'package:karvocab_flutter/presentation/screens/home_screen.dart';
 
 void main() {

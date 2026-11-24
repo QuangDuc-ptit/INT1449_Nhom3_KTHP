@@ -1,4 +1,4 @@
-import 'notification_ui_state.dart';
+import 'package:karvocab_flutter/presentation/notifications/notification_ui_state.dart';
 
 /// Dữ liệu mẫu cho popup thông báo khi chưa có backend (dùng cho app và Preview).
 /// Thời gian tính lùi từ [now] để chuỗi "… trước" luôn hợp lý.
@@ -94,9 +94,5 @@ class NotificationSampleData {
       full(now).copyWith(isLoadingMore: true);
 
   /// Không có thông báo nào.
-  static const NotificationUiState empty = NotificationUiState(
-    items: [],
-    totalCount: 0,
-    unreadCount: 0,
-  );
+  static const NotificationUiState empty = NotificationUiState.empty;
 }

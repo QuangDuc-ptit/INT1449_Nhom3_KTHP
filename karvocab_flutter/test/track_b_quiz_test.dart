@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:karvocab_flutter/core/utils/fuzzy_match.dart';
 import 'package:karvocab_flutter/core/utils/session_id.dart';
-import 'package:karvocab_flutter/data/mock/mock_vocab_data.dart';
+import 'fixtures/mock_vocab_data.dart';
 import 'package:karvocab_flutter/data/models/ai_vocab_draft.dart';
 import 'package:karvocab_flutter/data/models/quiz_models.dart';
 import 'package:karvocab_flutter/data/repositories/ai_vocab_repository.dart';
+import 'package:karvocab_flutter/data/repositories/collection_store.dart';
 import 'package:karvocab_flutter/data/repositories/dashboard_store.dart';
 import 'package:karvocab_flutter/data/repositories/quiz_question_factory.dart';
 import 'package:karvocab_flutter/data/services/feedback_service.dart';
@@ -182,7 +183,7 @@ void main() {
       expect(p.mastered, isTrue);
 
       var clock = DateTime(2026, 11, 19, 9);
-      final store = DashboardStore.forTest(clock: () => clock);
+      final store = DashboardStore.forTest(clock: () => clock, collections: _library());
       final word = store.dueVocabularies.first;
       final q = QuizQuestionFactory.build(mode: QuizMode.meaningChoose, pool: [word], count: 1).first;
       final correct = QuizAnswerRecord(
@@ -327,9 +328,9 @@ void main() {
     });
 
     test('chống học dồn: chỉ tính câu đầu tiên của mỗi từ và từ chưa đến hạn không lên level', () {
-      final store = DashboardStore.forTest();
-      final due = store.dueVocabularies.first;
-      final dueBefore = store.progressOf(due.id)!;
+      final store = DashboardStore.forTest(collections: _library());
+      final due = store.dueVocabularies.first; // từ mới: chưa có tiến độ, đến hạn ngay
+      final startedAt = DateTime.now();
       final q = QuizQuestionFactory.build(
         mode: QuizMode.meaningChoose,
         pool: [due],
@@ -351,7 +352,7 @@ void main() {
       final afterWrong = store.progressOf(due.id)!;
       expect(afterWrong.repetitionLevel, 0);
       expect(afterWrong.intervalDays, 1);
-      expect(dueBefore.nextReviewAt.isAfter(afterWrong.nextReviewAt), isFalse);
+      expect(afterWrong.nextReviewAt.isBefore(startedAt), isFalse);
 
       // Từ đã hẹn ôn ngày mai: trả lời đúng ngay hôm nay không được lên level
       store.recordSessionResult(QuizSummary(
@@ -397,7 +398,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(420, 1400));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      await tester.pumpWidget(const MaterialApp(home: PracticeModeScreen()));
+      await tester.pumpWidget(MaterialApp(home: PracticeModeScreen(store: _library())));
 
       expect(find.text('Luyện phát âm'), findsOneWidget);
       expect(find.text('Nghe và điền từ'), findsOneWidget);
@@ -440,3 +441,10 @@ void main() {
     });
   });
 }
+
+/// Thư viện riêng cho test (dữ liệu mẫu chỉ còn trong test/fixtures).
+CollectionStore _library() => CollectionStore(
+      collections: MockVocabData.seedCollections(),
+      vocabularies: MockVocabData.seedVocabularies(),
+      latency: Duration.zero,
+    );

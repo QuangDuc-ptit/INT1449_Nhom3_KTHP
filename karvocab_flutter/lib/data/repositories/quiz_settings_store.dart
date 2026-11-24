@@ -1,17 +1,21 @@
 import 'package:flutter/foundation.dart';
 
+import '../local/local_store.dart';
 import '../models/quiz_models.dart';
 
 /// Cài đặt khi làm bài (Màn 10): thời gian đếm ngược mỗi câu theo từng trò chơi
 /// và âm lượng hiệu ứng (đúng / sai / tích tắc).
 ///
-/// Chế độ Demo giữ cài đặt trong bộ nhớ; Sprint 3 có thể lưu xuống máy hoặc
-/// đồng bộ cùng `PATCH /users/me/settings`.
+/// Có [storage] thì cài đặt được lưu trên máy; Sprint 3 có thể đồng bộ cùng `PATCH /users/me/settings`.
 class QuizSettingsStore extends ChangeNotifier {
-  QuizSettingsStore();
+  QuizSettingsStore({this._storage}) {
+    _restore();
+  }
 
   /// Instance dùng chung toàn app. Test tạo instance riêng rồi truyền vào màn hình.
-  static QuizSettingsStore instance = QuizSettingsStore();
+  static QuizSettingsStore instance = QuizSettingsStore(storage: LocalStore.app);
+
+  final LocalStore? _storage;
 
   /// Thời gian mặc định (giây) cho mỗi câu, theo độ khó của từng trò:
   /// trò chọn đáp án nhanh hơn, trò phải gõ hoặc nói cần nhiều thời gian hơn.
@@ -92,5 +96,29 @@ class QuizSettingsStore extends ChangeNotifier {
       ..addAll(defaultSeconds);
     _volume = defaultVolume;
     notifyListeners();
+  }
+
+  @override
+  void notifyListeners() {
+    _storage?.writeJson(StorageKeys.quizSettings, {
+      'timerEnabled': _timerEnabled,
+      'volume': _volume,
+      'seconds': {for (final e in _seconds.entries) e.key.name: e.value},
+    });
+    super.notifyListeners();
+  }
+
+  void _restore() {
+    final data = _storage?.readJson(StorageKeys.quizSettings);
+    if (data is! Map<String, dynamic>) return;
+    _timerEnabled = (data['timerEnabled'] as bool?) ?? true;
+    _volume = ((data['volume'] as num?)?.toDouble() ?? defaultVolume).clamp(0.0, 1.0);
+    final seconds = data['seconds'];
+    if (seconds is Map<String, dynamic>) {
+      for (final mode in QuizMode.values) {
+        final v = seconds[mode.name];
+        if (v is num) _seconds[mode] = v.toInt().clamp(minSeconds, maxSeconds);
+      }
+    }
   }
 }

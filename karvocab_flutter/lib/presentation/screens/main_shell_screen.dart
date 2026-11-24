@@ -8,7 +8,6 @@ import '../ai_vocab/ai_generate_screen.dart';
 import '../dashboard/review_today_screen.dart';
 import '../home/home_state_builder.dart';
 import '../home/home_ui_state.dart';
-import '../notifications/notification_sample_data.dart';
 import '../notifications/notification_ui_state.dart';
 import '../quiz/practice_mode_screen.dart';
 import '../widgets/notification_popup.dart';
@@ -33,10 +32,9 @@ class MainShellScreen extends StatefulWidget {
 class _MainShellScreenState extends State<MainShellScreen> {
   late int _currentIndex;
 
-  /// Dữ liệu popup thông báo. Chưa có backend: bắt đầu từ dữ liệu mẫu và
-  /// giả lập các thao tác ngay trên bộ nhớ (xem các hàm `_on…` bên dưới).
-  final ValueNotifier<NotificationUiState> _notifications =
-      ValueNotifier(NotificationSampleData.full(DateTime.now()));
+  /// Dữ liệu popup thông báo. Chưa có backend gửi thông báo nên bắt đầu trống
+  /// (Empty State); các thao tác `_on…` bên dưới giữ sẵn cho Sprint 3 nối API.
+  final ValueNotifier<NotificationUiState> _notifications = ValueNotifier(NotificationUiState.empty);
 
   @override
   void initState() {
@@ -74,19 +72,12 @@ class _MainShellScreenState extends State<MainShellScreen> {
   }
 
   Future<void> _onRefresh() async {
-    _notifications.value = _notifications.value.copyWith(isRefreshing: true);
-    await Future<void>.delayed(NotificationSampleData.simulatedLatency);
-    if (!mounted) return;
+    // Chưa có API thông báo: không có gì mới để tải.
     _notifications.value = _notifications.value.copyWith(isRefreshing: false);
   }
 
   Future<void> _onLoadMore() async {
-    _notifications.value = _notifications.value.copyWith(isLoadingMore: true);
-    await Future<void>.delayed(NotificationSampleData.simulatedLatency);
-    if (!mounted) return;
-    final items = [..._notifications.value.items, ...NotificationSampleData.nextPage(DateTime.now())];
-    _setItems(items, totalCount: items.length, canLoadMore: false);
-    _notifications.value = _notifications.value.copyWith(isLoadingMore: false);
+    _notifications.value = _notifications.value.copyWith(isLoadingMore: false, canLoadMore: false);
   }
 
   @override

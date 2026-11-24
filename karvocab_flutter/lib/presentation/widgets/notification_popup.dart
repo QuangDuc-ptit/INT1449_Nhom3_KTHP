@@ -1,12 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widget_previews.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_durations.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
-import '../notifications/notification_sample_data.dart';
 import '../notifications/notification_ui_state.dart';
 import '../notifications/relative_time.dart';
 
@@ -413,30 +411,3 @@ class _ThinDivider extends StatelessWidget {
         color: AppColors.homeDivider,
       );
 }
-
-// -----------------------------------------------------------------------------
-// Preview (Flutter Widget Previewer)
-// -----------------------------------------------------------------------------
-
-Widget _previewFrame(NotificationUiState state) {
-  return MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: Scaffold(
-      backgroundColor: AppColors.background,
-      body: Padding(
-        padding: const EdgeInsets.all(AppDimensions.notificationPopupMargin),
-        child: Align(alignment: Alignment.topCenter, child: NotificationPopup(state: state)),
-      ),
-    ),
-  );
-}
-
-@Preview(name: 'Thông báo · có dữ liệu', size: Size(390, 844))
-Widget notificationPopupFullPreview() => _previewFrame(NotificationSampleData.full(DateTime.now()));
-
-@Preview(name: 'Thông báo · đang tải thêm', size: Size(390, 844))
-Widget notificationPopupLoadingMorePreview() =>
-    _previewFrame(NotificationSampleData.loadingMore(DateTime.now()));
-
-@Preview(name: 'Thông báo · trống', size: Size(390, 844))
-Widget notificationPopupEmptyPreview() => _previewFrame(NotificationSampleData.empty);

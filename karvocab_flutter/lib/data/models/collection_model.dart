@@ -26,6 +26,26 @@ class CollectionModel {
     this.level = defaultLevel,
   });
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'description': description,
+        'category': category,
+        'iconName': iconName,
+        'totalWords': totalWords,
+        'level': level,
+      };
+
+  factory CollectionModel.fromJson(Map<String, dynamic> json) => CollectionModel(
+        id: json['id'] as String,
+        title: json['title'] as String,
+        description: (json['description'] as String?) ?? '',
+        category: (json['category'] as String?) ?? defaultCategory,
+        iconName: (json['iconName'] as String?) ?? '',
+        totalWords: (json['totalWords'] as num?)?.toInt() ?? 0,
+        level: (json['level'] as String?) ?? defaultLevel,
+      );
+
   CollectionModel copyWith({
     String? id,
     String? title,

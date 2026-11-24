@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:karvocab_flutter/core/constants/app_strings.dart';
 import 'package:karvocab_flutter/core/utils/member_id.dart';
-import 'package:karvocab_flutter/data/mock/mock_vocab_data.dart';
+import 'fixtures/mock_vocab_data.dart';
 import 'package:karvocab_flutter/data/repositories/auth_repository.dart';
 import 'package:karvocab_flutter/data/repositories/collection_store.dart';
 import 'package:karvocab_flutter/data/models/quiz_models.dart';
@@ -27,7 +27,11 @@ void main() {
 
     test('Đăng ký cấp mã theo ngày sinh; sửa ngày sinh thì mã giữ nguyên', () async {
       final auth = AuthRepository(latency: Duration.zero);
-      // Tài khoản demo đã giữ KM05092000.
+      final first = await auth.register(
+        fullName: 'A', email: 'a@test.com', password: 'Hocvien123', birthDate: birth,
+      );
+      expect(first.memberId, 'KM05092000');
+      // Người thứ hai cùng ngày sinh: số thứ tự tăng.
       final user = await auth.register(
         fullName: 'B', email: 'b@test.com', password: 'Hocvien123', birthDate: birth,
       );
@@ -53,6 +57,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final auth = AuthRepository(latency: Duration.zero);
     await tester.runAsync(() => auth.login(AuthRepository.demoEmail, AuthRepository.demoPassword));
+    auth.updateBirthDate(DateTime(2005, 9, 20)); // tài khoản Demo bắt đầu chưa có ngày sinh
     final store = CollectionStore(
       collections: MockVocabData.seedCollections(),
       vocabularies: MockVocabData.seedVocabularies(),
@@ -74,8 +79,8 @@ void main() {
       vocabularies: MockVocabData.seedVocabularies(),
       latency: Duration.zero,
     );
-    final dashboard = DashboardStore.forTest();
-    // Dữ liệu mẫu có 9 từ đã học; 2 từ đầu là từ mới, trả lời đúng → 11 từ đã học
+    final dashboard = DashboardStore.forTest(collections: store);
+    // Chưa học từ nào; trả lời đúng 2 từ → 2 từ đã học
     final pool = MockVocabData.initialVocabularies.take(2).toList();
     final qs = QuizQuestionFactory.build(mode: QuizMode.meaningChoose, pool: pool, count: 2);
     dashboard.recordSessionResult(QuizSummary(
@@ -92,8 +97,8 @@ void main() {
       home: ProfileScreen(authRepository: AuthRepository(latency: Duration.zero), store: store, dashboard: dashboard),
     ));
 
-    expect(home.totalWords - home.newWords, 11);
-    expect(find.text('11'), findsOneWidget); // ô "Từ đã học"
+    expect(home.totalWords - home.newWords, 2);
+    expect(find.text('2'), findsWidgets); // ô "Từ đã học"
     expect(find.text('${dashboard.streak} ${AppStrings.profileStreakUnit}'), findsOneWidget); // ô "Chuỗi ngày"
   });
 }

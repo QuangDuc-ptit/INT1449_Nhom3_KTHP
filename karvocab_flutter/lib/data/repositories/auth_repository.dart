@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'dart:math';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../core/constants/app_strings.dart';
 import '../../core/utils/member_id.dart';
+import '../local/local_store.dart';
 import '../models/user_profile_model.dart';
 import '../remote/api_client.dart';
 
@@ -23,18 +26,66 @@ class AuthException implements Exception {
 
 enum SocialProvider { google, facebook }
 
+/// Tài khoản lưu trên máy. Mật khẩu chỉ lưu dạng băm SHA-256 kèm muối riêng, không lưu chữ thường.
 class _Account {
   String fullName;
-  String password;
+  String _salt;
+  String _passwordHash;
   DateTime? birthDate;
   String? memberId;
 
-  _Account({
-    required this.fullName,
-    required this.password,
-    this.birthDate,
-    this.memberId,
-  });
+  // Cài đặt riêng của tài khoản (Màn 23).
+  int dailyGoal;
+  String reminderTime;
+  bool notificationsEnabled;
+
+  _Account({required this.fullName, required String password})
+      : _salt = _newSalt(),
+        _passwordHash = '',
+        dailyGoal = _defaults.dailyGoalWords,
+        reminderTime = _defaults.reminderTime,
+        notificationsEnabled = _defaults.isNotificationEnabled {
+    setPassword(password);
+  }
+
+  static final UserProfileModel _defaults = UserProfileModel.initial();
+
+  static String _newSalt() {
+    final r = Random.secure();
+    return base64UrlEncode(List<int>.generate(16, (_) => r.nextInt(256)));
+  }
+
+  static String _hash(String salt, String password) => sha256.convert(utf8.encode('$salt:$password')).toString();
+
+  void setPassword(String password) {
+    _salt = _newSalt();
+    _passwordHash = _hash(_salt, password);
+  }
+
+  bool checkPassword(String password) => _hash(_salt, password) == _passwordHash;
+
+  Map<String, dynamic> toJson() => {
+        'fullName': fullName,
+        'salt': _salt,
+        'passwordHash': _passwordHash,
+        'birthDate': birthDate?.toIso8601String(),
+        'memberId': memberId,
+        'dailyGoal': dailyGoal,
+        'reminderTime': reminderTime,
+        'notificationsEnabled': notificationsEnabled,
+      };
+
+  static _Account fromJson(Map<String, dynamic> json) {
+    final birth = json['birthDate'];
+    return _Account(fullName: json['fullName'] as String, password: '')
+      .._salt = json['salt'] as String
+      .._passwordHash = json['passwordHash'] as String
+      ..birthDate = birth is String ? DateTime.parse(birth) : null
+      ..memberId = json['memberId'] as String?
+      ..dailyGoal = (json['dailyGoal'] as num?)?.toInt() ?? _defaults.dailyGoalWords
+      ..reminderTime = (json['reminderTime'] as String?) ?? _defaults.reminderTime
+      ..notificationsEnabled = (json['notificationsEnabled'] as bool?) ?? _defaults.isNotificationEnabled;
+  }
 }
 
 class _OtpTicket {
@@ -48,18 +99,24 @@ class _OtpTicket {
 ///
 /// Có [api] (chạy app với `--dart-define=API_BASE_URL=...`): đăng nhập, đăng ký, Google / Facebook
 /// và đăng xuất gọi backend (`/auth/login`, `/auth/register`, `/auth/social-login`, `/auth/logout`).
-/// Token chỉ giữ trong bộ nhớ. Không có [api]: chạy offline với tài khoản trong bộ nhớ (Demo Mode).
+/// Token chỉ giữ trong bộ nhớ. Không có [api]: chạy offline, tài khoản và phiên đăng nhập lưu
+/// trên máy qua [storage] (mở lại app vẫn còn đăng nhập).
 /// Chế độ Dùng thử luôn chạy offline. Các phần khác (quên mật khẩu, đổi mật khẩu) vẫn offline.
 class AuthRepository extends ChangeNotifier {
-  AuthRepository({this.latency = const Duration(milliseconds: 600), Random? random, ApiClient? apiClient})
-      : _random = random ?? Random(),
+  AuthRepository({
+    this.latency = const Duration(milliseconds: 600),
+    Random? random,
+    ApiClient? apiClient,
+    this._storage,
+  })  : _random = random ?? Random(),
         _api = apiClient {
+    _restoreAccounts();
     _seedAccounts();
   }
 
-  static final AuthRepository instance = AuthRepository(apiClient: ApiClient.instance);
+  static final AuthRepository instance = AuthRepository(apiClient: ApiClient.instance, storage: LocalStore.app);
 
-  /// Tài khoản mẫu để giảng viên đăng nhập thử.
+  /// Tài khoản Demo để giảng viên đăng nhập thử (không kèm dữ liệu mẫu, bắt đầu trống).
   static const String demoEmail = 'learner@karvocab.com';
   static const String demoPassword = 'Karvocab1';
 
@@ -69,6 +126,7 @@ class AuthRepository extends ChangeNotifier {
   final Duration latency;
   final Random _random;
   final ApiClient? _api;
+  final LocalStore? _storage;
 
   /// `true` khi đăng nhập / đăng ký đi qua backend thật.
   bool get usesBackend => _api != null;
@@ -88,7 +146,19 @@ class AuthRepository extends ChangeNotifier {
   // ---------------------------------------------------------------------------
 
   /// Màn 01: kiểm tra phiên đã lưu. Trả về `true` nếu còn đăng nhập.
-  Future<bool> restoreSession() async => isLoggedIn;
+  /// Bản offline nhớ phiên trên máy; bản nối BE chưa lưu token nên phải đăng nhập lại.
+  Future<bool> restoreSession() async {
+    if (isLoggedIn) return true;
+    if (_api != null) return false;
+    final session = _storage?.readJson(StorageKeys.session);
+    if (session is! Map<String, dynamic>) return false;
+    final email = session['email'];
+    if (email is! String) return false;
+    final account = _accounts[email];
+    if (account == null) return false;
+    _startSession(_profileFor(email, account), demo: session['demo'] == true);
+    return true;
+  }
 
   /// Màn 02: đăng nhập email + mật khẩu.
   Future<UserProfileModel> login(String email, String password) async {
@@ -106,10 +176,10 @@ class AuthRepository extends ChangeNotifier {
     if (account == null) {
       throw const AuthException(AppStrings.loginEmailNotRegistered, field: AuthErrorField.email);
     }
-    if (account.password != password) {
+    if (!account.checkPassword(password)) {
       throw const AuthException(AppStrings.loginWrongPassword, field: AuthErrorField.password);
     }
-    return _startSession(_profileFor(key, account, isNew: false));
+    return _startSession(_profileFor(key, account));
   }
 
   /// Màn 02: đăng nhập Google / Facebook (verifier giả lập — backend cũng dùng mock).
@@ -132,14 +202,14 @@ class AuthRepository extends ChangeNotifier {
     await Future<void>.delayed(latency);
     // Google / Facebook không trả ngày sinh: chưa có mã ID cho tới khi người dùng bổ sung.
     final account = _accounts.putIfAbsent(email, () => _Account(fullName: name, password: _randomPassword()));
-    return _startSession(_profileFor(email, account, isNew: false));
+    return _startSession(_profileFor(email, account));
   }
 
   /// Màn 02: Chế độ Dùng thử — vào thẳng app với hồ sơ mẫu, không cần mạng.
   UserProfileModel enterDemoMode() {
     _api?.setTokens(null); // Dùng thử không gọi BE: AI dùng kho từ mẫu.
     final account = _accounts[demoEmail]!;
-    return _startSession(_profileFor(demoEmail, account, isNew: false), demo: true);
+    return _startSession(_profileFor(demoEmail, account), demo: true);
   }
 
   /// Màn 03: đăng ký tài khoản mới rồi tự đăng nhập.
@@ -161,7 +231,6 @@ class AuthRepository extends ChangeNotifier {
         }),
         password: password,
         birthDate: birthDate,
-        isNew: true,
       );
     }
     await Future<void>.delayed(latency);
@@ -172,7 +241,7 @@ class AuthRepository extends ChangeNotifier {
     final account = _Account(fullName: fullName.trim(), password: password);
     _accounts[key] = account;
     if (birthDate != null) _assignBirthDate(account, birthDate);
-    return _startSession(_profileFor(key, account, isNew: true));
+    return _startSession(_profileFor(key, account));
   }
 
   /// Màn 15 / 23: cập nhật ngày sinh. Lần đầu có ngày sinh thì cấp mã ID;
@@ -204,6 +273,13 @@ class AuthRepository extends ChangeNotifier {
   /// Màn 23: lưu cài đặt (mục tiêu ngày, giờ nhắc học, ...).
   void updateProfile(UserProfileModel profile) {
     _currentUser = profile;
+    final account = _accounts[_normalize(profile.email)];
+    if (account != null) {
+      account
+        ..dailyGoal = profile.dailyGoalWords
+        ..reminderTime = profile.reminderTime
+        ..notificationsEnabled = profile.isNotificationEnabled;
+    }
     notifyListeners();
   }
 
@@ -216,13 +292,14 @@ class AuthRepository extends ChangeNotifier {
       throw const AuthException('Không thể đổi mật khẩu ở Chế độ Dùng thử');
     }
     final account = _accounts[_normalize(user.email)];
-    if (account == null || account.password != currentPassword) {
+    if (account == null || !account.checkPassword(currentPassword)) {
       throw const AuthException('Mật khẩu hiện tại không đúng');
     }
     if (currentPassword == newPassword) {
       throw const AuthException('Mật khẩu mới phải khác mật khẩu hiện tại');
     }
-    account.password = newPassword;
+    account.setPassword(newPassword);
+    _saveAccounts();
   }
 
   // ---------------------------------------------------------------------------
@@ -261,7 +338,8 @@ class AuthRepository extends ChangeNotifier {
     if (ticket == null || !ticket.verified || account == null) {
       throw const AuthException('Phiên đặt lại mật khẩu không hợp lệ');
     }
-    account.password = newPassword;
+    account.setPassword(newPassword);
+    _saveAccounts();
     _otpTickets.remove(key);
   }
 
@@ -289,7 +367,6 @@ class AuthRepository extends ChangeNotifier {
     Future<dynamic> Function() call, {
     String? password,
     DateTime? birthDate,
-    bool isNew = false,
   }) async {
     final Object? data;
     try {
@@ -308,9 +385,9 @@ class AuthRepository extends ChangeNotifier {
       key,
       () => _Account(fullName: fullName, password: password ?? _randomPassword()),
     )..fullName = fullName;
-    if (password != null) account.password = password;
+    if (password != null) account.setPassword(password);
     if (birthDate != null) _assignBirthDate(account, birthDate);
-    return _startSession(_profileFor(key, account, isNew: isNew));
+    return _startSession(_profileFor(key, account));
   }
 
   static AuthException _authErrorFrom(ApiException e) {
@@ -332,14 +409,43 @@ class AuthRepository extends ChangeNotifier {
     return AuthException(e.message);
   }
 
-  /// Tài khoản mẫu: chỉ có tài khoản demo.
+  /// Chỉ tạo sẵn tài khoản Demo (trống, chưa có ngày sinh / mã ID) nếu máy chưa có.
   void _seedAccounts() {
-    _accounts[demoEmail] = _Account(
-      fullName: 'Nguyễn Văn A',
-      password: demoPassword,
-      birthDate: DateTime(2005, 9, 20),
-      memberId: 'KM05092000',
-    );
+    _accounts.putIfAbsent(demoEmail, () => _Account(fullName: demoFullName, password: demoPassword));
+  }
+
+  static const String demoFullName = 'Học viên Demo';
+
+  void _restoreAccounts() {
+    final data = _storage?.readJson(StorageKeys.accounts);
+    if (data is! Map<String, dynamic>) return;
+    try {
+      _accounts.addAll({
+        for (final e in data.entries) e.key: _Account.fromJson(e.value as Map<String, dynamic>),
+      });
+    } on Object {
+      _accounts.clear(); // dữ liệu hỏng: chỉ còn tài khoản Demo
+    }
+  }
+
+  void _saveAccounts() {
+    _storage?.writeJson(StorageKeys.accounts, {for (final e in _accounts.entries) e.key: e.value.toJson()});
+  }
+
+  /// Mỗi lần trạng thái đổi: lưu danh sách tài khoản và phiên đăng nhập hiện tại.
+  @override
+  void notifyListeners() {
+    final storage = _storage;
+    if (storage != null) {
+      _saveAccounts();
+      final user = _currentUser;
+      if (user == null || _api != null) {
+        storage.remove(StorageKeys.session);
+      } else {
+        storage.writeJson(StorageKeys.session, {'email': _normalize(user.email), 'demo': _isDemo});
+      }
+    }
+    super.notifyListeners();
   }
 
   void _assignBirthDate(_Account account, DateTime birthDate) {
@@ -359,20 +465,18 @@ class AuthRepository extends ChangeNotifier {
     return profile;
   }
 
-  UserProfileModel _profileFor(String email, _Account account, {required bool isNew}) {
-    final mock = UserProfileModel.mockDefault();
-    // Dựng lại để các trường có thể rỗng (mã ID, ngày sinh) lấy đúng của tài khoản.
+  /// Hồ sơ của tài khoản; số liệu học tập lấy từ CollectionStore / DashboardStore.
+  UserProfileModel _profileFor(String email, _Account account) {
     return UserProfileModel(
       fullName: account.fullName,
       email: email,
-      avatarUrl: mock.avatarUrl,
-      // Tài khoản mới: thống kê bắt đầu từ 0.
-      totalWordsLearned: isNew ? 0 : mock.totalWordsLearned,
-      currentStreak: isNew ? 0 : mock.currentStreak,
-      totalCollections: isNew ? 0 : mock.totalCollections,
-      dailyGoalWords: mock.dailyGoalWords,
-      reminderTime: mock.reminderTime,
-      isNotificationEnabled: mock.isNotificationEnabled,
+      avatarUrl: '',
+      totalWordsLearned: 0,
+      currentStreak: 0,
+      totalCollections: 0,
+      dailyGoalWords: account.dailyGoal,
+      reminderTime: account.reminderTime,
+      isNotificationEnabled: account.notificationsEnabled,
       memberId: account.memberId,
       birthDate: account.birthDate,
     );

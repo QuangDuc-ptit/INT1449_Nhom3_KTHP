@@ -1,7 +1,6 @@
 import '../../data/models/user_profile_model.dart';
 import '../../data/repositories/collection_store.dart';
 import '../../data/repositories/dashboard_store.dart';
-import 'home_sample_data.dart';
 import 'home_ui_state.dart';
 
 /// Tạo [HomeUiState] cho Màn 04 từ store thật của hai track:
@@ -23,14 +22,14 @@ class HomeStateBuilder {
     final words = collections.collections.expand((c) => collections.wordsOf(c.id));
 
     return HomeUiState(
-      userName: (user ?? UserProfileModel.mockDefault()).fullName,
+      userName: user?.fullName ?? '',
       totalWords: collections.totalWordCount,
       streakDays: dashboard.streak,
       // Từ chưa học: chưa có tiến độ ôn tập hoặc chưa lên level nào.
       newWords: words.where((w) => !dashboard.isLearned(w.id)).length,
       wordsToReview: due,
       reviewMinutes: (due * secondsPerReviewWord / 60).ceil(),
-      weeklyStats: _weekly(today, dashboard.reviewedToday),
+      weeklyStats: _weekly(now ?? DateTime.now(), dashboard),
       todayIndex: today,
       reviewedToday: dashboard.reviewedToday,
       dailyGoal: dashboard.dailyGoal,
@@ -46,13 +45,18 @@ class HomeStateBuilder {
     );
   }
 
-  /// [DashboardStore] mới chỉ lưu số từ ôn hôm nay. Các ngày trước dùng lịch sử mẫu
-  /// (Demo Mode) cho tới khi có API thống kê tuần; các ngày sau hôm nay để trống.
-  static List<int?> _weekly(int today, int reviewedToday) {
-    final history = HomeSampleData.full.weeklyStats;
+  /// Số từ học được mỗi ngày trong tuần này (T2 → CN) lấy từ lịch sử đã lưu; các ngày sau hôm nay để trống.
+  static List<int?> _weekly(DateTime now, DashboardStore dashboard) {
+    final today = DateTime(now.year, now.month, now.day);
+    final monday = DateTime(today.year, today.month, today.day - (today.weekday - 1));
     return [
       for (var i = 0; i < 7; i++)
-        if (i < today) history[i] ?? 0 else if (i == today) reviewedToday else null,
+        if (i < today.weekday - 1)
+          dashboard.learnedOn(DateTime(monday.year, monday.month, monday.day + i))
+        else if (i == today.weekday - 1)
+          dashboard.reviewedToday
+        else
+          null,
     ];
   }
 }

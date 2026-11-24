@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:karvocab_flutter/core/constants/app_strings.dart';
 import 'package:karvocab_flutter/core/widgets/app_button.dart';
-import 'package:karvocab_flutter/presentation/home/home_sample_data.dart';
+import 'fixtures/home_sample_data.dart';
 import 'package:karvocab_flutter/presentation/home/home_ui_state.dart';
 import 'package:karvocab_flutter/presentation/notifications/notification_ui_state.dart';
 import 'package:karvocab_flutter/presentation/screens/home_screen.dart';
@@ -18,7 +18,7 @@ void main() {
     testWidgets('Đủ dữ liệu: thẻ thống kê, nhắc ôn tập, nút chính, tối đa 3 học phần', (tester) async {
       await tester.pumpWidget(_app(const HomeScreen(state: HomeSampleData.full)));
 
-      expect(find.text('Xin chào, Karmate!'), findsOneWidget);
+      expect(find.text('Xin chào, Anh!'), findsOneWidget); // chào bằng tên gọi
       expect(find.text('248'), findsOneWidget);
       expect(find.text('7 ngày'), findsOneWidget);
       expect(find.text('18 từ đang chờ bạn ôn tập'), findsOneWidget);

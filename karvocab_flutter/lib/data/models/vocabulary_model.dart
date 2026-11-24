@@ -36,6 +36,38 @@ class VocabularyModel {
     this.note = '',
   });
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'collectionId': collectionId,
+        'term': term,
+        'partOfSpeech': partOfSpeech,
+        'ipa': ipa,
+        'definitionVi': definitionVi,
+        'definitionEn': definitionEn,
+        'exampleSentence': exampleSentence,
+        'cefrLevel': cefrLevel,
+        'isMastered': isMastered,
+        'synonyms': synonyms,
+        'antonyms': antonyms,
+        'note': note,
+      };
+
+  factory VocabularyModel.fromJson(Map<String, dynamic> json) => VocabularyModel(
+        id: json['id'] as String,
+        collectionId: json['collectionId'] as String,
+        term: json['term'] as String,
+        partOfSpeech: (json['partOfSpeech'] as String?) ?? 'noun',
+        ipa: (json['ipa'] as String?) ?? '',
+        definitionVi: (json['definitionVi'] as String?) ?? '',
+        definitionEn: (json['definitionEn'] as String?) ?? '',
+        exampleSentence: (json['exampleSentence'] as String?) ?? '',
+        cefrLevel: (json['cefrLevel'] as String?) ?? 'B1',
+        isMastered: (json['isMastered'] as bool?) ?? false,
+        synonyms: [for (final s in (json['synonyms'] as List?) ?? const []) s as String],
+        antonyms: [for (final s in (json['antonyms'] as List?) ?? const []) s as String],
+        note: (json['note'] as String?) ?? '',
+      );
+
   VocabularyModel copyWith({
     String? id,
     String? collectionId,

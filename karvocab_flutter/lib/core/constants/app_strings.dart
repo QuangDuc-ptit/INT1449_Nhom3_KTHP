@@ -67,7 +67,11 @@ class AppStrings {
   static const String navProfile = 'Cá nhân';
 
   // Màn 04 · Trang chủ
-  static const String homeGreeting = 'Xin chào, Karmate!';
+  /// Chào bằng tên gọi (chữ cuối của họ tên, vd "Nguyễn Minh Anh" → "Anh"); chưa có tên thì "Xin chào!".
+  static String homeGreeting(String fullName) {
+    final parts = fullName.trim().split(RegExp(r'\s+'));
+    return parts.last.isEmpty ? 'Xin chào!' : 'Xin chào, ${parts.last}!';
+  }
   static const String homeNotificationsTooltip = 'Thông báo';
 
   static const String homeStatTotalWords = 'Tổng số từ';

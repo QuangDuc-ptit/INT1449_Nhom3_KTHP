@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:karvocab_flutter/core/constants/app_strings.dart';
 import 'package:karvocab_flutter/core/widgets/app_button.dart';
-import 'package:karvocab_flutter/data/mock/mock_vocab_data.dart';
 import 'package:karvocab_flutter/data/repositories/auth_repository.dart';
 import 'package:karvocab_flutter/data/repositories/collection_store.dart';
 import 'package:karvocab_flutter/data/repositories/dashboard_store.dart';
@@ -37,29 +37,21 @@ void main() {
     });
   });
 
-  test('Dữ liệu mẫu nhất quán: hôm nay chưa học, có streak, có từ đã học / đã thuộc / mới', () {
-    final dashboard = DashboardStore.forTest();
-    final store = CollectionStore(
-      collections: MockVocabData.seedCollections(),
-      vocabularies: MockVocabData.seedVocabularies(),
-      latency: Duration.zero,
-    );
+  test('Không còn dữ liệu giả: thư viện, tiến độ, chuỗi ngày và biểu đồ tuần đều bắt đầu trống', () {
+    final store = CollectionStore(latency: Duration.zero);
+    final dashboard = DashboardStore.forTest(collections: store);
     final home = HomeStateBuilder.build(collections: store, dashboard: dashboard);
-    final ids = MockVocabData.initialVocabularies.map((v) => v.id);
 
-    // Mục tiêu ngày và cột hôm nay của biểu đồ cùng là 0 khi streak chỉ tính tới hôm qua.
-    expect(dashboard.studiedToday, isFalse);
-    expect(dashboard.streak, greaterThan(0));
-    expect(home.reviewedToday, 0);
-    expect(home.weeklyStats[home.todayIndex], 0);
+    expect(store.collections, isEmpty);
+    expect(store.totalWordCount, 0);
+    expect(dashboard.streak, 0);
+    expect(dashboard.dueVocabularies, isEmpty);
+    expect(home.weeklyStats.whereType<int>().every((v) => v == 0), isTrue);
+    expect(home.userName, isEmpty);
+  });
 
-    // Đã có lịch sử học nên phải có từ đã học, khớp với "Từ chưa học" ở Trang chủ.
-    final learned = ids.where(dashboard.isLearned).length;
-    expect(learned, greaterThan(0));
-    expect(home.newWords, home.totalWords - learned);
-    expect(ids.where((id) => dashboard.progressOf(id)!.mastered), isNotEmpty);
-
-    // Từ đến hạn ôn đều là từ đã học (từ mới không bị gọi là "ôn lại").
-    expect(dashboard.dueVocabularies.where((v) => dashboard.isLearned(v.id)), isNotEmpty);
+  test('Lời chào dùng tên gọi (chữ cuối họ tên); chưa có tên thì chỉ "Xin chào!"', () {
+    expect(AppStrings.homeGreeting('Nguyễn Minh Anh'), 'Xin chào, Anh!');
+    expect(AppStrings.homeGreeting('  '), 'Xin chào!');
   });
 }

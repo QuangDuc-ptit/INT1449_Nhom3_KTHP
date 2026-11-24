@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 
-import '../mock/mock_vocab_data.dart';
+import '../local/local_store.dart';
 import '../models/quiz_models.dart';
-import '../models/user_profile_model.dart';
 import '../models/vocabulary_model.dart';
+import 'collection_store.dart';
 
 /// Tiến độ Spaced Repetition của 1 từ (bảng USER_VOCAB_PROGRESS phía BE).
 class SrsProgress {
@@ -20,6 +20,22 @@ class SrsProgress {
     required this.nextReviewAt,
     required this.mastered,
   });
+
+  Map<String, dynamic> toJson() => {
+        'level': repetitionLevel,
+        'interval': intervalDays,
+        'ease': easeFactor,
+        'next': nextReviewAt.toIso8601String(),
+        'mastered': mastered,
+      };
+
+  factory SrsProgress.fromJson(Map<String, dynamic> json) => SrsProgress(
+        repetitionLevel: (json['level'] as num).toInt(),
+        intervalDays: (json['interval'] as num).toInt(),
+        easeFactor: (json['ease'] as num).toDouble(),
+        nextReviewAt: DateTime.parse(json['next'] as String),
+        mastered: json['mastered'] as bool,
+      );
 }
 
 /// Thuật toán SM-2 biến thể theo BE-SPECIFICATION mục 4.1 (dùng offline cho chế độ Demo).
@@ -75,20 +91,35 @@ DateTime _previousDay(DateTime day) => DateTime(day.year, day.month, day.day - 1
 /// Cầu nối với Quiz: sau mỗi phiên chỉ cần gọi `recordSessionResult(summary)`.
 /// Luật tính mục tiêu ngày, streak và SM-2 giữ giống BE (dashboard.service.ts,
 /// streak.ts, sm2.ts) để khi nối API số liệu không đổi.
+///
+/// Bắt đầu trống (chưa học từ nào, chuỗi 0 ngày). Có [LocalStore] thì tiến độ, chuỗi ngày và
+/// lịch sử từng ngày được lưu trên máy.
 class DashboardStore extends ChangeNotifier {
-  DashboardStore._() : _clock = DateTime.now {
-    _seed();
+  DashboardStore._()
+      : _clock = DateTime.now,
+        _collections = null,
+        _storage = LocalStore.app {
+    _restore();
   }
 
   static final DashboardStore instance = DashboardStore._();
 
-  /// Dùng trong unit test để có store sạch. [clock] cho phép giả lập sang ngày mới.
+  /// Dùng trong unit test để có store sạch. [clock] cho phép giả lập sang ngày mới;
+  /// [collections] là nguồn từ vựng cho hàng đợi ôn tập (mặc định [CollectionStore.instance]).
   @visibleForTesting
-  DashboardStore.forTest({DateTime Function()? clock}) : _clock = clock ?? DateTime.now {
-    _seed();
+  DashboardStore.forTest({DateTime Function()? clock, this._collections, this._storage})
+      : _clock = clock ?? DateTime.now {
+    _restore();
   }
 
   final DateTime Function() _clock;
+  final CollectionStore? _collections;
+  final LocalStore? _storage;
+
+  CollectionStore get _library => _collections ?? CollectionStore.instance;
+
+  /// Số từ khác nhau học được theo từng ngày (khoá `yyyy-mm-dd`), dùng cho biểu đồ tuần.
+  final Map<String, int> _history = {};
 
   int _streak = 0;
   int _highestStreak = 0;
@@ -135,65 +166,76 @@ class DashboardStore extends ChangeNotifier {
   /// Trang chủ ("Từ chưa học") và Hồ sơ ("Từ đã học") cùng dùng luật này để số liệu khớp nhau.
   bool isLearned(String vocabId) => (_progress[vocabId]?.repetitionLevel ?? 0) > 0;
 
-  /// Các từ đến hạn ôn: `next_review_at <= NOW`, kể cả từ đã mastered (BE vẫn
-  /// cho ôn lại từ mastered sau 35 ngày). Sắp theo hạn ôn sớm nhất trước.
+  /// Các từ đến hạn ôn: từ mới (chưa có tiến độ) và từ có `next_review_at <= NOW`, kể cả
+  /// từ đã mastered (BE vẫn cho ôn lại sau 35 ngày). Sắp theo hạn ôn sớm nhất trước.
   List<VocabularyModel> get dueVocabularies {
     final now = _clock();
-    final due = MockVocabData.initialVocabularies.where((v) {
-      final p = _progress[v.id];
-      return p != null && !p.nextReviewAt.isAfter(now);
-    }).toList();
-    due.sort((a, b) =>
-        _progress[a.id]!.nextReviewAt.compareTo(_progress[b.id]!.nextReviewAt));
+    DateTime dueAt(VocabularyModel v) => _progress[v.id]?.nextReviewAt ?? now;
+    final due = _library.allWords.where((v) => !dueAt(v).isAfter(now)).toList();
+    due.sort((a, b) => dueAt(a).compareTo(dueAt(b)));
     return due;
   }
 
-  void _seed() {
-    final profile = UserProfileModel.mockDefault();
-    final today = _today;
-    _streak = profile.currentStreak;
-    _highestStreak = profile.currentStreak;
-    // Streak mẫu: học liên tục tới hôm qua, hôm nay chưa học
-    _lastStreakDate = _streak > 0 ? _previousDay(today) : null;
-    _dailyGoal = profile.dailyGoalWords.clamp(minDailyGoal, maxDailyGoal);
-    _learnedDay = today;
+  /// Số từ học được trong [day] (biểu đồ tuần ở Trang chủ).
+  int learnedOn(DateTime day) => _history[_dayKey(day)] ?? 0;
+
+  static String _dayKey(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  /// Xoá toàn bộ tiến độ (đăng xuất / kiểm thử).
+  void clear() {
+    _streak = 0;
+    _highestStreak = 0;
+    _lastStreakDate = null;
+    _learnedDay = null;
     _learnedTodayIds.clear();
     _progress.clear();
-
-    // Câu chuyện Demo phải khớp ở mọi màn: học đều tới hôm qua (streak), hôm nay
-    // chưa học (mục tiêu 0/N), phần lớn từ đã học ở các cấp khác nhau, vài từ mới.
-    final now = _clock();
-    final vocabs = MockVocabData.initialVocabularies;
-    for (var i = 0; i < vocabs.length; i++) {
-      final (level, offset) = i < _seedPlan.length ? _seedPlan[i] : (0, Duration.zero);
-      _progress[vocabs[i].id] = level == 0 ? Sm2Engine.initial(now.add(offset)) : _seedProgress(level, now.add(offset));
-    }
+    _history.clear();
+    notifyListeners();
   }
 
-  /// (cấp SM-2, lệch so với bây giờ của lần ôn tới) cho từng từ mẫu theo thứ tự.
-  /// Âm = đã đến hạn: 2 từ quá hạn nhiều ngày, 2 từ quá hạn 1 ngày, 2 từ đến hạn hôm nay.
-  static const List<(int, Duration)> _seedPlan = [
-    (0, Duration.zero), // coherent: từ mới
-    (0, Duration.zero), // inevitable: từ mới
-    (1, Duration(days: -4)),
-    (2, Duration(days: -3)),
-    (1, Duration(days: -1)),
-    (2, Duration(days: -1)),
-    (1, Duration(hours: -2)),
-    (3, Duration(hours: -1)),
-    (2, Duration(days: 2)),
-    (3, Duration(days: 5)),
-    (Sm2Engine.maxLevel, Duration(days: 30)), // đã thuộc
-    (0, Duration.zero), // từ mới
-  ];
+  /// Mỗi lần dữ liệu đổi thì lưu lại trên máy.
+  @override
+  void notifyListeners() {
+    _storage?.writeJson(StorageKeys.dashboard, {
+      'streak': _streak,
+      'highestStreak': _highestStreak,
+      'lastStreakDate': _lastStreakDate?.toIso8601String(),
+      'dailyGoal': _dailyGoal,
+      'learnedDay': _learnedDay?.toIso8601String(),
+      'learnedToday': _learnedTodayIds.toList(),
+      'progress': {for (final e in _progress.entries) e.key: e.value.toJson()},
+      'history': _history,
+    });
+    super.notifyListeners();
+  }
 
-  static SrsProgress _seedProgress(int level, DateTime next) => SrsProgress(
-        repetitionLevel: level,
-        intervalDays: Sm2Engine.intervals[level - 1],
-        easeFactor: 2.5,
-        nextReviewAt: next,
-        mastered: level >= Sm2Engine.maxLevel,
-      );
+  void _restore() {
+    final data = _storage?.readJson(StorageKeys.dashboard);
+    if (data is! Map<String, dynamic>) return;
+    try {
+      DateTime? date(Object? v) => v is String ? DateTime.parse(v) : null;
+      _streak = (data['streak'] as num?)?.toInt() ?? 0;
+      _highestStreak = (data['highestStreak'] as num?)?.toInt() ?? _streak;
+      _lastStreakDate = date(data['lastStreakDate']);
+      _dailyGoal = ((data['dailyGoal'] as num?)?.toInt() ?? _dailyGoal).clamp(minDailyGoal, maxDailyGoal);
+      _learnedDay = date(data['learnedDay']);
+      _learnedTodayIds.addAll([for (final id in (data['learnedToday'] as List?) ?? const []) id as String]);
+      final progress = data['progress'];
+      if (progress is Map<String, dynamic>) {
+        _progress.addAll({
+          for (final e in progress.entries) e.key: SrsProgress.fromJson(e.value as Map<String, dynamic>),
+        });
+      }
+      final history = data['history'];
+      if (history is Map<String, dynamic>) {
+        _history.addAll({for (final e in history.entries) e.key: (e.value as num).toInt()});
+      }
+    } on Object {
+      // Dữ liệu lưu bị hỏng: bắt đầu lại từ đầu.
+      clear();
+    }
+  }
 
   /// BE chỉ nhận mục tiêu ngày trong khoảng 5–30 từ.
   static const int minDailyGoal = 5;
@@ -234,6 +276,7 @@ class DashboardStore extends ChangeNotifier {
     for (final r in summary.records) {
       if (r.isCorrect) _learnedTodayIds.add(r.question.vocab.id);
     }
+    _history[_dayKey(today)] = _learnedTodayIds.length;
 
     // Streak (BE computeStreak): mọi phiên đã nộp đều tính, mỗi ngày tăng tối đa 1.
     if (_lastStreakDate != today) {

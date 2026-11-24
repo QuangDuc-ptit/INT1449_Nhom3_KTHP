@@ -57,20 +57,18 @@ class UserProfileModel {
     );
   }
 
-  // Dữ liệu mẫu khởi tạo ban đầu
-  static UserProfileModel mockDefault() {
+  /// Hồ sơ mặc định của tài khoản mới: thống kê 0, mục tiêu 10 từ/ngày, nhắc học lúc 20:00.
+  static UserProfileModel initial({String fullName = '', String email = ''}) {
     return UserProfileModel(
-      fullName: 'Nguyễn Văn A',
-      email: 'learner@karvocab.com',
+      fullName: fullName,
+      email: email,
       avatarUrl: '',
-      totalWordsLearned: 42,
-      currentStreak: 7,
-      totalCollections: 3,
+      totalWordsLearned: 0,
+      currentStreak: 0,
+      totalCollections: 0,
       dailyGoalWords: 10,
       reminderTime: '20:00',
       isNotificationEnabled: true,
-      memberId: 'KM05092000',
-      birthDate: DateTime(2005, 9, 20),
     );
   }
 }

@@ -65,7 +65,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return ListenableBuilder(
       listenable: Listenable.merge([_auth, _store, _dashboard]),
       builder: (context, _) {
-        final stored = _auth.currentUser ?? UserProfileModel.mockDefault();
+        final stored = _auth.currentUser ?? UserProfileModel.initial();
         // Thành tựu tính từ dữ liệu thật của Thư viện và tiến độ ôn tập, cùng luật
         // với Trang chủ, để hai màn không hiện hai con số khác nhau.
         final learned = _store.collections

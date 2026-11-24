@@ -1,4 +1,4 @@
-import 'home_ui_state.dart';
+import 'package:karvocab_flutter/presentation/home/home_ui_state.dart';
 
 /// Dữ liệu mẫu cho Màn 04 · Trang chủ khi chưa có backend (dùng cho app và Preview).
 class HomeSampleData {

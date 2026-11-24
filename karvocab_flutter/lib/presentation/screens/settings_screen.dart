@@ -39,7 +39,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   AuthRepository get _auth => widget.authRepository ?? AuthRepository.instance;
   ReminderService get _reminders => widget.reminderService ?? ReminderService.instance;
-  UserProfileModel get _profile => _auth.currentUser ?? UserProfileModel.mockDefault();
+  UserProfileModel get _profile => _auth.currentUser ?? UserProfileModel.initial();
 
   @override
   void initState() {

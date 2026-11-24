@@ -1,9 +1,9 @@
 import 'dart:math';
 
 import '../../core/constants/app_strings.dart';
-import '../mock/mock_vocab_data.dart';
 import '../models/quiz_models.dart';
 import '../models/vocabulary_model.dart';
+import 'collection_store.dart';
 
 /// Sinh câu hỏi cho 4 chế độ từ danh sách từ vựng (Demo offline — thay cho `GET /practice/questions`).
 class QuizQuestionFactory {
@@ -24,7 +24,7 @@ class QuizQuestionFactory {
     final chosen = picked.take(count).toList();
     return [
       for (var i = 0; i < chosen.length; i++)
-        _buildOne(i, mode, chosen[i], rnd),
+        _buildOne(i, mode, chosen[i], rnd, _sourceFor(pool)),
     ];
   }
 
@@ -47,7 +47,7 @@ class QuizQuestionFactory {
     const modes = QuizMode.reviewModes;
     return [
       for (var i = 0; i < chosen.length; i++)
-        _buildOne(i, modes[i % modes.length], chosen[i], rnd),
+        _buildOne(i, modes[i % modes.length], chosen[i], rnd, _sourceFor(pool)),
     ];
   }
 
@@ -60,7 +60,16 @@ class QuizQuestionFactory {
     final list = List<QuizQuestion>.from(missed)..shuffle(rnd);
     return [
       for (var i = 0; i < list.length; i++)
-        _buildOne(i, list[i].mode, list[i].vocab, rnd, idPrefix: 'retry'),
+        _buildOne(i, list[i].mode, list[i].vocab, rnd, _sourceFor([for (final q in list) q.vocab]), idPrefix: 'retry'),
+    ];
+  }
+
+  /// Nguồn đáp án nhiễu: các từ trong phiên + mọi từ trong thư viện của người dùng (bỏ trùng).
+  static List<VocabularyModel> _sourceFor(List<VocabularyModel> pool) {
+    final seen = <String>{};
+    return [
+      for (final v in [...pool, ...CollectionStore.instance.allWords])
+        if (seen.add(v.id)) v,
     ];
   }
 
@@ -68,7 +77,8 @@ class QuizQuestionFactory {
     int index,
     QuizMode mode,
     VocabularyModel vocab,
-    Random rnd, {
+    Random rnd,
+    List<VocabularyModel> source, {
     String idPrefix = 'q',
   }) {
     final id = '$idPrefix-$index-${vocab.id}';
@@ -78,7 +88,7 @@ class QuizQuestionFactory {
           id: id,
           vocab: vocab,
           mode: mode,
-          options: _options(vocab, rnd, (v) => v.term),
+          options: _options(vocab, rnd, source, (v) => v.term),
           correctAnswer: vocab.term,
         );
       case QuizMode.meaningChoose:
@@ -86,7 +96,7 @@ class QuizQuestionFactory {
           id: id,
           vocab: vocab,
           mode: mode,
-          options: _options(vocab, rnd, (v) => v.definitionVi),
+          options: _options(vocab, rnd, source, (v) => v.definitionVi),
           correctAnswer: vocab.definitionVi,
         );
       case QuizMode.synonymAntonym:
@@ -124,10 +134,11 @@ class QuizQuestionFactory {
   static List<String> _options(
     VocabularyModel vocab,
     Random rnd,
+    List<VocabularyModel> source,
     String Function(VocabularyModel) pick,
   ) {
     final correct = pick(vocab);
-    final others = MockVocabData.initialVocabularies
+    final others = source
         .where((v) => v.id != vocab.id && pick(v) != correct)
         .toList()
       ..shuffle(rnd);

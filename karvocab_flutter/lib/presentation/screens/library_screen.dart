@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/widget_previews.dart';
 
 import '../../core/constants/app_assets.dart';
 import '../../core/constants/app_colors.dart';
@@ -14,9 +13,7 @@ import '../../core/widgets/app_toast.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../data/repositories/collection_store.dart';
 import '../library/library_controller.dart';
-import '../library/library_sample_data.dart';
 import '../library/library_ui_state.dart';
-import '../widgets/app_bottom_nav_bar.dart';
 import '../widgets/collection_form_sheet.dart';
 import '../widgets/collection_actions.dart';
 import '../widgets/course_icon.dart';
@@ -717,33 +714,3 @@ class _SkeletonCardState extends State<SkeletonCard> with SingleTickerProviderSt
     );
   }
 }
-
-// -----------------------------------------------------------------------------
-// Preview (Flutter Widget Previewer)
-// -----------------------------------------------------------------------------
-
-Widget _previewFrame(LibraryUiState state) {
-  return MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: Scaffold(
-      body: LibraryView(
-        state: state,
-        onQueryChange: (_) {},
-        onCategorySelect: (_) {},
-        onCourseClick: (_) {},
-        onCreateCourseClick: () {},
-        onRetry: () {},
-      ),
-      bottomNavigationBar: AppBottomNavBar(currentIndex: 1, onTabSelected: (_) {}),
-    ),
-  );
-}
-
-@Preview(name: 'Thư viện · có dữ liệu', size: Size(390, 844))
-Widget libraryFullPreview() => _previewFrame(LibrarySampleData.full);
-
-@Preview(name: 'Thư viện · đang lọc theo nhóm', size: Size(390, 844))
-Widget libraryFilteredPreview() => _previewFrame(LibrarySampleData.filtered);
-
-@Preview(name: 'Thư viện · trống', size: Size(390, 844))
-Widget libraryEmptyPreview() => _previewFrame(LibrarySampleData.empty);

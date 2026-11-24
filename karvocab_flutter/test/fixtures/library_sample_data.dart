@@ -1,4 +1,4 @@
-import 'library_ui_state.dart';
+import 'package:karvocab_flutter/presentation/library/library_ui_state.dart';
 
 /// Dữ liệu mẫu của Màn 05 · Thư viện — chỉ dùng cho Preview và test giao diện.
 class LibrarySampleData {

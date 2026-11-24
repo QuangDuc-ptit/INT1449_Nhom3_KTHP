@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widget_previews.dart';
 
 import '../../core/constants/app_assets.dart';
 import '../../core/constants/app_colors.dart';
@@ -9,9 +8,7 @@ import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/streak_flame.dart';
-import '../home/home_sample_data.dart';
 import '../home/home_ui_state.dart';
-import '../notifications/notification_sample_data.dart';
 import '../notifications/notification_ui_state.dart';
 import '../widgets/app_bottom_nav_bar.dart';
 import '../widgets/course_icon.dart';
@@ -78,7 +75,7 @@ class HomeScreen extends StatelessWidget {
             AppDimensions.homeBlockGap,
           ),
           children: [
-            _Header(notifications: notifications, notificationCallbacks: notificationCallbacks),
+            _Header(userName: state.userName, notifications: notifications, notificationCallbacks: notificationCallbacks),
             blockGap,
             if (_isNewUser)
               _NewUserCard(onCreateCourse: onCreateCourseClick, onAiGenerate: onAiGenerateClick)
@@ -160,12 +157,14 @@ class _Header extends StatelessWidget {
   final ValueListenable<NotificationUiState>? notifications;
   final NotificationPopupCallbacks notificationCallbacks;
 
-  const _Header({required this.notifications, required this.notificationCallbacks});
+  final String userName;
+
+  const _Header({required this.userName, required this.notifications, required this.notificationCallbacks});
 
   @override
   Widget build(BuildContext context) {
     return TabHeader(
-      title: AppStrings.homeGreeting,
+      title: AppStrings.homeGreeting(userName),
       trailing: _BellButton(notifications: notifications, callbacks: notificationCallbacks),
     );
   }
@@ -587,23 +586,3 @@ class _HomeCard extends StatelessWidget {
     );
   }
 }
-
-// -----------------------------------------------------------------------------
-// Preview (Flutter Widget Previewer)
-// -----------------------------------------------------------------------------
-
-Widget _previewFrame(HomeUiState state, NotificationUiState notifications) {
-  return MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: Scaffold(
-      body: HomeScreen(state: state, notifications: ValueNotifier(notifications)),
-      bottomNavigationBar: AppBottomNavBar(currentIndex: 0, onTabSelected: (_) {}),
-    ),
-  );
-}
-
-@Preview(name: 'Trang chủ · đầy đủ dữ liệu', size: Size(390, 844))
-Widget homeScreenFullPreview() => _previewFrame(HomeSampleData.full, NotificationSampleData.full(DateTime.now()));
-
-@Preview(name: 'Trang chủ · trạng thái trống', size: Size(390, 844))
-Widget homeScreenEmptyPreview() => _previewFrame(HomeSampleData.empty, NotificationSampleData.empty);

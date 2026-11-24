@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:karvocab_flutter/data/mock/mock_vocab_data.dart';
+import 'fixtures/mock_vocab_data.dart';
 import 'package:karvocab_flutter/data/repositories/collection_store.dart';
 import 'package:karvocab_flutter/data/services/device_tts_service.dart';
 import 'package:karvocab_flutter/data/services/pronunciation_service.dart';

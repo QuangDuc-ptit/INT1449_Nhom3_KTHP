@@ -1,5 +1,5 @@
-import '../models/collection_model.dart';
-import '../models/vocabulary_model.dart';
+import 'package:karvocab_flutter/data/models/collection_model.dart';
+import 'package:karvocab_flutter/data/models/vocabulary_model.dart';
 
 /// Dữ liệu mẫu chuẩn trích xuất từ chính xác file Figma KarVocab
 class MockVocabData {

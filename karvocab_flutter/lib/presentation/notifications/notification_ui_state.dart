@@ -45,6 +45,9 @@ class NotificationUiState {
     this.canLoadMore = false,
   });
 
+  /// Không có thông báo nào.
+  static const NotificationUiState empty = NotificationUiState(items: [], totalCount: 0, unreadCount: 0);
+
   NotificationUiState copyWith({
     List<NotificationItem>? items,
     int? totalCount,

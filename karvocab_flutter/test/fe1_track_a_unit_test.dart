@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:karvocab_flutter/core/utils/validators.dart';
-import 'package:karvocab_flutter/data/mock/mock_vocab_data.dart';
+import 'fixtures/mock_vocab_data.dart';
 import 'package:karvocab_flutter/data/models/vocabulary_model.dart';
 import 'package:karvocab_flutter/data/repositories/auth_repository.dart';
 import 'package:karvocab_flutter/data/repositories/collection_store.dart';

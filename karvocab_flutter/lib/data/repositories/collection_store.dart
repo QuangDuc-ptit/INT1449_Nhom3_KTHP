@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../mock/mock_vocab_data.dart';
+import '../local/local_store.dart';
 import '../models/collection_model.dart';
 import '../models/vocabulary_model.dart';
 
@@ -12,20 +12,24 @@ enum LoadStatus { initial, loading, ready, error }
 /// - Là nguồn dữ liệu duy nhất cho Màn 05, 06, 07, 09, 22, 24, 28 và thống kê Màn 15.
 /// - Hiện thực hợp đồng tích hợp đặc tả §5.1: `addWords(collectionId, words)`
 ///   để Track B (Lưu từ AI — Màn 14) gọi vào.
-/// - Mặc định thao tác trên danh sách sống của [MockVocabData] (chế độ Demo/offline);
-///   Sprint 3 sẽ thay phần `load()` bằng API backend thật.
+/// - Bắt đầu trống, người dùng tự tạo học phần / thêm từ. Có [storage] thì mọi thay đổi được
+///   lưu trên máy và nạp lại khi mở app; Sprint 3 sẽ thay phần `load()` bằng API backend thật.
 class CollectionStore extends ChangeNotifier {
   CollectionStore({
-    required this._collections,
-    required this._vocabularies,
+    List<CollectionModel>? collections,
+    List<VocabularyModel>? vocabularies,
     this.latency = const Duration(milliseconds: 400),
-  });
+    LocalStore? storage,
+  })  : _collections = collections ?? [],
+        _vocabularies = vocabularies ?? [],
+        _storage = storage {
+    if (storage != null && collections == null && vocabularies == null) _restore(storage);
+  }
 
-  /// Instance dùng chung toàn app (Demo Mode dùng dữ liệu mock).
-  static final CollectionStore instance = CollectionStore(
-    collections: MockVocabData.initialCollections,
-    vocabularies: MockVocabData.initialVocabularies,
-  );
+  /// Instance dùng chung toàn app, lưu vào [LocalStore.app].
+  static final CollectionStore instance = CollectionStore(storage: LocalStore.app);
+
+  final LocalStore? _storage;
 
   final List<CollectionModel> _collections;
   final List<VocabularyModel> _vocabularies;
@@ -44,6 +48,9 @@ class CollectionStore extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   List<CollectionModel> get collections => List.unmodifiable(_collections);
+
+  /// Mọi từ vựng ở mọi học phần (vd làm đáp án nhiễu cho quiz, hàng đợi ôn tập).
+  List<VocabularyModel> get allWords => List.unmodifiable(_vocabularies);
   int get totalWordCount => _vocabularies.length;
 
   // ---------------------------------------------------------------------------
@@ -284,18 +291,40 @@ class CollectionStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Đưa store về dữ liệu gốc (Demo / kiểm thử).
-  void resetToSeed() {
-    _collections
-      ..clear()
-      ..addAll(MockVocabData.seedCollections());
-    _vocabularies
-      ..clear()
-      ..addAll(MockVocabData.seedVocabularies());
+  /// Xoá toàn bộ học phần và từ vựng (đăng xuất khỏi tài khoản / kiểm thử).
+  void clear() {
+    _collections.clear();
+    _vocabularies.clear();
     _status = LoadStatus.initial;
     _errorMessage = null;
     simulateNetworkError = false;
     notifyListeners();
+  }
+
+  /// Mỗi lần dữ liệu đổi (đi qua [notifyListeners]) thì lưu lại trên máy.
+  @override
+  void notifyListeners() {
+    final storage = _storage;
+    if (storage != null) {
+      storage.writeJson(StorageKeys.collections, [for (final c in _collections) c.toJson()]);
+      storage.writeJson(StorageKeys.vocabularies, [for (final w in _vocabularies) w.toJson()]);
+    }
+    super.notifyListeners();
+  }
+
+  void _restore(LocalStore storage) {
+    final cols = storage.readJson(StorageKeys.collections);
+    final words = storage.readJson(StorageKeys.vocabularies);
+    try {
+      if (cols is List) _collections.addAll([for (final c in cols) CollectionModel.fromJson(c as Map<String, dynamic>)]);
+      if (words is List) {
+        _vocabularies.addAll([for (final w in words) VocabularyModel.fromJson(w as Map<String, dynamic>)]);
+      }
+    } on Object {
+      // Dữ liệu lưu bị hỏng: bỏ qua, bắt đầu trống thay vì treo app.
+      _collections.clear();
+      _vocabularies.clear();
+    }
   }
 
   // ---------------------------------------------------------------------------
