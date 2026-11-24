@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:karvocab_flutter/core/constants/app_strings.dart';
 import 'package:karvocab_flutter/core/widgets/app_button.dart';
+import 'package:karvocab_flutter/data/repositories/auth_repository.dart';
 import 'package:karvocab_flutter/data/mock/mock_vocab_data.dart';
 import 'package:karvocab_flutter/data/repositories/collection_store.dart';
 import 'package:karvocab_flutter/presentation/screens/library_screen.dart';
@@ -78,17 +80,40 @@ void main() {
 
       await tester.tap(find.descendant(of: tabs, matching: find.text('Đăng ký')));
       await tester.pump();
-      // Email, Ngày sinh, Mật khẩu, Xác nhận mật khẩu.
-      expect(find.byType(TextField), findsNWidgets(4));
+      // Họ và tên, Email, Ngày sinh, Mật khẩu, Xác nhận mật khẩu.
+      expect(find.byType(TextField), findsNWidgets(5));
+      expect(find.text('Họ và tên'), findsOneWidget);
       expect(find.text('Ngày sinh'), findsOneWidget);
       expect(find.text('Xác nhận mật khẩu'), findsOneWidget);
       // Ô Xác nhận mật khẩu cũng nhập dạng ẩn
-      expect(tester.widget<TextField>(find.byType(TextField).at(3)).obscureText, isTrue);
+      expect(tester.widget<TextField>(find.byType(TextField).at(4)).obscureText, isTrue);
 
       await tester.tap(find.descendant(of: tabs, matching: find.text('Đăng nhập')));
       await tester.pump();
       expect(find.byType(TextField), findsNWidgets(2));
       expect(find.text('Chào mừng trở lại'), findsOneWidget);
+    });
+  });
+
+  group('Màn 03 · Đăng ký có họ tên, nút mạng xã hội hoạt động', () {
+    testWidgets('Bỏ trống họ tên thì báo lỗi dưới ô Họ và tên', (tester) async {
+      await tester.pumpWidget(_app(LoginScreen(initialTab: 1, authRepository: AuthRepository(latency: Duration.zero))));
+      await tester.ensureVisible(find.widgetWithText(AppButton, AppStrings.registerButton));
+      await tester.tap(find.widgetWithText(AppButton, AppStrings.registerButton));
+      await tester.pump();
+      expect(find.text('Vui lòng nhập họ và tên'), findsOneWidget);
+    });
+
+    testWidgets('Bấm Google thì đăng nhập bằng tài khoản Google (không còn là nút chết)', (tester) async {
+      final auth = AuthRepository(latency: Duration.zero);
+      await tester.pumpWidget(_app(LoginScreen(authRepository: auth)));
+      await tester.ensureVisible(find.byKey(const Key('auth_google')));
+      await tester.tap(find.byKey(const Key('auth_google')));
+      await tester.pump(const Duration(milliseconds: 10));
+      expect(auth.currentUser?.fullName, 'Người dùng Google');
+      // Đã sang Trang chủ: gỡ cây widget và chạy hết timer của các màn
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 5));
     });
   });
 

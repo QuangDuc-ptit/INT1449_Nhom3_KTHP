@@ -180,6 +180,8 @@ class AppStrings {
   static const String profileHelpMessage = 'Hệ thống học từ vựng Spaced Repetition (SM-2) KarVocab.';
 
   // Màn 03 · Đăng ký
+  static const String registerFullName = 'Họ và tên';
+  static const String registerFullNameHint = 'VD: Nguyễn Văn An';
   static const String registerBirthDate = 'Ngày sinh';
   static const String registerBirthDateHint = 'DD/MM/YYYY';
   static const String registerBirthDateRequired = 'Vui lòng chọn ngày sinh';

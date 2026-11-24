@@ -21,7 +21,8 @@ import 'main_shell_screen.dart';
 /// - "Đăng nhập" → kiểm tra qua [AuthRepository.login]. Đúng → Trang chủ
 ///   ([MainShellScreen]); email chưa đăng ký / sai mật khẩu → lỗi dưới ô tương ứng.
 /// - "Quên mật khẩu?" → Màn 21 ([ForgotPasswordScreen]).
-/// - "Đăng ký", Google, Facebook → chưa có hành động.
+/// - "Đăng ký" → tạo tài khoản qua [AuthRepository.register] (họ tên, email, ngày sinh, mật khẩu).
+/// - Google, Facebook → [AuthRepository.loginWithSocial] (verifier giả lập trong Demo Mode).
 class LoginScreen extends StatefulWidget {
   /// 0 = Đăng nhập, 1 = Đăng ký.
   final int initialTab;
@@ -38,6 +39,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _loginEmailController = TextEditingController();
   final _loginPasswordController = TextEditingController();
+  final _registerNameController = TextEditingController();
   final _registerEmailController = TextEditingController();
   final _registerPasswordController = TextEditingController();
   final _registerConfirmController = TextEditingController();
@@ -49,6 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _loginPasswordError;
 
   DateTime? _registerBirthDate;
+  String? _registerNameError;
   String? _registerEmailError;
   String? _registerPasswordError;
   String? _registerConfirmError;
@@ -65,6 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _loginEmailController.dispose();
     _loginPasswordController.dispose();
+    _registerNameController.dispose();
     _registerEmailController.dispose();
     _registerPasswordController.dispose();
     _registerConfirmController.dispose();
@@ -120,19 +124,21 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   /// Màn 03: kiểm tra form rồi tạo tài khoản (gói Thường, cấp mã ID theo ngày sinh).
-  /// Form chưa có ô họ tên nên tạm lấy phần trước "@" của email; người dùng đổi sau.
   Future<void> _handleRegister() async {
     if (_isSubmitting) return;
     FocusScope.of(context).unfocus();
+    final name = _registerNameController.text.trim();
     final email = _registerEmailController.text.trim();
     final password = _registerPasswordController.text;
     setState(() {
+      _registerNameError = Validators.fullName(name);
       _registerEmailError = Validators.email(email);
       _registerPasswordError = Validators.strongPassword(password);
       _registerConfirmError = Validators.confirmPassword(_registerConfirmController.text, password);
       _registerBirthDateError = _registerBirthDate == null ? AppStrings.registerBirthDateRequired : null;
     });
-    if (_registerEmailError != null ||
+    if (_registerNameError != null ||
+        _registerEmailError != null ||
         _registerPasswordError != null ||
         _registerConfirmError != null ||
         _registerBirthDateError != null) {
@@ -141,7 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isSubmitting = true);
     try {
       await _auth.register(
-        fullName: email.split('@').first,
+        fullName: name,
         email: email,
         password: password,
         birthDate: _registerBirthDate,
@@ -155,19 +161,35 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
     if (!mounted) return;
+    _goHome();
+  }
+
+  void _goHome() {
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const MainShellScreen(initialTabIndex: 0)),
       (route) => false,
     );
   }
 
+  /// Google / Facebook: dùng chung cho cả hai tab, đăng nhập xong vào Trang chủ.
+  Future<void> _handleSocial(SocialProvider provider) async {
+    if (_isSubmitting) return;
+    FocusScope.of(context).unfocus();
+    setState(() => _isSubmitting = true);
+    try {
+      await _auth.loginWithSocial(provider);
+    } catch (_) {
+      if (mounted) setState(() => _isSubmitting = false);
+      return;
+    }
+    if (!mounted) return;
+    _goHome();
+  }
+
   void _openForgotPassword() {
     FocusScope.of(context).unfocus();
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => const _ForgotPasswordRoute()));
   }
-
-  // Chưa làm: chỉ có giao diện.
-  void _noAction() {}
 
   @override
   Widget build(BuildContext context) {
@@ -256,14 +278,20 @@ class _LoginScreenState extends State<LoginScreen> {
         Row(
           children: [
             Expanded(
-              child: _SocialButton(label: 'Google', icon: const _GoogleIcon(), onPressed: _noAction),
+              child: _SocialButton(
+                key: const Key('auth_google'),
+                label: 'Google',
+                icon: const _GoogleIcon(),
+                onPressed: () => _handleSocial(SocialProvider.google),
+              ),
             ),
             const SizedBox(width: AppDimensions.space16),
             Expanded(
               child: _SocialButton(
+                key: const Key('auth_facebook'),
                 label: 'Facebook',
                 icon: const Icon(Icons.facebook, color: AppColors.facebookBlue, size: AppDimensions.iconSocial),
-                onPressed: _noAction,
+                onPressed: () => _handleSocial(SocialProvider.facebook),
               ),
             ),
           ],
@@ -348,6 +376,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
   List<Widget> _buildRegisterFields() {
     return [
+      AppTextField(
+        key: const ValueKey('register_name'),
+        label: AppStrings.registerFullName,
+        hintText: AppStrings.registerFullNameHint,
+        controller: _registerNameController,
+        keyboardType: TextInputType.name,
+        borderColor: AppColors.softBlueSurface,
+        errorText: _registerNameError,
+        onChanged: (_) {
+          if (_registerNameError != null) setState(() => _registerNameError = null);
+        },
+      ),
+      const SizedBox(height: AppDimensions.space16),
       AppTextField(
         key: const ValueKey('register_email'),
         label: AppStrings.emailLabel,
@@ -482,7 +523,7 @@ class _SocialButton extends StatelessWidget {
   final Widget icon;
   final VoidCallback onPressed;
 
-  const _SocialButton({required this.label, required this.icon, required this.onPressed});
+  const _SocialButton({super.key, required this.label, required this.icon, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
