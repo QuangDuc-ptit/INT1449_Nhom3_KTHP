@@ -103,13 +103,18 @@ class _AiPreviewScreenState extends State<AiPreviewScreen> {
       for (var i = 0; i < chosen.length; i++)
         chosen[i].toVocabulary(collectionId, 'voc-ai-$stamp-$i'),
     ];
-    CollectionBridge.addWords(collectionId, words);
+    final skipped = CollectionBridge.addWords(collectionId, words);
+    final savedCount = words.length - skipped.length;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: AppColors.successGreen,
         behavior: SnackBarBehavior.floating,
-        content: Text(AppStrings.aiSaved(words.length)),
+        content: Text(
+          skipped.isEmpty
+              ? AppStrings.aiSaved(savedCount)
+              : AppStrings.aiSavedWithSkipped(savedCount, skipped.length),
+        ),
       ),
     );
     // Trả `true` cho Màn 13 để nó tự đóng, quay về màn đã mở luồng AI.

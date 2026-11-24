@@ -29,6 +29,7 @@ class CollectionBridge {
   }
 
   /// Thêm danh sách từ vào học phần (cập nhật `totalWords` và báo cho Thư viện).
-  static void addWords(String collectionId, List<VocabularyModel> words) =>
+  /// Từ đã có trong học phần bị bỏ qua; trả về các term bị bỏ qua.
+  static List<String> addWords(String collectionId, List<VocabularyModel> words) =>
       store.addWords(collectionId, words);
 }

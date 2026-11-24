@@ -347,6 +347,8 @@ class AppStrings {
   static const String aiDeselectAll = 'Bỏ chọn tất cả';
   static String aiSaveSelected(int count) => 'Lưu $count từ đã chọn';
   static String aiSaved(int count) => 'Đã thêm $count từ vào học phần';
+  static String aiSavedWithSkipped(int saved, int skipped) =>
+      'Đã thêm $saved từ, bỏ qua $skipped từ đã có trong học phần';
   static String aiNewCollectionDefault(String topic) => 'AI · $topic';
   static String aiDestinationNew(String name) => 'Tạo mới: $name';
   static const String aiAlreadyInCollection = 'Đã có trong học phần';

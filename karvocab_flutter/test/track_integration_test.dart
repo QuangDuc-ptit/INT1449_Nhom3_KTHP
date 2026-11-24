@@ -19,10 +19,10 @@ CollectionStore _freshStore() => CollectionStore(
       latency: Duration.zero,
     );
 
-VocabularyModel _aiWord(String id) => VocabularyModel(
+VocabularyModel _aiWord(String id, {String term = 'boarding pass'}) => VocabularyModel(
       id: id,
       collectionId: '',
-      term: 'boarding pass',
+      term: term,
       partOfSpeech: 'noun',
       ipa: '/ˈbɔːdɪŋ pɑːs/',
       definitionVi: 'thẻ lên máy bay',
@@ -46,12 +46,31 @@ void main() {
 
     test('addWords đi qua store: Thư viện được báo và số từ tăng', () {
       final before = store.findCollection('col-1')!.totalWords;
-      CollectionBridge.addWords('col-1', [_aiWord('voc-ai-1'), _aiWord('')]);
+      CollectionBridge.addWords(
+        'col-1',
+        [_aiWord('voc-ai-1'), _aiWord('', term: 'layover')],
+      );
 
       expect(notified, greaterThan(0));
       expect(store.findCollection('col-1')!.totalWords, before + 2);
-      final added = store.wordsOf('col-1').where((w) => w.term == 'boarding pass');
+      final added = store.wordsOf('col-1').where((w) => w.term == 'boarding pass' || w.term == 'layover');
+      expect(added.length, 2);
       expect(added.every((w) => w.id.isNotEmpty && w.collectionId == 'col-1'), isTrue);
+    });
+
+    test('addWords bỏ qua từ đã có (không phân biệt hoa thường, kể cả trùng trong cùng lần lưu) như BE', () {
+      CollectionBridge.addWords('col-1', [_aiWord('voc-ai-1')]);
+      final before = store.findCollection('col-1')!.totalWords;
+
+      final skipped = CollectionBridge.addWords('col-1', [
+        _aiWord('voc-ai-2', term: '  Boarding   PASS '),
+        _aiWord('voc-ai-3', term: 'gate'),
+        _aiWord('voc-ai-4', term: 'GATE'),
+      ]);
+
+      expect(skipped, ['  Boarding   PASS ', 'GATE']);
+      expect(store.findCollection('col-1')!.totalWords, before + 1);
+      expect(store.wordsOf('col-1').where((w) => w.term.toLowerCase() == 'gate').length, 1);
     });
 
     test('createCollection tạo học phần trong store, tự thêm hậu tố khi trùng tên', () {

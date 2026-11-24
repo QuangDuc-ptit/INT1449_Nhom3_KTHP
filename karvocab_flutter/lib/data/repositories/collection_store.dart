@@ -126,10 +126,14 @@ class CollectionStore extends ChangeNotifier {
   }
 
   bool isTermTaken(String collectionId, String term, {String? excludeId}) {
-    final t = term.trim().toLowerCase();
+    final t = termKey(term);
     return _vocabularies.any((w) =>
-        w.collectionId == collectionId && w.id != excludeId && w.term.trim().toLowerCase() == t);
+        w.collectionId == collectionId && w.id != excludeId && termKey(w.term) == t);
   }
+
+  /// Khoá so trùng từ vựng, giống `termKey()` của BE: trim, gộp khoảng trắng, viết thường.
+  static String termKey(String term) =>
+      term.trim().replaceAll(RegExp(r'\s+'), ' ').toLowerCase();
 
   // ---------------------------------------------------------------------------
   // Học phần (Màn 22)
@@ -223,13 +227,31 @@ class CollectionStore extends ChangeNotifier {
   }
 
   /// Hợp đồng tích hợp với Track B (Màn 14 — Lưu từ AI vào học phần).
-  void addWords(String collectionId, List<VocabularyModel> words) {
+  ///
+  /// Giống `POST /vocabularies/batch-save` của BE: bỏ qua từ đã có trong học phần
+  /// (không phân biệt hoa thường, kể cả trùng nhau trong cùng lần lưu) và trả về
+  /// danh sách term bị bỏ qua (BE `skippedTerms`).
+  List<String> addWords(String collectionId, List<VocabularyModel> words) {
+    final seen = {
+      for (final w in _vocabularies)
+        if (w.collectionId == collectionId) termKey(w.term),
+    };
+    final skipped = <String>[];
+    var added = 0;
     for (final w in words) {
+      if (!seen.add(termKey(w.term))) {
+        skipped.add(w.term);
+        continue;
+      }
       final withId = w.id.isEmpty ? w.copyWith(id: _newId('voc')) : w;
-      _vocabularies.add(withId.copyWith(collectionId: collectionId));
+      _vocabularies.add(withId.copyWith(collectionId: collectionId, term: w.term.trim()));
+      added++;
     }
-    _syncCount(collectionId);
-    notifyListeners();
+    if (added > 0) {
+      _syncCount(collectionId);
+      notifyListeners();
+    }
+    return skipped;
   }
 
   /// Cập nhật một từ đã có. Trả về `false` nếu không tìm thấy.
