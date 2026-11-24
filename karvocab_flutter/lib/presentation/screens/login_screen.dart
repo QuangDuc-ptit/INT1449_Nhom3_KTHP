@@ -85,6 +85,17 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     if (_isSubmitting) return;
     FocusScope.of(context).unfocus();
+    // Kiểm tra định dạng trên máy trước (giống Đăng ký): ô trống không bị báo
+    // nhầm thành "Email chưa được đăng ký".
+    final emailError = Validators.email(_loginEmailController.text);
+    final passwordError = Validators.loginPassword(_loginPasswordController.text);
+    if (emailError != null || passwordError != null) {
+      setState(() {
+        _loginEmailError = emailError;
+        _loginPasswordError = passwordError;
+      });
+      return;
+    }
     setState(() {
       _isSubmitting = true;
       _loginEmailError = null;
