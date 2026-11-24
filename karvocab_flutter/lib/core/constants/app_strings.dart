@@ -237,7 +237,12 @@ class AppStrings {
   static const String wordDetailNoteLabel = 'GHI CHÚ';
   static const String wordDetailSynonyms = 'Từ đồng nghĩa';
   static const String wordDetailAntonyms = 'Từ trái nghĩa';
-  static const String wordDetailDelete = 'Xóa từ vựng';
+  static const String wordDetailDelete = 'Xoá từ vựng';
+  static const String wordDetailProgress = 'TIẾN ĐỘ HỌC';
+  static const String wordProgressNew = 'Chưa học';
+  static String wordProgressLearning(int level, int max) => 'Đang học · cấp $level/$max';
+  static const String wordProgressMastered = 'Đã thuộc';
+  static const String wordProgressNoSchedule = 'Lịch ôn sẽ có sau lần luyện tập đầu tiên';
   static String wordDetailSpeak(String term) => 'Phát âm từ $term';
   static String wordDetailUpdated(String term) => 'Đã cập nhật từ "$term"';
   static String wordDetailDeleted(String term) => 'Đã xoá từ "$term"';

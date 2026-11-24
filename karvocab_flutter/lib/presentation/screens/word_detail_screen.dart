@@ -6,11 +6,13 @@ import '../../core/constants/app_durations.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/constants/part_of_speech.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/utils/review_schedule.dart';
 import '../../core/widgets/app_toast.dart';
 import '../../core/widgets/cefr_badge.dart';
 import '../../core/widgets/sound_wave_indicator.dart';
 import '../../data/models/vocabulary_model.dart';
 import '../../data/repositories/collection_store.dart';
+import '../../data/repositories/dashboard_store.dart';
 import '../../data/services/pronunciation_service.dart';
 import '../widgets/delete_word_dialog.dart';
 import '../widgets/word_screen_header.dart';
@@ -18,7 +20,8 @@ import 'word_form_screen.dart';
 
 /// Màn 07 · Chi tiết từ vựng.
 /// Thẻ từ (trình độ, từ loại, từ, IPA, nút phát âm), nghĩa tiếng Việt, ví dụ,
-/// ghi chú, từ đồng nghĩa / trái nghĩa và nút xoá (Màn 28 xác nhận).
+/// tiến độ học (cấp SM-2, lịch ôn lại), ghi chú, từ đồng nghĩa / trái nghĩa
+/// và nút xoá (Màn 28 xác nhận).
 /// Bút chì mở Màn 09 (Sửa) với dữ liệu hiện tại; màn này luôn đọc bản mới nhất
 /// từ [CollectionStore] nên lưu xong quay về là thấy nội dung mới.
 class WordDetailScreen extends StatefulWidget {
@@ -26,7 +29,10 @@ class WordDetailScreen extends StatefulWidget {
   final CollectionStore? store;
   final PronunciationService? pronunciation;
 
-  const WordDetailScreen({super.key, required this.vocabulary, this.store, this.pronunciation});
+  /// Tiến độ ôn tập (mặc định [DashboardStore.instance]).
+  final DashboardStore? dashboard;
+
+  const WordDetailScreen({super.key, required this.vocabulary, this.store, this.pronunciation, this.dashboard});
 
   @override
   State<WordDetailScreen> createState() => _WordDetailScreenState();
@@ -35,6 +41,7 @@ class WordDetailScreen extends StatefulWidget {
 class _WordDetailScreenState extends State<WordDetailScreen> {
   CollectionStore get _store => widget.store ?? CollectionStore.instance;
   PronunciationService get _audio => widget.pronunciation ?? PronunciationService.instance;
+  DashboardStore get _dashboard => widget.dashboard ?? DashboardStore.instance;
 
   Future<void> _openEdit(VocabularyModel vocab) async {
     final saved = await Navigator.of(context).push<VocabularyModel>(
@@ -74,7 +81,7 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([_store, _audio]),
+      listenable: Listenable.merge([_store, _audio, _dashboard]),
       builder: (context, _) {
         // Đọc bản mới nhất từ store để phản ánh ngay thay đổi sau khi sửa.
         final vocab = _store.findWord(widget.vocabulary.id) ?? widget.vocabulary;
@@ -115,6 +122,8 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
                   child: HighlightedSentence(sentence: vocab.exampleSentence, keyword: vocab.term),
                 ),
               ],
+              const SizedBox(height: AppDimensions.wordDetailBlockGap),
+              _ProgressBlock(progress: _dashboard.progressOf(vocab.id)),
               if (vocab.note.isNotEmpty) ...[
                 const SizedBox(height: AppDimensions.space12),
                 _TintBlock(
@@ -150,6 +159,44 @@ class _WordDetailScreenState extends State<WordDetailScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+/// Tiến độ học của từ: trạng thái (Chưa học / Đang học cấp n/5 / Đã thuộc) và lịch ôn lại.
+class _ProgressBlock extends StatelessWidget {
+  final SrsProgress? progress;
+
+  const _ProgressBlock({required this.progress});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = progress;
+    final String status;
+    final Color color;
+    if (p == null || p.repetitionLevel == 0) {
+      status = AppStrings.wordProgressNew;
+      color = AppColors.practiceTextSecondary;
+    } else if (p.mastered) {
+      status = AppStrings.wordProgressMastered;
+      color = AppColors.successGreen;
+    } else {
+      status = AppStrings.wordProgressLearning(p.repetitionLevel, Sm2Engine.maxLevel);
+      color = AppColors.practicePrimary;
+    }
+    final due = p == null ? AppStrings.wordProgressNoSchedule : reviewDueText(p.nextReviewAt, DateTime.now());
+
+    return _TintBlock(
+      label: AppStrings.wordDetailProgress,
+      child: Column(
+        key: const Key('word_detail_progress'),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(status, style: AppTypography.wordDetailBody.copyWith(color: color, fontWeight: FontWeight.w700)),
+          const SizedBox(height: AppDimensions.space4),
+          Text(due, style: AppTypography.wordDetailBody.copyWith(color: AppColors.practiceTextSecondary)),
+        ],
+      ),
     );
   }
 }

@@ -31,7 +31,7 @@ void main() {
       expect(find.text('Từ đồng nghĩa'), findsOneWidget);
       expect(find.text('Từ trái nghĩa'), findsOneWidget);
       await tester.ensureVisible(find.byKey(const Key('word_detail_delete')));
-      expect(find.text('Xóa từ vựng'), findsOneWidget);
+      expect(find.text('Xoá từ vựng'), findsOneWidget);
     });
 
     testWidgets('Bút chì mở form đã điền sẵn; quay lại không lưu', (tester) async {
