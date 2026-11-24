@@ -184,7 +184,9 @@ class _ProgressBlock extends StatelessWidget {
       status = AppStrings.wordProgressLearning(p.repetitionLevel, Sm2Engine.maxLevel);
       color = AppColors.practicePrimary;
     }
-    final due = p == null ? AppStrings.wordProgressNoSchedule : reviewDueText(p.nextReviewAt, DateTime.now());
+    final due = (p == null || p.repetitionLevel == 0)
+        ? AppStrings.wordProgressNoSchedule
+        : reviewDueText(p.nextReviewAt, DateTime.now());
 
     return _TintBlock(
       label: AppStrings.wordDetailProgress,

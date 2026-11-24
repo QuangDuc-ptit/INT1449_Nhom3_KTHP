@@ -101,9 +101,6 @@ class DashboardStore extends ChangeNotifier {
   /// Ngày mà [_learnedTodayIds] đang tính; sang ngày khác thì đếm lại từ 0.
   DateTime? _learnedDay;
 
-  /// Số từ mẫu "đã học sáng nay" của dữ liệu Demo (chỉ tính trong ngày seed).
-  int _seedLearnedCount = 0;
-
   /// Các từ khác nhau đã trả lời đúng trong ngày (BE đếm distinct vocabularyId).
   final Set<String> _learnedTodayIds = {};
 
@@ -123,8 +120,7 @@ class DashboardStore extends ChangeNotifier {
   int get dailyGoal => _dailyGoal;
 
   /// Số từ khác nhau trả lời đúng hôm nay (BE `wordsLearnedToday`).
-  int get reviewedToday =>
-      _learnedDay == _today ? _seedLearnedCount + _learnedTodayIds.length : 0;
+  int get reviewedToday => _learnedDay == _today ? _learnedTodayIds.length : 0;
 
   /// BE `isStreakActiveToday`: hôm nay đã hoàn thành ít nhất một phiên.
   bool get studiedToday => _lastStreakDate == _today;
@@ -161,20 +157,43 @@ class DashboardStore extends ChangeNotifier {
     _lastStreakDate = _streak > 0 ? _previousDay(today) : null;
     _dailyGoal = profile.dailyGoalWords.clamp(minDailyGoal, maxDailyGoal);
     _learnedDay = today;
-    _seedLearnedCount = 4;
     _learnedTodayIds.clear();
     _progress.clear();
 
+    // Câu chuyện Demo phải khớp ở mọi màn: học đều tới hôm qua (streak), hôm nay
+    // chưa học (mục tiêu 0/N), phần lớn từ đã học ở các cấp khác nhau, vài từ mới.
     final now = _clock();
     final vocabs = MockVocabData.initialVocabularies;
     for (var i = 0; i < vocabs.length; i++) {
-      // 6 từ đầu đã đến hạn ôn, các từ còn lại hẹn trong những ngày tới.
-      final next = i < 6
-          ? now.subtract(Duration(hours: i + 1))
-          : now.add(Duration(days: (i % 3) + 1));
-      _progress[vocabs[i].id] = Sm2Engine.initial(next);
+      final (level, offset) = i < _seedPlan.length ? _seedPlan[i] : (0, Duration.zero);
+      _progress[vocabs[i].id] = level == 0 ? Sm2Engine.initial(now.add(offset)) : _seedProgress(level, now.add(offset));
     }
   }
+
+  /// (cấp SM-2, lệch so với bây giờ của lần ôn tới) cho từng từ mẫu theo thứ tự.
+  /// Âm = đã đến hạn: 2 từ quá hạn nhiều ngày, 2 từ quá hạn 1 ngày, 2 từ đến hạn hôm nay.
+  static const List<(int, Duration)> _seedPlan = [
+    (0, Duration.zero), // coherent: từ mới
+    (0, Duration.zero), // inevitable: từ mới
+    (1, Duration(days: -4)),
+    (2, Duration(days: -3)),
+    (1, Duration(days: -1)),
+    (2, Duration(days: -1)),
+    (1, Duration(hours: -2)),
+    (3, Duration(hours: -1)),
+    (2, Duration(days: 2)),
+    (3, Duration(days: 5)),
+    (Sm2Engine.maxLevel, Duration(days: 30)), // đã thuộc
+    (0, Duration.zero), // từ mới
+  ];
+
+  static SrsProgress _seedProgress(int level, DateTime next) => SrsProgress(
+        repetitionLevel: level,
+        intervalDays: Sm2Engine.intervals[level - 1],
+        easeFactor: 2.5,
+        nextReviewAt: next,
+        mastered: level >= Sm2Engine.maxLevel,
+      );
 
   /// BE chỉ nhận mục tiêu ngày trong khoảng 5–30 từ.
   static const int minDailyGoal = 5;
@@ -210,7 +229,6 @@ class DashboardStore extends ChangeNotifier {
     // phiên hôm nay, kể cả phiên "Thử lại câu sai". Dùng tập hợp nên không đếm đôi.
     if (_learnedDay != today) {
       _learnedDay = today;
-      _seedLearnedCount = 0;
       _learnedTodayIds.clear();
     }
     for (final r in summary.records) {

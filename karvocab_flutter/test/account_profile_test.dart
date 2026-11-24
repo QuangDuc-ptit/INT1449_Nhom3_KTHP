@@ -76,7 +76,7 @@ void main() {
       latency: Duration.zero,
     );
     final dashboard = DashboardStore.forTest();
-    // Trả lời đúng 2 từ đầu tiên → 2 từ đã học
+    // Dữ liệu mẫu có 9 từ đã học; 2 từ đầu là từ mới, trả lời đúng → 11 từ đã học
     final pool = MockVocabData.initialVocabularies.take(2).toList();
     final qs = QuizQuestionFactory.build(mode: QuizMode.meaningChoose, pool: pool, count: 2);
     dashboard.recordSessionResult(QuizSummary(
@@ -93,8 +93,8 @@ void main() {
       home: ProfileScreen(authRepository: AuthRepository(latency: Duration.zero), store: store, dashboard: dashboard),
     ));
 
-    expect(home.totalWords - home.newWords, 2);
-    expect(find.text('2'), findsOneWidget); // ô "Từ đã học"
+    expect(home.totalWords - home.newWords, 11);
+    expect(find.text('11'), findsOneWidget); // ô "Từ đã học"
     expect(find.text('${dashboard.streak} ${AppStrings.profileStreakUnit}'), findsOneWidget); // ô "Chuỗi ngày"
   });
 }
