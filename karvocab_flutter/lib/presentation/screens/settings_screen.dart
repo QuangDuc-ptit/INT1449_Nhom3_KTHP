@@ -4,7 +4,6 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
-import '../../core/utils/date_format.dart';
 import '../../core/utils/validators.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_text_field.dart';
@@ -12,7 +11,6 @@ import '../../core/widgets/app_toast.dart';
 import '../../data/models/user_profile_model.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/services/reminder_service.dart';
-import '../widgets/birth_date_picker.dart';
 import 'login_screen.dart';
 
 /// Màn 23 · Cài đặt tài khoản (Account Settings Screen)
@@ -69,14 +67,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } else {
       await _reminders.cancel();
     }
-  }
-
-  /// Sửa ngày sinh; mã ID đã cấp thì giữ nguyên.
-  Future<void> _editBirthDate() async {
-    final picked = await pickBirthDate(context, initial: _profile.birthDate);
-    if (picked == null || !mounted) return;
-    setState(() => _auth.updateBirthDate(picked));
-    AppToast.success(context, AppStrings.profileBirthDateSaved);
   }
 
   // Hộp thoại đổi mật khẩu
@@ -294,22 +284,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               clipBehavior: Clip.antiAlias,
               child: Column(
                 children: [
-                  ListTile(
-                    key: const Key('settings_birth_date'),
-                    leading: const Icon(Icons.cake_outlined, color: AppColors.primaryBlue),
-                    title: Text(AppStrings.profileBirthDate, style: AppTypography.bodyBold),
-                    subtitle: Text(
-                      _profile.birthDate == null ? AppStrings.profileNoBirthDate : formatDmy(_profile.birthDate!),
-                      style: AppTypography.bodyMedium,
-                    ),
-                    trailing: const Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      size: AppDimensions.iconXSmall,
-                      color: AppColors.textMuted,
-                    ),
-                    onTap: _editBirthDate,
-                  ),
-                  const Divider(height: AppDimensions.dividerThickness, color: AppColors.borderLight),
+                  // Ngày sinh chỉ sửa ở Hồ sơ (Màn 15) để không có hai nơi cùng sửa một thông tin.
                   ListTile(
                     leading: const Icon(Icons.lock_reset_rounded, color: AppColors.primaryBlue),
                     title: Text('Đổi mật khẩu', style: AppTypography.bodyBold),

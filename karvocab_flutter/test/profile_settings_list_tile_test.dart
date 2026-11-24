@@ -33,4 +33,14 @@ void main() {
     expect(find.byType(ListTile), findsWidgets);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('Màn 23 · Cài đặt: không còn dòng Ngày sinh (chỉ sửa ở Hồ sơ)', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: SettingsScreen(authRepository: AuthRepository(latency: Duration.zero)),
+    ));
+    await tester.pump();
+
+    expect(find.byKey(const Key('settings_birth_date')), findsNothing);
+    expect(find.text('Đổi mật khẩu'), findsOneWidget);
+  });
 }

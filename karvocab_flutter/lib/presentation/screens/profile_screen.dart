@@ -144,7 +144,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             icon: Icons.mail_outline_rounded,
             label: AppStrings.profileEmail,
             value: profile.email,
-            trailing: const _LockIcon(),
+            // Ghi rõ bằng chữ thay cho icon ổ khoá dễ hiểu nhầm là "bảo mật".
+            note: AppStrings.profileEmailNote,
           ),
           const _RowDivider(),
           _InfoRow(
@@ -319,21 +320,6 @@ class _RowDivider extends StatelessWidget {
   );
 }
 
-class _LockIcon extends StatelessWidget {
-  const _LockIcon();
-
-  @override
-  Widget build(BuildContext context) => const Padding(
-    padding: EdgeInsets.all(AppDimensions.space12),
-    child: Icon(
-      Icons.lock_outline_rounded,
-      size: AppDimensions.iconSmall,
-      color: AppColors.practiceTextSecondary,
-      semanticLabel: AppStrings.profileLocked,
-    ),
-  );
-}
-
 /// Một dòng thông tin: icon, nhãn nhỏ, giá trị và nút bên phải.
 class _InfoRow extends StatelessWidget {
   final IconData icon;
@@ -344,6 +330,9 @@ class _InfoRow extends StatelessWidget {
   final VoidCallback? onTap;
   final String? semanticsHint;
 
+  /// Dòng chú thích nhỏ dưới giá trị, vd "không thể thay đổi".
+  final String? note;
+
   const _InfoRow({
     super.key,
     required this.icon,
@@ -353,6 +342,7 @@ class _InfoRow extends StatelessWidget {
     this.trailing,
     this.onTap,
     this.semanticsHint,
+    this.note,
   });
 
   @override
@@ -381,6 +371,10 @@ class _InfoRow extends StatelessWidget {
                       Text(label, style: AppTypography.quizCaption),
                       const SizedBox(height: AppDimensions.space2),
                       Text(value, style: valueStyle ?? AppTypography.quizOption),
+                      if (note != null) ...[
+                        const SizedBox(height: AppDimensions.space2),
+                        Text(note!, style: AppTypography.quizCaption),
+                      ],
                     ],
                   ),
                 ),

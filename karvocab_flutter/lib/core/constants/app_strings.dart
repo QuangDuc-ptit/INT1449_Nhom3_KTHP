@@ -170,8 +170,8 @@ class AppStrings {
   static const String profileAccountInfo = 'Thông tin tài khoản';
   static const String profileMemberId = 'Mã ID';
   static const String profileEmail = 'Email';
+  static const String profileEmailNote = 'Dùng để đăng nhập, không thể thay đổi';
   static const String profileBirthDate = 'Ngày sinh';
-  static const String profileLocked = 'Không thể thay đổi';
   static const String profileCopyId = 'Sao chép mã ID';
   static const String profileIdCopied = 'Đã sao chép mã ID';
   static const String profileNoBirthDate = 'Chưa cập nhật';
