@@ -10,6 +10,7 @@ import '../../core/utils/date_format.dart';
 import '../../data/models/user_profile_model.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/collection_store.dart';
+import '../../data/repositories/dashboard_store.dart';
 import '../widgets/birth_date_picker.dart';
 import 'settings_screen.dart';
 import '../widgets/tab_header.dart';
@@ -21,7 +22,10 @@ class ProfileScreen extends StatefulWidget {
   final AuthRepository? authRepository;
   final CollectionStore? store;
 
-  const ProfileScreen({super.key, this.authRepository, this.store});
+  /// Tiến độ học (mặc định [DashboardStore.instance]) để tính "Từ đã học" và streak.
+  final DashboardStore? dashboard;
+
+  const ProfileScreen({super.key, this.authRepository, this.store, this.dashboard});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -30,6 +34,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   AuthRepository get _auth => widget.authRepository ?? AuthRepository.instance;
   CollectionStore get _store => widget.store ?? CollectionStore.instance;
+  DashboardStore get _dashboard => widget.dashboard ?? DashboardStore.instance;
 
   void _openSettings() {
     Navigator.of(context)
@@ -57,11 +62,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([_auth, _store]),
+      listenable: Listenable.merge([_auth, _store, _dashboard]),
       builder: (context, _) {
         final stored = _auth.currentUser ?? UserProfileModel.mockDefault();
-        // Số học phần lấy trực tiếp từ Thư viện để luôn khớp với dữ liệu thật.
-        final profile = stored.copyWith(totalCollections: _store.collections.length);
+        // Thành tựu tính từ dữ liệu thật của Thư viện và tiến độ ôn tập, cùng luật
+        // với Trang chủ, để hai màn không hiện hai con số khác nhau.
+        final learned = _store.collections
+            .expand((c) => _store.wordsOf(c.id))
+            .where((w) => _dashboard.isLearned(w.id))
+            .length;
+        final profile = stored.copyWith(
+          totalCollections: _store.collections.length,
+          totalWordsLearned: learned,
+          currentStreak: _dashboard.streak,
+        );
         return Scaffold(
           backgroundColor: AppColors.practiceBackground,
           body: SafeArea(

@@ -67,7 +67,7 @@ class AppStrings {
 
   static const String homeStatTotalWords = 'Tổng số từ';
   static const String homeStatStreak = 'Chuỗi ngày học';
-  static const String homeStatNewWords = 'Số từ mới tạo';
+  static const String homeStatNewWords = 'Từ chưa học';
   static const String homeStatToReview = 'Cần ôn lại';
   static String homeStreakValue(int days) => '$days ngày';
 
@@ -124,7 +124,7 @@ class AppStrings {
   // Màn 10 · Chọn chế độ luyện tập
   static const String practiceTitle = 'Luyện tập';
   static const String practiceSourceLabel = 'Nguồn học phần';
-  static const String practiceSourceHint = 'Chọn tối đa 3 bộ';
+  static const String practiceSourceHint = 'Chọn tối đa 3 học phần';
   static const String practiceSourceEmpty = 'Chưa chọn học phần';
   static const String practiceStatusLabel = 'Trạng thái từ';
   static const String practiceStatusUnmastered = 'Chưa thuộc';
@@ -171,6 +171,8 @@ class AppStrings {
   static const String profileBirthDateHelp = 'Chọn ngày sinh';
   static const String profileAchievements = 'Thành tựu';
   static const String profileWordsLearned = 'Từ đã học';
+  /// Màn 17: mục tiêu ngày đếm số từ khác nhau trả lời đúng (giống Trang chủ).
+  static const String settingsDailyGoalLabel = 'Số từ cần học mỗi ngày';
   static const String profileStreak = 'Chuỗi ngày';
   static const String profileStreakUnit = 'ngày';
   static const String profileCollections = 'Học phần';

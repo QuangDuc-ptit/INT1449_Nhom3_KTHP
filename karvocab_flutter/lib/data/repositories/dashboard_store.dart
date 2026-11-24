@@ -135,6 +135,10 @@ class DashboardStore extends ChangeNotifier {
 
   SrsProgress? progressOf(String vocabId) => _progress[vocabId];
 
+  /// Từ đã học: đã trả lời đúng ít nhất một lần nên lên level ≥ 1.
+  /// Trang chủ ("Từ chưa học") và Hồ sơ ("Từ đã học") cùng dùng luật này để số liệu khớp nhau.
+  bool isLearned(String vocabId) => (_progress[vocabId]?.repetitionLevel ?? 0) > 0;
+
   /// Các từ đến hạn ôn: `next_review_at <= NOW`, kể cả từ đã mastered (BE vẫn
   /// cho ôn lại từ mastered sau 35 ngày). Sắp theo hạn ôn sớm nhất trước.
   List<VocabularyModel> get dueVocabularies {

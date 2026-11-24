@@ -26,11 +26,8 @@ class HomeStateBuilder {
       userName: (user ?? UserProfileModel.mockDefault()).fullName,
       totalWords: collections.totalWordCount,
       streakDays: dashboard.streak,
-      // Từ chưa có tiến độ ôn tập hoặc chưa lên level nào.
-      newWords: words.where((w) {
-        final p = dashboard.progressOf(w.id);
-        return p == null || p.repetitionLevel == 0;
-      }).length,
+      // Từ chưa học: chưa có tiến độ ôn tập hoặc chưa lên level nào.
+      newWords: words.where((w) => !dashboard.isLearned(w.id)).length,
       wordsToReview: due,
       reviewMinutes: (due * secondsPerReviewWord / 60).ceil(),
       weeklyStats: _weekly(today, dashboard.reviewedToday),

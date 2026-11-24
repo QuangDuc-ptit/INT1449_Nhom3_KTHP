@@ -27,7 +27,7 @@ void main() {
       await pumpScreen(tester);
 
       expect(find.text('Giao tiếp & Đời sống hằng ngày'), findsOneWidget);
-      expect(find.text('Chọn tối đa 3 bộ'), findsOneWidget);
+      expect(find.text('Chọn tối đa 3 học phần'), findsOneWidget);
       expect(find.text('Chưa thuộc'), findsOneWidget);
       expect(find.text('20'), findsOneWidget);
 

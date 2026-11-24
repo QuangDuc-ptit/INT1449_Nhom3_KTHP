@@ -160,7 +160,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [Text('Số từ cần ôn mỗi ngày', style: AppTypography.bodyBold)],
+                          children: [Text(AppStrings.settingsDailyGoalLabel, style: AppTypography.bodyBold)],
                         ),
                       ),
 
