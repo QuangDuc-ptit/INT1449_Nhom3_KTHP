@@ -7,6 +7,7 @@ import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/date_format.dart';
+import '../../data/models/learning_badge.dart';
 import '../../data/models/user_profile_model.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/collection_store.dart';
@@ -101,6 +102,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(height: AppDimensions.space24),
                         const _SectionTitle(AppStrings.profileAchievements),
                         _buildAchievements(profile),
+                        const SizedBox(height: AppDimensions.space24),
+                        const _SectionTitle(AppStrings.profileBadges),
+                        _buildBadges(profile),
                         const SizedBox(height: AppDimensions.space24),
                         const _SectionTitle(AppStrings.profileMore),
                         _buildMoreOptions(),
@@ -203,6 +207,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildBadges(UserProfileModel profile) {
+    final badges = LearningBadge.evaluate(
+      highestStreak: _dashboard.highestStreak > profile.currentStreak ? _dashboard.highestStreak : profile.currentStreak,
+      wordsLearned: profile.totalWordsLearned,
+      collections: profile.totalCollections,
+    );
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < badges.length; i++) ...[
+            if (i > 0) const SizedBox(width: AppDimensions.space12),
+            Expanded(child: _BadgeTile(badge: badges[i])),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildMoreOptions() {
     // Material (thay vì Container có màu nền) để ListTile vẽ được hiệu ứng bấm.
     return Material(
@@ -280,7 +303,7 @@ class _Card extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
 
-  const _Card({required this.child, this.padding = EdgeInsets.zero});
+  const _Card({super.key, required this.child, this.padding = EdgeInsets.zero});
 
   @override
   Widget build(BuildContext context) {
@@ -375,6 +398,80 @@ class _InfoRow extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Ô huy hiệu: đã mở thì có màu; chưa mở thì xám kèm điều kiện và tiến độ (đặc tả §4.6).
+class _BadgeTile extends StatelessWidget {
+  final LearningBadge badge;
+
+  const _BadgeTile({required this.badge});
+
+  @override
+  Widget build(BuildContext context) {
+    final (String title, String condition, IconData icon, Color color, Color tint) = switch (badge.kind) {
+      LearningBadgeKind.streak7 => (
+          AppStrings.badgeStreak7,
+          AppStrings.badgeStreak7Condition,
+          Icons.local_fire_department_rounded,
+          AppColors.warningOrange,
+          AppColors.quizAlmostTint,
+        ),
+      LearningBadgeKind.first100 => (
+          AppStrings.badgeFirst100,
+          AppStrings.badgeFirst100Condition,
+          Icons.emoji_events_rounded,
+          AppColors.practicePrimary,
+          AppColors.practiceSelectedFill,
+        ),
+      LearningBadgeKind.explorer => (
+          AppStrings.badgeExplorer,
+          AppStrings.badgeExplorerCondition,
+          Icons.explore_rounded,
+          AppColors.successGreen,
+          AppColors.quizCorrectTint,
+        ),
+    };
+    final on = badge.unlocked;
+    final Widget symbol = badge.kind == LearningBadgeKind.streak7
+        ? StreakFlame(size: AppDimensions.iconSmall, lit: on)
+        : Icon(icon, color: on ? color : AppColors.textMuted, size: AppDimensions.iconSmall);
+
+    return Semantics(
+      label: '$title, ${on ? AppStrings.badgeUnlocked : AppStrings.badgeLocked}',
+      excludeSemantics: !on,
+      child: _Card(
+        key: Key('badge_${badge.kind.name}'),
+        padding: const EdgeInsets.symmetric(vertical: AppDimensions.space16, horizontal: AppDimensions.space8),
+        child: Column(
+          children: [
+            Container(
+              width: AppDimensions.profileStatIconBox,
+              height: AppDimensions.profileStatIconBox,
+              decoration: BoxDecoration(color: on ? tint : AppColors.borderLight, shape: BoxShape.circle),
+              child: Center(child: symbol),
+            ),
+            const SizedBox(height: AppDimensions.space8),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: AppTypography.quizCaption.copyWith(
+                color: on ? AppColors.practiceTextPrimary : AppColors.textMuted,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            if (!on) ...[
+              const SizedBox(height: AppDimensions.space4),
+              Text(
+                '$condition · ${AppStrings.badgeProgress(badge.shownProgress, badge.target)}',
+                textAlign: TextAlign.center,
+                style: AppTypography.quizCaption.copyWith(color: AppColors.textMuted),
+              ),
+            ],
+          ],
         ),
       ),
     );

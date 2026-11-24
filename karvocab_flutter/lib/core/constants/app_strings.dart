@@ -186,6 +186,16 @@ class AppStrings {
   static const String profileBirthDateSaved = 'Đã cập nhật ngày sinh';
   static const String profileBirthDateHelp = 'Chọn ngày sinh';
   static const String profileAchievements = 'Thành tựu';
+  static const String profileBadges = 'Huy hiệu';
+  static const String badgeStreak7 = 'Chuỗi 7 ngày';
+  static const String badgeStreak7Condition = 'Học 7 ngày liên tục';
+  static const String badgeFirst100 = '100 từ đầu tiên';
+  static const String badgeFirst100Condition = 'Học đủ 100 từ';
+  static const String badgeExplorer = 'Nhà thám hiểm';
+  static const String badgeExplorerCondition = 'Tạo trên 5 học phần';
+  static String badgeProgress(int current, int target) => '$current/$target';
+  static const String badgeUnlocked = 'Đã mở khoá';
+  static const String badgeLocked = 'Chưa mở khoá';
   static const String profileWordsLearned = 'Từ đã học';
   /// Màn 17: mục tiêu ngày đếm số từ khác nhau trả lời đúng (giống Trang chủ).
   static const String settingsDailyGoalLabel = 'Số từ cần học mỗi ngày';

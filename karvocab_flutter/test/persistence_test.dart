@@ -1,5 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:karvocab_flutter/core/constants/app_strings.dart';
 import 'package:karvocab_flutter/data/local/local_store.dart';
+import 'package:karvocab_flutter/data/models/learning_badge.dart';
 import 'package:karvocab_flutter/data/models/quiz_models.dart';
 import 'package:karvocab_flutter/data/models/vocabulary_model.dart';
 import 'package:karvocab_flutter/data/repositories/auth_repository.dart';
@@ -7,6 +10,7 @@ import 'package:karvocab_flutter/data/repositories/collection_store.dart';
 import 'package:karvocab_flutter/data/repositories/dashboard_store.dart';
 import 'package:karvocab_flutter/data/repositories/quiz_question_factory.dart';
 import 'package:karvocab_flutter/data/repositories/quiz_settings_store.dart';
+import 'package:karvocab_flutter/presentation/screens/profile_screen.dart';
 
 /// "Tải lại app" = tạo store mới trên cùng một [LocalStore].
 void main() {
@@ -108,6 +112,41 @@ void main() {
         ..write(StorageKeys.dashboard, '[1,2');
       expect(CollectionStore(storage: disk).collections, isEmpty);
       expect(DashboardStore.forTest(storage: disk).streak, 0);
+    });
+  });
+
+  group('Màn 15 · Huy hiệu', () {
+    test('Mở khoá theo mốc: chuỗi 7 ngày, 100 từ, trên 5 học phần', () {
+      final locked = LearningBadge.evaluate(highestStreak: 3, wordsLearned: 99, collections: 5);
+      expect(locked.map((b) => b.unlocked), [false, false, false]);
+      final open = LearningBadge.evaluate(highestStreak: 7, wordsLearned: 100, collections: 6);
+      expect(open.map((b) => b.unlocked), [true, true, true]);
+      expect(locked.first.shownProgress, 3);
+    });
+
+    testWidgets('Tài khoản mới: 3 huy hiệu đều xám kèm điều kiện mở', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(420, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final auth = AuthRepository(latency: Duration.zero);
+      await tester.runAsync(() => auth.login(AuthRepository.demoEmail, AuthRepository.demoPassword));
+      final store = CollectionStore(latency: Duration.zero);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ProfileScreen(
+            authRepository: auth,
+            store: store,
+            dashboard: DashboardStore.forTest(collections: store),
+          ),
+        ),
+      );
+
+      expect(find.text(AppStrings.profileBadges), findsOneWidget);
+      for (final kind in LearningBadgeKind.values) {
+        expect(find.byKey(Key('badge_${kind.name}')), findsOneWidget);
+      }
+      expect(find.text('${AppStrings.badgeStreak7Condition} · 0/7'), findsOneWidget);
+      expect(find.text('${AppStrings.badgeFirst100Condition} · 0/100'), findsOneWidget);
+      expect(find.text('${AppStrings.badgeExplorerCondition} · 0/6'), findsOneWidget);
     });
   });
 }
