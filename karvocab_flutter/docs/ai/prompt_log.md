@@ -309,3 +309,21 @@
 - Màn 07 bỏ 2 nút chọn giọng UK / US (nút loa đọc giọng UK mặc định); xoá token không còn dùng.
 - Thẻ học phần (Thư viện, Trang chủ) chỉ còn icon theo chủ đề, tên, số từ; thêm sửa / xoá học phần (`updateCollection`, `deleteCollection`, menu ⋮ ở Màn 05 và 06, xoá phải xác nhận); thêm chủ đề "Khác" làm mặc định. `flutter test` 145/145 pass.
 - `flutter analyze` 0 error / 0 warning; `flutter test` 140/140 pass.
+
+---
+
+### Phiên làm việc ngày 24/11/2026: Rà soát UX theo góc nhìn BA và sửa nhóm lỗi mức cao
+
+> Công cụ: Claude Code (Anthropic).
+
+#### 1. Yêu cầu đầu vào (Prompts):
+- "Bạn hãy đóng vai trò làm nhà BA chuyên nghiệp nhận xét app này những trang nào thiết kế chưa ổn" → AI chụp 20 màn (390 × 844, dữ liệu Demo), đối chiếu code, xếp nhận xét theo 3 mức.
+- "Sửa nhóm mức cao từ 1 đến 4 đi nhưng không được phép sửa backend" → chỉ sửa trong `karvocab_flutter/`.
+
+#### 2. Kết quả & Đóng góp của AI:
+- Màn 03 Đăng ký: thêm ô Họ và tên bắt buộc (`Validators.fullName`), không còn lấy phần trước "@" của email làm tên. Nút Google / Facebook nối vào `AuthRepository.loginWithSocial` (trước đây bấm không có tác dụng).
+- Số liệu thống nhất: Trang chủ "Số từ mới tạo" đổi thành "Từ chưa học"; Hồ sơ tính "Từ đã học" và "Chuỗi ngày" từ `DashboardStore` (cùng luật `isLearned`) thay cho số mẫu 42; Cài đặt đổi nhãn thành "Số từ cần học mỗi ngày" cho khớp cách đếm mục tiêu; Màn 10 "Chọn tối đa 3 học phần".
+- Màn 09 / 24 Thêm từ: gợi ý có tiền tố "VD:", dấu * đỏ cho ô bắt buộc, Từ loại và Trình độ không còn chọn sẵn (chưa chọn thì báo lỗi); ô đồng nghĩa / trái nghĩa tách thẻ bằng dấu phẩy / chấm phẩy / Enter để nhập được cụm như "give up".
+- Màn làm bài: đồng hồ đếm ngược thành viên tròn (vòng thời gian + số giây) thay cho thanh ngang thứ hai, đặt ở chỗ chip tên trò (tên trò đã có trong câu hướng dẫn). Trò Nghe chỉ bắt đầu đếm khi phát xong âm thanh lần đầu; trò Phát âm giữ đồng hồ trong lúc hỏi quyền micro và đang nghe (`holdCountdown` / `releaseCountdown`).
+- Thêm test: lỗi họ tên, nút Google, Từ loại / Trình độ bắt buộc, cụm từ trong ô thẻ, giữ đồng hồ trò Nghe / Phát âm, Hồ sơ khớp Trang chủ.
+- `flutter analyze` 0 error / 0 warning; `flutter test` 165/165 pass.
