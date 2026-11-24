@@ -3,7 +3,7 @@
 
 > **Quy định Rubric cuối kỳ:**
 > - Công cụ sử dụng: Google Antigravity / Gemini 3.8
-> - Mục đích: Hỗ trợ trích xuất Design Tokens từ Figma, tư vấn kiến trúc Clean Architecture + BLoC, thiết kế Base Components chuẩn tiếp cận (touch target $\ge 48$dp), hỗ trợ tạo khung dự án và kiểm thử.
+> - Mục đích: Hỗ trợ trích xuất Design Tokens từ Figma, tư vấn kiến trúc phân tầng (`core` → `data` → `presentation`, trạng thái bằng `ChangeNotifier`; ban đầu dự kiến BLoC nhưng không dùng), thiết kế Base Components chuẩn tiếp cận (touch target $\ge 48$dp), hỗ trợ tạo khung dự án và kiểm thử.
 > - Thành viên nhóm đã đọc, hiểu và làm chủ 100% mã nguồn được sinh ra.
 
 ---
@@ -378,3 +378,10 @@
 - Bỏ chữ phụ không cần thiết: "Một phiên ngắn · khoảng N phút" (Trang chủ), "Chọn tối đa 3 học phần" và dòng tóm tắt "Tuỳ chọn khác" (Màn 10), "N giây/câu" trên thẻ trò chơi, ghi chú dưới Email (Hồ sơ), dòng giải thích âm lượng, "Lịch ôn sẽ có sau…" khi từ chưa học. Giữ những dòng mang thông tin cần: cảnh báo thiếu từ (chỉ hiện khi thiếu), luật hết giờ, lịch ôn khi đã học.
 - `core/widgets/streak_flame.dart`: ngọn lửa vẽ bằng `CustomPainter` (lửa ngoài đỏ cam → cam vàng có lưỡi lửa phụ, lõi vàng sáng; chuỗi 0 ngày thì xám). Thêm token màu `streakFlame*`, `streakCore*`, `streakOff*`. Dùng ở thẻ Chuỗi ngày học (Trang chủ) và Thành tựu (Hồ sơ).
 - Thêm `test/streak_flame_test.dart`, sửa các test cũ còn tìm chữ đã bỏ. `flutter test` 195/195 pass.
+
+#### 11. Sửa nhóm mức cao (BA lần 3) và bỏ dữ liệu giả (Prompt: "sửa nhóm mức cao đi, chưa cần tạo data giả xóa hết các data giả đi cho tôi"):
+- **Bỏ dữ liệu giả khỏi app:** chuyển `MockVocabData`, `HomeSampleData`, `LibrarySampleData`, `NotificationSampleData` sang `test/fixtures/` (chỉ test dùng). Bỏ tiến độ SM-2 mẫu, chuỗi 7 ngày mẫu, lịch sử tuần mẫu, 3 thông báo mẫu, hồ sơ "Nguyễn Văn A" và lời chào cứng "Karmate". Tài khoản Demo vẫn đăng nhập được nhưng bắt đầu trống. Kho từ AI offline (`MockAiVocabBank`) giữ lại vì là nguồn tạo từ khi chưa có Gemini.
+- **Lưu dữ liệu trên máy:** thêm `shared_preferences` + `crypto`, lớp `data/local/local_store.dart`. Tài khoản (mật khẩu băm SHA-256 có muối), phiên đăng nhập, học phần, từ vựng, tiến độ SM-2, chuỗi ngày, lịch sử từng ngày (biểu đồ tuần) và cài đặt luyện tập đều được lưu; dữ liệu hỏng thì bắt đầu trống. Hàng đợi ôn tập và đáp án nhiễu lấy từ thư viện thật của người dùng.
+- **Huy hiệu ở Hồ sơ (đặc tả §4.6):** `Chuỗi 7 ngày`, `100 từ đầu tiên`, `Nhà thám hiểm`; chưa mở thì xám kèm điều kiện và tiến độ.
+- **Tài liệu:** README, `prompt_log` và `CLAUDE.md` mô tả đúng kiến trúc (`ChangeNotifier`, không BLoC) và cách lưu dữ liệu.
+- Thêm Empty State cho Luyện tập khi chưa có từ, chào bằng tên gọi. Thêm `test/persistence_test.dart` (7 test) và 2 test ở `high_priority_ux_test.dart`. `flutter test` 204/204 pass.
