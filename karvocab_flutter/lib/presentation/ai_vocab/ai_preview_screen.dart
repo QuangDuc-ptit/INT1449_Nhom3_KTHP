@@ -275,9 +275,11 @@ class _DraftCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
         border: Border.all(
           color: draft.selected ? AppColors.primaryBlue : AppColors.borderLight,
-          width: draft.selected ? 1.5 : 1,
+          width: draft.selected ? AppDimensions.borderMedium : AppDimensions.borderThin,
         ),
       ),
+      // Nút loa và bút nằm cùng dòng với từ, phần nghĩa và câu ví dụ được dùng
+      // trọn bề ngang thẻ thay vì bị một cột icon bên phải bóp hẹp.
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -291,57 +293,67 @@ class _DraftCard extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(top: AppDimensions.space8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Wrap(
-                    spacing: AppDimensions.space8,
-                    crossAxisAlignment: WrapCrossAlignment.center,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Wrap(
+                        spacing: AppDimensions.space8,
+                        runSpacing: AppDimensions.space4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(draft.term, style: AppTypography.headingMedium),
+                          CefrBadge(level: draft.cefrLevel),
+                          if (draft.existsInCollection)
+                            Text(
+                              AppStrings.aiAlreadyInCollection,
+                              style: AppTypography.labelSmall.copyWith(
+                                color: AppColors.warningOrange,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: AppStrings.listenPronunciationOf(draft.term),
+                      constraints: const BoxConstraints(
+                        minWidth: AppDimensions.minTouchTarget,
+                        minHeight: AppDimensions.minTouchTarget,
+                      ),
+                      icon: const Icon(Icons.volume_up_rounded, color: AppColors.primaryBlue),
+                      onPressed: () => SpeechService.instance.speak(draft.term),
+                    ),
+                    IconButton(
+                      tooltip: AppStrings.aiEditTooltip(draft.term),
+                      constraints: const BoxConstraints(
+                        minWidth: AppDimensions.minTouchTarget,
+                        minHeight: AppDimensions.minTouchTarget,
+                      ),
+                      icon: const Icon(Icons.edit_rounded, color: AppColors.primaryBlue),
+                      onPressed: onEdit,
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: AppDimensions.space8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(draft.term, style: AppTypography.headingMedium),
-                      CefrBadge(level: draft.cefrLevel),
-                      if (draft.existsInCollection)
-                        Text(
-                          AppStrings.aiAlreadyInCollection,
-                          style: AppTypography.labelSmall.copyWith(
-                            color: AppColors.warningOrange,
-                          ),
-                        ),
+                      Text(AppStrings.aiDraftMeta(draft.partOfSpeech, draft.ipa), style: AppTypography.labelSmall),
+                      const SizedBox(height: AppDimensions.space4),
+                      Text(draft.definitionVi, style: AppTypography.bodyBold),
+                      const SizedBox(height: AppDimensions.space4),
+                      Text(
+                        draft.exampleSentence,
+                        style: AppTypography.bodyMedium.copyWith(fontStyle: FontStyle.italic),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: AppDimensions.space4),
-                  Text(AppStrings.aiDraftMeta(draft.partOfSpeech, draft.ipa),
-                      style: AppTypography.labelSmall),
-                  const SizedBox(height: AppDimensions.space4),
-                  Text(draft.definitionVi, style: AppTypography.bodyBold),
-                  const SizedBox(height: AppDimensions.space4),
-                  Text(
-                    draft.exampleSentence,
-                    style: AppTypography.bodyMedium.copyWith(fontStyle: FontStyle.italic),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ),
-          IconButton(
-            tooltip: AppStrings.listenPronunciationOf(draft.term),
-            constraints: const BoxConstraints(
-              minWidth: AppDimensions.minTouchTarget,
-              minHeight: AppDimensions.minTouchTarget,
-            ),
-            icon: const Icon(Icons.volume_up_rounded, color: AppColors.primaryBlue),
-            onPressed: () => SpeechService.instance.speak(draft.term),
-          ),
-          IconButton(
-            tooltip: AppStrings.aiEditTooltip(draft.term),
-            constraints: const BoxConstraints(
-              minWidth: AppDimensions.minTouchTarget,
-              minHeight: AppDimensions.minTouchTarget,
-            ),
-            icon: const Icon(Icons.edit_rounded, color: AppColors.primaryBlue),
-            onPressed: onEdit,
           ),
         ],
       ),

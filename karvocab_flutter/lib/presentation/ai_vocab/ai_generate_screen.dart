@@ -52,6 +52,9 @@ class AiGenerateScreen extends StatefulWidget {
 
 class _AiGenerateScreenState extends State<AiGenerateScreen> with SingleTickerProviderStateMixin {
   static const int _maxTopicLength = 100;
+
+  /// Bộ đếm ký tự chỉ hiện khi sắp chạm giới hạn, để ô chủ đề gọn một dòng.
+  static const int _topicCounterFrom = 80;
   static const int _minWords = 3;
   static const int _maxWords = 20;
   static const List<String> _levels = ['A1', 'A2', 'B1', 'B2', 'C1'];
@@ -224,6 +227,10 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> with SingleTickerPr
                   minLines: 1,
                   textInputAction: TextInputAction.done,
                   onChanged: (_) => setState(() {}),
+                  buildCounter: (context, {required currentLength, required isFocused, maxLength}) =>
+                      currentLength >= _topicCounterFrom
+                          ? Text('$currentLength/$maxLength', style: AppTypography.caption)
+                          : null,
                   style: AppTypography.bodyLarge,
                   decoration: InputDecoration(
                     hintText: AppStrings.aiTopicHint,
