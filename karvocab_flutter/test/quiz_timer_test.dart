@@ -261,6 +261,8 @@ void main() {
       );
       await tester.pumpWidget(MaterialApp(home: PracticeModeScreen(store: store, quizSettings: settings)));
       expect(find.text(AppStrings.practiceGameSeconds(35)), findsOneWidget);
+      await tester.tap(find.byKey(const Key('practice_more'))); // mở "Tuỳ chọn khác"
+      await tester.pump();
       expect(find.text(AppStrings.practiceTimerPerGame), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('practice_timer')));

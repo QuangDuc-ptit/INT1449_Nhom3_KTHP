@@ -72,7 +72,7 @@ class PracticeOrderButton extends StatelessWidget {
     final shape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(AppDimensions.practiceOrderButtonRadius),
       side: BorderSide(
-        color: selected ? AppColors.practicePrimary : AppColors.transparent,
+        color: selected ? AppColors.practicePrimary : AppColors.practiceBorder,
         width: AppDimensions.borderThin,
       ),
     );
@@ -86,7 +86,7 @@ class PracticeOrderButton extends StatelessWidget {
           height: AppDimensions.minTouchTarget,
           child: Center(
             child: Material(
-              color: selected ? AppColors.practiceSelectedFill : AppColors.practiceFieldFill,
+              color: selected ? AppColors.practiceSelectedFill : AppColors.white,
               shape: shape,
               clipBehavior: Clip.antiAlias,
               child: InkWell(
@@ -102,7 +102,7 @@ class PracticeOrderButton extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTypography.practiceOrderOption.copyWith(
-                          color: selected ? AppColors.practicePrimary : AppColors.practiceTextSecondary,
+                          color: selected ? AppColors.practicePrimary : AppColors.practiceTextPrimary,
                         ),
                       ),
                     ),

@@ -135,6 +135,16 @@ class AppStrings {
   static const String practiceOrderAlphabet = 'Theo thứ tự (A-Z)';
   static const String practiceOrderRandom = 'Ngẫu nhiên';
   static const String practiceGamesTitle = 'Danh sách trò chơi';
+  static const String practiceMoreOptions = 'Tuỳ chọn khác';
+  static const String practiceOrderAlphabetShort = 'A-Z';
+  static const String practiceTimerOnShort = 'Có đếm giờ';
+  static String practiceCountShort(int count) => '$count từ';
+  /// Số từ thật sự có trong nguồn đã chọn, để người dùng biết phiên dài bao nhiêu.
+  static String practicePoolInfo(int available, int count) => available == 0
+      ? 'Không có từ phù hợp với lựa chọn này'
+      : available < count
+          ? 'Có $available từ phù hợp · phiên chỉ có $available câu'
+          : 'Có $available từ phù hợp';
   static const String practiceSheetDone = 'Xong';
 
   // Màn 10 · Thời gian đếm ngược mỗi câu & âm lượng hiệu ứng

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:karvocab_flutter/core/constants/app_strings.dart';
 import 'package:karvocab_flutter/data/mock/mock_vocab_data.dart';
 import 'package:karvocab_flutter/data/repositories/collection_store.dart';
 import 'package:karvocab_flutter/presentation/quiz/practice_mode_screen.dart';
@@ -23,8 +24,32 @@ void main() {
       await tester.pumpWidget(MaterialApp(home: PracticeModeScreen(store: store)));
     }
 
+    /// Mở phần "Tuỳ chọn khác" (điện thoại mặc định thu gọn).
+    Future<void> expandMore(WidgetTester tester) async {
+      await tester.tap(find.byKey(const Key('practice_more')));
+      await tester.pump();
+    }
+
+    testWidgets('Điện thoại: tuỳ chọn phụ thu gọn thành một dòng tóm tắt, báo số từ phù hợp; trò dễ lên trước',
+        (tester) async {
+      await pumpScreen(tester);
+
+      expect(find.byKey(const Key('practice_status')), findsNothing);
+      expect(find.text('Chưa thuộc · 20 từ · A-Z · Có đếm giờ'), findsOneWidget);
+      // Học phần "hằng ngày" chỉ có 3 từ trong dữ liệu mẫu → báo phiên chỉ có 3 câu
+      expect(find.text(AppStrings.practicePoolInfo(3, 20)), findsOneWidget);
+
+      final titles = tester.widgetList<PracticeGameCard>(find.byType(PracticeGameCard)).map((c) => c.title).toList();
+      expect(titles.first, 'Chọn nghĩa đúng');
+      expect(titles.last, 'Luyện phát âm');
+
+      await expandMore(tester);
+      expect(find.byKey(const Key('practice_status')), findsOneWidget);
+    });
+
     testWidgets('Giá trị ban đầu: bộ hằng ngày, Chưa thuộc, 20, A-Z đang chọn', (tester) async {
       await pumpScreen(tester);
+      await expandMore(tester);
 
       expect(find.text('Giao tiếp & Đời sống hằng ngày'), findsOneWidget);
       expect(find.text('Chọn tối đa 3 học phần'), findsOneWidget);
@@ -38,6 +63,7 @@ void main() {
 
     testWidgets('Bấm "Ngẫu nhiên" chuyển trạng thái chọn; ô chọn và nút ≥ 48dp', (tester) async {
       await pumpScreen(tester);
+      await expandMore(tester);
 
       await tester.tap(find.text('Ngẫu nhiên'));
       await tester.pump();
@@ -52,6 +78,7 @@ void main() {
 
     testWidgets('Đổi "Số lượng từ" và "Trạng thái từ" qua bottom sheet', (tester) async {
       await pumpScreen(tester);
+      await expandMore(tester);
 
       await tester.tap(find.byKey(const Key('practice_count')));
       await tester.pumpAndSettle();

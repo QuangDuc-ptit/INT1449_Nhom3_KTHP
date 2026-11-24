@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_durations.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
 import '../../data/models/collection_model.dart';
@@ -49,13 +50,19 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
   int _count = 20;
   PracticeOrder _order = PracticeOrder.alphabet;
 
+  /// Điện thoại / tablet: các tuỳ chọn phụ thu gọn thành một dòng tóm tắt để
+  /// danh sách trò chơi (hành động chính) hiện ngay màn đầu.
+  bool _moreExpanded = false;
+
+  // Trò dễ, không cần thiết bị đặc biệt lên trước; Luyện phát âm cần micro và
+  // quyền ghi âm nên để cuối.
   static const List<_Game> _games = [
-    _Game(AppStrings.gamePronunciation, Icons.mic_rounded, QuizMode.pronunciation, filledIcon: true),
-    _Game(AppStrings.gameListenType, Icons.headphones_rounded, QuizMode.listenType),
+    _Game(AppStrings.gameChooseMeaning, Icons.menu_book_rounded, QuizMode.meaningChoose, filledIcon: true),
     _Game(AppStrings.gameListenChoose, Icons.headphones_rounded, QuizMode.listenChoose),
-    _Game(AppStrings.gameChooseMeaning, Icons.menu_book_rounded, QuizMode.meaningChoose),
-    _Game(AppStrings.gameSynonymAntonym, Icons.compare_arrows_rounded, QuizMode.synonymAntonym),
+    _Game(AppStrings.gameListenType, Icons.headphones_rounded, QuizMode.listenType),
     _Game(AppStrings.gameRecallType, Icons.edit_note_rounded, QuizMode.recallType),
+    _Game(AppStrings.gameSynonymAntonym, Icons.compare_arrows_rounded, QuizMode.synonymAntonym),
+    _Game(AppStrings.gamePronunciation, Icons.mic_rounded, QuizMode.pronunciation),
   ];
 
   // ---------------------------------------------------------------------------
@@ -139,7 +146,9 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
       return;
     }
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => QuizSessionScreen(questions: questions, settings: _settings)),
+      MaterialPageRoute<void>(
+        builder: (_) => QuizSessionScreen(questions: questions, settings: _settings),
+      ),
     );
   }
 
@@ -151,10 +160,7 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimensions.practicePanelRadius)),
       ),
-      builder: (_) => QuizSettingsSheet(
-        settings: _settings,
-        games: [for (final g in _games) (g.mode, g.title)],
-      ),
+      builder: (_) => QuizSettingsSheet(settings: _settings, games: [for (final g in _games) (g.mode, g.title)]),
     );
   }
 
@@ -272,7 +278,7 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
         : (isTablet ? AppDimensions.practiceMaxWidthTablet : double.infinity);
     final horizontal = isTablet ? AppDimensions.practiceHorizontalPaddingWide : AppDimensions.practiceHorizontalPadding;
 
-    final settings = _buildSettingsPanel(collections, selected);
+    final settings = _buildSettingsPanel(collections, selected, collapsible: !isDesktop);
     final games = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -316,7 +322,53 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
     );
   }
 
-  Widget _buildSettingsPanel(List<CollectionModel> collections, List<String> selected) {
+  /// Dòng tóm tắt các tuỳ chọn phụ, vd "Chưa thuộc · 20 từ · A-Z · Có đếm giờ".
+  String _moreSummary() => [
+    _statusLabel(_status),
+    AppStrings.practiceCountShort(_count),
+    _order == PracticeOrder.alphabet ? AppStrings.practiceOrderAlphabetShort : AppStrings.practiceOrderRandom,
+    _settings.timerEnabled ? AppStrings.practiceTimerOnShort : AppStrings.practiceTimerOff,
+  ].join(' · ');
+
+  Widget _buildMoreToggle() {
+    return Semantics(
+      button: true,
+      expanded: _moreExpanded,
+      child: InkWell(
+        key: const Key('practice_more'),
+        borderRadius: BorderRadius.circular(AppDimensions.practiceFieldRadius),
+        onTap: () => setState(() => _moreExpanded = !_moreExpanded),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: AppDimensions.minTouchTarget),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(AppStrings.practiceMoreOptions, style: AppTypography.practiceLabel),
+                    if (!_moreExpanded) ...[
+                      const SizedBox(height: AppDimensions.space4),
+                      Text(_moreSummary(), style: AppTypography.practiceHint),
+                    ],
+                  ],
+                ),
+              ),
+              AnimatedRotation(
+                turns: _moreExpanded ? 0.5 : 0,
+                duration: AppDurations.fast,
+                child: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.practiceTextSecondary),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettingsPanel(List<CollectionModel> collections, List<String> selected, {required bool collapsible}) {
+    final available = _pool(selected).length;
+    final showMore = !collapsible || _moreExpanded;
     return Container(
       padding: const EdgeInsets.all(AppDimensions.practicePanelPadding),
       decoration: BoxDecoration(
@@ -335,55 +387,71 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
           ),
           const SizedBox(height: AppDimensions.space6),
           const Text(AppStrings.practiceSourceHint, style: AppTypography.practiceHint),
+          const SizedBox(height: AppDimensions.space4),
+          Text(
+            AppStrings.practicePoolInfo(available, _count),
+            key: const Key('practice_pool_info'),
+            style: AppTypography.practiceHint.copyWith(
+              color: available < _count ? AppColors.practicePrimary : AppColors.practiceTextSecondary,
+            ),
+          ),
           const SizedBox(height: AppDimensions.space16),
           const Divider(
             height: AppDimensions.borderThin,
             thickness: AppDimensions.borderThin,
             color: AppColors.practiceCardBorder,
           ),
-          const SizedBox(height: AppDimensions.space16),
-          const Text(AppStrings.practiceStatusLabel, style: AppTypography.practiceLabel),
-          const SizedBox(height: AppDimensions.space8),
-          PracticeSelectField(key: const Key('practice_status'), value: _statusLabel(_status), onTap: _pickStatus),
-          const SizedBox(height: AppDimensions.space16),
-          const Text(AppStrings.practiceCountLabel, style: AppTypography.practiceLabel),
-          const SizedBox(height: AppDimensions.space8),
-          PracticeSelectField(key: const Key('practice_count'), value: '$_count', onTap: _pickCount),
-          const SizedBox(height: AppDimensions.space16),
-          const Text(AppStrings.practiceOrderLabel, style: AppTypography.practiceLabel),
-          const SizedBox(height: AppDimensions.space4),
-          Row(
-            children: [
-              Expanded(
-                flex: AppDimensions.practiceOrderPrimaryFlex,
-                child: PracticeOrderButton(
-                  label: AppStrings.practiceOrderAlphabet,
-                  selected: _order == PracticeOrder.alphabet,
-                  onTap: () => setState(() => _order = PracticeOrder.alphabet),
-                ),
-              ),
-              const SizedBox(width: AppDimensions.space10),
-              Expanded(
-                flex: AppDimensions.practiceOrderSecondaryFlex,
-                child: PracticeOrderButton(
-                  label: AppStrings.practiceOrderRandom,
-                  selected: _order == PracticeOrder.random,
-                  onTap: () => setState(() => _order = PracticeOrder.random),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppDimensions.space16),
-          const Text(AppStrings.practiceTimerLabel, style: AppTypography.practiceLabel),
-          const SizedBox(height: AppDimensions.space8),
-          PracticeSelectField(
-            key: const Key('practice_timer'),
-            value: _settings.timerEnabled ? AppStrings.practiceTimerPerGame : AppStrings.practiceTimerOff,
-            onTap: _openTimerSettings,
-          ),
+          if (collapsible) ...[const SizedBox(height: AppDimensions.space8), _buildMoreToggle()],
+          if (showMore) ..._buildMoreOptions(),
         ],
       ),
     );
+  }
+
+  /// Trạng thái từ, số lượng, thứ tự, thời gian mỗi câu.
+  List<Widget> _buildMoreOptions() {
+    return [
+      const SizedBox(height: AppDimensions.space16),
+      const Text(AppStrings.practiceStatusLabel, style: AppTypography.practiceLabel),
+      const SizedBox(height: AppDimensions.space8),
+      PracticeSelectField(key: const Key('practice_status'), value: _statusLabel(_status), onTap: _pickStatus),
+      const SizedBox(height: AppDimensions.space16),
+      const Text(AppStrings.practiceCountLabel, style: AppTypography.practiceLabel),
+      const SizedBox(height: AppDimensions.space8),
+      PracticeSelectField(key: const Key('practice_count'), value: '$_count', onTap: _pickCount),
+      const SizedBox(height: AppDimensions.space16),
+      const Text(AppStrings.practiceOrderLabel, style: AppTypography.practiceLabel),
+      const SizedBox(height: AppDimensions.space4),
+      Row(
+        children: [
+          Expanded(
+            flex: AppDimensions.practiceOrderPrimaryFlex,
+            child: PracticeOrderButton(
+              label: AppStrings.practiceOrderAlphabet,
+              selected: _order == PracticeOrder.alphabet,
+              onTap: () => setState(() => _order = PracticeOrder.alphabet),
+            ),
+          ),
+          const SizedBox(width: AppDimensions.space10),
+          Expanded(
+            flex: AppDimensions.practiceOrderSecondaryFlex,
+            child: PracticeOrderButton(
+              label: AppStrings.practiceOrderRandom,
+              selected: _order == PracticeOrder.random,
+              onTap: () => setState(() => _order = PracticeOrder.random),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: AppDimensions.space16),
+      const Text(AppStrings.practiceTimerLabel, style: AppTypography.practiceLabel),
+      const SizedBox(height: AppDimensions.space8),
+      PracticeSelectField(
+        key: const Key('practice_timer'),
+        value: _settings.timerEnabled ? AppStrings.practiceTimerPerGame : AppStrings.practiceTimerOff,
+        onTap: _openTimerSettings,
+      ),
+    ];
   }
 
   /// Lưới [columns] cột; mỗi hàng cao bằng thẻ cao nhất để các thẻ thẳng hàng.
