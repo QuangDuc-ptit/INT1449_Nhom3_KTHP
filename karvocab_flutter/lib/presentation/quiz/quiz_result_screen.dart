@@ -6,8 +6,10 @@ import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_durations.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/utils/review_schedule.dart';
 import '../../core/widgets/app_button.dart';
 import '../../data/models/quiz_models.dart';
+import '../../data/repositories/dashboard_store.dart';
 import '../../data/repositories/quiz_question_factory.dart';
 import '../../data/services/speech_service.dart';
 import 'quiz_session_screen.dart';
@@ -17,7 +19,10 @@ import 'widgets/quiz_card.dart';
 class QuizResultScreen extends StatelessWidget {
   final QuizSummary summary;
 
-  const QuizResultScreen({super.key, required this.summary});
+  /// Lịch ôn lại của từ sai (mặc định [DashboardStore.instance]).
+  final DashboardStore? dashboard;
+
+  const QuizResultScreen({super.key, required this.summary, this.dashboard});
 
   /// Từ 80% trở lên được tính là "Xuất sắc".
   static const double excellentPercent = 80;
@@ -40,6 +45,9 @@ class QuizResultScreen extends StatelessWidget {
     final excellent = summary.accuracyPercent >= excellentPercent;
     final accent = excellent ? AppColors.successGreen : AppColors.warningOrange;
     final missed = summary.missedQuestions;
+    final missedRecords = summary.records.where((r) => !r.isCorrect).toList();
+    final store = dashboard ?? DashboardStore.instance;
+    final now = DateTime.now();
 
     return PopScope(
       canPop: false,
@@ -109,8 +117,14 @@ class QuizResultScreen extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(height: AppDimensions.space12),
-                          for (final q in missed) ...[
-                            _MissedWordTile(question: q),
+                          for (final r in missedRecords) ...[
+                            _MissedWordTile(
+                              record: r,
+                              dueText: switch (store.progressOf(r.question.vocab.id)) {
+                                final p? => reviewDueText(p.nextReviewAt, now),
+                                null => null,
+                              },
+                            ),
                             const SizedBox(height: AppDimensions.quizOptionGap),
                           ],
                         ],
@@ -278,14 +292,24 @@ class _Stat extends StatelessWidget {
   }
 }
 
+/// Một từ trả lời sai: từ, nghĩa, câu người dùng đã trả lời và lịch ôn lại.
 class _MissedWordTile extends StatelessWidget {
-  final QuizQuestion question;
+  final QuizAnswerRecord record;
 
-  const _MissedWordTile({required this.question});
+  /// "Ôn lại vào ngày mai"...; `null` khi từ chưa có lịch ôn.
+  final String? dueText;
+
+  const _MissedWordTile({required this.record, this.dueText});
+
+  String get _answerText {
+    if (record.timedOut) return AppStrings.resultTimedOut;
+    if (record.userAnswer.trim().isEmpty) return AppStrings.resultSkipped;
+    return AppStrings.resultYourAnswer(record.userAnswer);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final v = question.vocab;
+    final v = record.question.vocab;
     return Container(
       padding: const EdgeInsets.only(left: AppDimensions.space16),
       decoration: BoxDecoration(
@@ -312,6 +336,12 @@ class _MissedWordTile extends StatelessWidget {
                   ),
                   const SizedBox(height: AppDimensions.space4),
                   Text(v.definitionVi, style: AppTypography.quizCaption),
+                  const SizedBox(height: AppDimensions.space4),
+                  Text(_answerText, style: AppTypography.quizCaption.copyWith(color: AppColors.errorRedText)),
+                  if (dueText != null) ...[
+                    const SizedBox(height: AppDimensions.space2),
+                    Text(dueText!, style: AppTypography.quizCaption.copyWith(color: AppColors.practicePrimary)),
+                  ],
                 ],
               ),
             ),

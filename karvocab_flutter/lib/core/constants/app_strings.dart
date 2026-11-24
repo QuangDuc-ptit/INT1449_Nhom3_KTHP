@@ -331,6 +331,9 @@ class AppStrings {
   static String feedbackAlmost(String term) => 'Suýt đúng! Chú ý chính tả: $term';
   static const String feedbackWrong = 'Chưa đúng rồi';
   static const String feedbackTimeUp = 'Hết giờ!';
+  static String resultYourAnswer(String answer) => 'Bạn trả lời: $answer';
+  static const String resultTimedOut = 'Hết giờ, chưa trả lời';
+  static const String resultSkipped = 'Đã bỏ qua câu này';
   static const String feedbackCorrectAnswer = 'Đáp án đúng:';
   static const String feedbackContinue = 'Tiếp tục';
   static const String feedbackSeeResult = 'Xem kết quả';
