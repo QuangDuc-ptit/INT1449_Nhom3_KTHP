@@ -327,3 +327,10 @@
 - Màn làm bài: đồng hồ đếm ngược thành viên tròn (vòng thời gian + số giây) thay cho thanh ngang thứ hai, đặt ở chỗ chip tên trò (tên trò đã có trong câu hướng dẫn). Trò Nghe chỉ bắt đầu đếm khi phát xong âm thanh lần đầu; trò Phát âm giữ đồng hồ trong lúc hỏi quyền micro và đang nghe (`holdCountdown` / `releaseCountdown`).
 - Thêm test: lỗi họ tên, nút Google, Từ loại / Trình độ bắt buộc, cụm từ trong ô thẻ, giữ đồng hồ trò Nghe / Phát âm, Hồ sơ khớp Trang chủ.
 - `flutter analyze` 0 error / 0 warning; `flutter test` 165/165 pass.
+
+#### 3. Sửa tiếp nhóm mức trung bình (Prompt: "sửa tiếp nhóm mức trung bình"):
+- Màn 10 Luyện tập: trên điện thoại / tablet, Trạng thái từ, Số lượng, Thứ tự, Thời gian thu gọn thành dòng "Tuỳ chọn khác" (tóm tắt "Chưa thuộc · 20 từ · A-Z · Có đếm giờ") để danh sách trò chơi hiện ngay màn đầu; máy tính vẫn mở sẵn. Thêm dòng báo số từ thật có ("Có 3 từ phù hợp · phiên chỉ có 3 câu"). Trò dễ lên trước, Luyện phát âm (cần micro) xuống cuối. Nút "Ngẫu nhiên" khi chưa chọn có nền trắng, viền và chữ đậm, không còn trông như bị khoá.
+- Màn 13: bộ đếm "0/100" chỉ hiện khi gõ từ 80 ký tự, ô chủ đề gọn một dòng. Công tắc "Mô phỏng lỗi AI" vốn đã chỉ hiện ở bản debug (`kDebugMode`), không cần sửa.
+- Màn 14: nút loa và bút lên cùng dòng với từ, nghĩa và câu ví dụ dùng trọn bề ngang thẻ; độ dày viền dùng token `AppDimensions.borderThin` / `borderMedium`.
+- Màn 15 / 17: Ngày sinh chỉ sửa ở Hồ sơ (bỏ dòng trùng ở Cài đặt); thay icon ổ khoá cạnh Email bằng chú thích "Dùng để đăng nhập, không thể thay đổi".
+- `flutter analyze` 0 error / 0 warning; `flutter test` 167/167 pass.
