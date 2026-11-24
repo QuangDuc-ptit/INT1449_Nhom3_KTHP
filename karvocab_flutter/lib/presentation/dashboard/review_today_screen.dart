@@ -4,6 +4,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/utils/review_schedule.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/cefr_badge.dart';
 import '../../core/widgets/state_widgets.dart';
@@ -15,11 +16,19 @@ import '../quiz/quiz_session_screen.dart';
 class ReviewTodayScreen extends StatelessWidget {
   const ReviewTodayScreen({super.key});
 
-  String _overdueLabel(DateTime due) {
-    final diff = DateTime.now().difference(due);
-    if (diff.inHours < 1) return AppStrings.reviewDueNow;
-    if (diff.inHours < 24) return AppStrings.reviewOverdueHours(diff.inHours);
-    return AppStrings.reviewOverdueDays(diff.inDays);
+  /// Nhãn + màu theo mức gấp: đến hạn hôm nay (xanh), quá hạn 1–2 ngày (cam),
+  /// quá hạn từ [urgentDays] ngày (đỏ).
+  static const int urgentDays = 3;
+
+  static ({String label, Color text, Color background}) overdueStyle(DateTime due, DateTime now) {
+    final days = calendarDaysBetween(due, now);
+    if (days <= 0) {
+      return (label: AppStrings.reviewDueNow, text: AppColors.practicePrimary, background: AppColors.practiceSelectedFill);
+    }
+    if (days < urgentDays) {
+      return (label: AppStrings.reviewOverdueDays(days), text: AppColors.warningOrangeText, background: AppColors.quizAlmostTint);
+    }
+    return (label: AppStrings.reviewOverdueDays(days), text: AppColors.errorRedText, background: AppColors.quizWrongTint);
   }
 
   void _start(BuildContext context, DashboardStore store) {
@@ -65,6 +74,7 @@ class ReviewTodayScreen extends StatelessWidget {
                   itemBuilder: (context, i) {
                     final v = due[i];
                     final p = store.progressOf(v.id)!;
+                    final urgency = overdueStyle(p.nextReviewAt, DateTime.now());
                     return Container(
                       padding: const EdgeInsets.all(AppDimensions.space16),
                       decoration: BoxDecoration(
@@ -91,11 +101,16 @@ class ReviewTodayScreen extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: AppDimensions.space8),
-                          Text(
-                            _overdueLabel(p.nextReviewAt),
-                            style: AppTypography.labelSmall.copyWith(
-                              color: AppColors.warningOrange,
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppDimensions.space8,
+                              vertical: AppDimensions.space4,
                             ),
+                            decoration: BoxDecoration(
+                              color: urgency.background,
+                              borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+                            ),
+                            child: Text(urgency.label, style: AppTypography.labelSmall.copyWith(color: urgency.text)),
                           ),
                         ],
                       ),

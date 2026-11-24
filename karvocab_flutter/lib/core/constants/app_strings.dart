@@ -415,8 +415,12 @@ class AppStrings {
   static const String reviewDoneTitle = 'Bạn đã ôn xong hôm nay!';
   static const String reviewDoneMessage = 'Không còn từ nào đến hạn. Quay lại vào ngày mai nhé.';
   static const String reviewBackHome = 'Về Trang chủ';
-  static const String reviewDueNow = 'Đến hạn bây giờ';
-  static String reviewOverdueHours(int h) => 'Quá hạn $h giờ';
+  static const String reviewDueNow = 'Đến hạn hôm nay';
   static String reviewOverdueDays(int d) => 'Quá hạn $d ngày';
+
+  // Lịch ôn lại (Màn 07, 12)
+  static const String reviewDueToday = 'Ôn lại hôm nay';
+  static const String reviewDueTomorrow = 'Ôn lại vào ngày mai';
+  static String reviewDueInDays(int days) => 'Ôn lại sau $days ngày';
   static String reviewStart(int count) => 'Bắt đầu ôn $count từ';
 }

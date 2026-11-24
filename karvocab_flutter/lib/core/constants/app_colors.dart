@@ -79,6 +79,10 @@ class AppColors {
   static const Color successGreen = Color(0xFF22C55E);
   static const Color errorRed = Color(0xFFEF4444);
   static const Color warningOrange = Color(0xFFF59E0B);
+
+  /// Chữ cam / đỏ đậm đặt trên nền tint nhạt (đủ tương phản cho chữ nhỏ).
+  static const Color warningOrangeText = Color(0xFFB45309);
+  static const Color errorRedText = Color(0xFFB91C1C);
   static const Color infoBlue = Color(0xFF0EA5E9);
 
   // Border & Divider Colors
