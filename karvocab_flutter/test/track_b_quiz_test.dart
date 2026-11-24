@@ -46,6 +46,12 @@ void main() {
       expect(levenshtein('', 'abc'), 3);
     });
 
+    test('chuẩn hoá như BE: gộp khoảng trắng thừa, chuỗi rỗng là sai', () {
+      expect(normalizeAnswer('  Give 	  UP '), 'give up');
+      expect(evaluateTypedAnswer('give  up', 'give up'), AnswerResult.correct);
+      expect(evaluateTypedAnswer('   ', 'cat'), AnswerResult.wrong);
+    });
+
     test('trim + lowercase trước khi so sánh', () {
       expect(evaluateTypedAnswer('  Coherent ', 'coherent'), AnswerResult.correct);
     });
@@ -165,7 +171,105 @@ void main() {
       expect(wrong.easeFactor, closeTo(2.3, 0.001));
     });
 
-    test('recordSessionResult cộng tiến độ ngày và tăng streak (≥ 5 từ)', () {
+    test('level không vượt quá 5 và từ mastered vẫn được ôn lại khi đến hạn (như BE)', () {
+      final now = DateTime(2026, 11, 19);
+      var p = Sm2Engine.initial(now);
+      for (var i = 0; i < 8; i++) {
+        p = Sm2Engine.apply(p, true, now);
+      }
+      expect(p.repetitionLevel, 5);
+      expect(p.intervalDays, 35);
+      expect(p.mastered, isTrue);
+
+      var clock = DateTime(2026, 11, 19, 9);
+      final store = DashboardStore.forTest(clock: () => clock);
+      final word = store.dueVocabularies.first;
+      final q = QuizQuestionFactory.build(mode: QuizMode.meaningChoose, pool: [word], count: 1).first;
+      final correct = QuizAnswerRecord(
+        question: q,
+        userAnswer: q.correctAnswer,
+        result: AnswerResult.correct,
+        responseTimeMs: 500,
+      );
+      // Mỗi lần trả lời đúng thì đợi tới đúng hạn ôn rồi ôn tiếp, cho tới khi mastered
+      for (var i = 0; i < 5; i++) {
+        store.recordSessionResult(QuizSummary(records: [correct], durationSeconds: 5, clientSessionId: 's$i'));
+        clock = store.progressOf(word.id)!.nextReviewAt;
+      }
+      expect(store.progressOf(word.id)!.mastered, isTrue);
+      expect(store.dueVocabularies.map((v) => v.id), contains(word.id));
+    });
+
+    test('mục tiêu ngày đếm số từ khác nhau trả lời đúng, sang ngày mới đếm lại', () {
+      var clock = DateTime(2026, 11, 19, 9);
+      final store = DashboardStore.forTest(clock: () => clock);
+      final before = store.reviewedToday;
+      final words = MockVocabData.initialVocabularies.take(3).toList();
+      final qs = QuizQuestionFactory.build(mode: QuizMode.meaningChoose, pool: words, count: 3, shuffle: false);
+      QuizAnswerRecord rec(QuizQuestion q, AnswerResult r) =>
+          QuizAnswerRecord(question: q, userAnswer: 'x', result: r, responseTimeMs: 500);
+
+      // Từ 1 đúng 2 lần, từ 2 sai rồi đúng, từ 3 sai → 2 từ được tính
+      store.recordSessionResult(QuizSummary(
+        records: [
+          rec(qs[0], AnswerResult.correct),
+          rec(qs[0], AnswerResult.correct),
+          rec(qs[1], AnswerResult.wrong),
+          rec(qs[1], AnswerResult.correct),
+          rec(qs[2], AnswerResult.wrong),
+        ],
+        durationSeconds: 20,
+        clientSessionId: 'a',
+      ));
+      expect(store.reviewedToday, before + 2);
+
+      // Phiên thử lại: từ 3 đúng → được tính; từ 1 đã tính rồi → không cộng đôi
+      store.recordSessionResult(QuizSummary(
+        records: [rec(qs[2], AnswerResult.correct), rec(qs[0], AnswerResult.correct)],
+        durationSeconds: 5,
+        clientSessionId: 'b',
+        isRetry: true,
+      ));
+      expect(store.reviewedToday, before + 3);
+
+      clock = DateTime(2026, 11, 20, 9);
+      expect(store.reviewedToday, 0);
+    });
+
+    test('streak như BE: phiên nào cũng tính, mỗi ngày tăng 1, bỏ một ngày thì về 0', () {
+      var clock = DateTime(2026, 11, 19, 9);
+      final store = DashboardStore.forTest(clock: () => clock);
+      final start = store.streak;
+      final q = QuizQuestionFactory.build(
+        mode: QuizMode.meaningChoose,
+        pool: MockVocabData.initialVocabularies,
+        count: 1,
+      ).first;
+      QuizSummary session(String id) => QuizSummary(
+            records: [QuizAnswerRecord(question: q, userAnswer: 'x', result: AnswerResult.wrong, responseTimeMs: 500)],
+            durationSeconds: 5,
+            clientSessionId: id,
+          );
+
+      store.recordSessionResult(session('1')); // 1 câu, sai vẫn tính
+      expect(store.streak, start + 1);
+      expect(store.studiedToday, isTrue);
+      store.recordSessionResult(session('2')); // cùng ngày → không tăng thêm
+      expect(store.streak, start + 1);
+
+      clock = DateTime(2026, 11, 20, 21);
+      expect(store.studiedToday, isFalse);
+      store.recordSessionResult(session('3'));
+      expect(store.streak, start + 2);
+
+      clock = DateTime(2026, 11, 22, 8); // bỏ trọn ngày 21
+      expect(store.streak, 0);
+      store.recordSessionResult(session('4'));
+      expect(store.streak, 1);
+      expect(store.highestStreak, start + 2);
+    });
+
+    test('recordSessionResult cộng tiến độ ngày và tăng streak', () {
       final store = DashboardStore.forTest();
       final streakBefore = store.streak;
       final reviewedBefore = store.reviewedToday;

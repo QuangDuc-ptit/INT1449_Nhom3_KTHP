@@ -1,7 +1,12 @@
 import '../../data/models/quiz_models.dart';
 
-/// Chuẩn hoá chuỗi: trim + lowercase (quy tắc chung Màn 19 & 20).
-String normalizeAnswer(String input) => input.trim().toLowerCase();
+final RegExp _whitespace = RegExp(r'\s+');
+
+/// Chuẩn hoá chuỗi như BE (`grading.ts`): trim, gộp khoảng trắng liên tiếp
+/// thành một dấu cách, lowercase. BE còn chuẩn hoá Unicode NFC; Dart core không
+/// có sẵn NFC, nhưng đáp án gõ là từ tiếng Anh nên không ảnh hưởng.
+String normalizeAnswer(String input) =>
+    input.trim().replaceAll(_whitespace, ' ').toLowerCase();
 
 /// Khoảng cách Levenshtein giữa 2 chuỗi.
 int levenshtein(String a, String b) {
@@ -34,6 +39,7 @@ int levenshtein(String a, String b) {
 AnswerResult evaluateTypedAnswer(String userInput, String correctTerm) {
   final user = normalizeAnswer(userInput);
   final correct = normalizeAnswer(correctTerm);
+  if (user.isEmpty) return AnswerResult.wrong;
   if (user == correct) return AnswerResult.correct;
   if (correct.length >= 3 && levenshtein(user, correct) == 1) {
     return AnswerResult.almost;
