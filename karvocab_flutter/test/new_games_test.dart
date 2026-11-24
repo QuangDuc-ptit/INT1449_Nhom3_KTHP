@@ -121,6 +121,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('chưa hỗ trợ nhận dạng giọng nói'), findsOneWidget);
 
+      // Thanh đếm ngược làm nội dung dài hơn khung test 800×600: cuộn tới nút trước khi bấm
+      await tester.ensureVisible(find.text('Bỏ qua câu này'));
       await tester.tap(find.text('Bỏ qua câu này'));
       await tester.pumpAndSettle();
       expect(find.text('Chưa đúng rồi'), findsOneWidget);

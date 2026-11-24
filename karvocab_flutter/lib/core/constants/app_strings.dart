@@ -136,6 +136,25 @@ class AppStrings {
   static const String practiceOrderRandom = 'Ngẫu nhiên';
   static const String practiceGamesTitle = 'Danh sách trò chơi';
   static const String practiceSheetDone = 'Xong';
+
+  // Màn 10 · Thời gian đếm ngược mỗi câu & âm lượng hiệu ứng
+  static const String practiceTimerLabel = 'Thời gian mỗi câu';
+  static const String practiceTimerPerGame = 'Theo từng trò chơi';
+  static const String practiceTimerOff = 'Không giới hạn';
+  static const String practiceTimerEnable = 'Đếm ngược mỗi câu';
+  static const String practiceTimerHint = 'Hết giờ sẽ tính là trả lời sai. 5 giây cuối có tiếng tích tắc.';
+  static const String practiceTimerReset = 'Khôi phục mặc định';
+  static String practiceGameSeconds(int seconds) => '$seconds giây/câu';
+  static String secondsShort(int seconds) => '${seconds}s';
+  static String timerDecrease(String game) => 'Giảm thời gian $game';
+  static String timerIncrease(String game) => 'Tăng thời gian $game';
+  static const String volumeLabel = 'Âm lượng hiệu ứng';
+  static const String volumeHint = 'Tiếng đúng / sai và tiếng tích tắc đếm ngược';
+  static const String volumeDecrease = 'Giảm âm lượng';
+  static const String volumeIncrease = 'Tăng âm lượng';
+  static const String volumeMuted = 'Tắt tiếng';
+  static String volumePercent(int percent) => '$percent%';
+  static const String volumePreview = 'Nghe thử';
   // Màn 15 · Hồ sơ cá nhân
   static const String profileTitle = 'Hồ sơ cá nhân';
   static const String profileAccountInfo = 'Thông tin tài khoản';
@@ -232,6 +251,9 @@ class AppStrings {
 
   // Màn 08 / 19 / 20 / 25 · Làm bài
   static const String quizExitTooltip = 'Thoát';
+  static const String quizVolumeTooltip = 'Âm lượng';
+  static String quizTimeLeft(int seconds) => 'Còn $seconds giây';
+  static const String quizPaused = 'Tạm dừng';
   static const String quizExitTitle = 'Thoát buổi luyện tập?';
   static const String quizExitMessage = 'Tiến độ của phiên này sẽ không được lưu.';
   static const String quizExitStay = 'Tiếp tục học';
@@ -283,6 +305,7 @@ class AppStrings {
   static const String feedbackCorrect = 'Chính xác!';
   static String feedbackAlmost(String term) => 'Suýt đúng! Chú ý chính tả: $term';
   static const String feedbackWrong = 'Chưa đúng rồi';
+  static const String feedbackTimeUp = 'Hết giờ!';
   static const String feedbackCorrectAnswer = 'Đáp án đúng:';
   static const String feedbackContinue = 'Tiếp tục';
   static const String feedbackSeeResult = 'Xem kết quả';

@@ -9,8 +9,10 @@ import '../../data/models/quiz_models.dart';
 import '../../data/models/vocabulary_model.dart';
 import '../../data/repositories/collection_store.dart';
 import '../../data/repositories/quiz_question_factory.dart';
+import '../../data/repositories/quiz_settings_store.dart';
 import 'quiz_session_screen.dart';
 import 'widgets/practice_widgets.dart';
+import 'widgets/quiz_settings_sheet.dart';
 import '../widgets/tab_header.dart';
 
 /// Trạng thái từ dùng để lọc nguồn luyện tập.
@@ -26,7 +28,10 @@ enum PracticeOrder { alphabet, random }
 class PracticeModeScreen extends StatefulWidget {
   final CollectionStore? store;
 
-  const PracticeModeScreen({super.key, this.store});
+  /// Thời gian đếm ngược & âm lượng (mặc định [QuizSettingsStore.instance]).
+  final QuizSettingsStore? quizSettings;
+
+  const PracticeModeScreen({super.key, this.store, this.quizSettings});
 
   /// Các lựa chọn "Số lượng từ".
   static const List<int> countOptions = [10, 20, 30, 50];
@@ -37,6 +42,7 @@ class PracticeModeScreen extends StatefulWidget {
 
 class _PracticeModeScreenState extends State<PracticeModeScreen> {
   CollectionStore get _store => widget.store ?? CollectionStore.instance;
+  QuizSettingsStore get _settings => widget.quizSettings ?? QuizSettingsStore.instance;
 
   List<String>? _selectedIds; // null = chưa khởi tạo, lấy mặc định từ store
   PracticeWordStatus _status = PracticeWordStatus.unmastered;
@@ -132,7 +138,24 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
       _showMessage(AppStrings.practiceNoRelations);
       return;
     }
-    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => QuizSessionScreen(questions: questions)));
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => QuizSessionScreen(questions: questions, settings: _settings)),
+    );
+  }
+
+  Future<void> _openTimerSettings() {
+    return showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.white,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimensions.practicePanelRadius)),
+      ),
+      builder: (_) => QuizSettingsSheet(
+        settings: _settings,
+        games: [for (final g in _games) (g.mode, g.title)],
+      ),
+    );
   }
 
   Future<void> _pickSources(List<CollectionModel> collections, List<String> selected) async {
@@ -227,7 +250,7 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
       body: SafeArea(
         bottom: false,
         child: ListenableBuilder(
-          listenable: _store,
+          listenable: Listenable.merge([_store, _settings]),
           builder: (context, _) {
             final collections = _store.collections;
             final selected = _validSelection(collections);
@@ -350,6 +373,14 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
               ),
             ],
           ),
+          const SizedBox(height: AppDimensions.space16),
+          const Text(AppStrings.practiceTimerLabel, style: AppTypography.practiceLabel),
+          const SizedBox(height: AppDimensions.space8),
+          PracticeSelectField(
+            key: const Key('practice_timer'),
+            value: _settings.timerEnabled ? AppStrings.practiceTimerPerGame : AppStrings.practiceTimerOff,
+            onTap: _openTimerSettings,
+          ),
         ],
       ),
     );
@@ -382,6 +413,7 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
       icon: game.icon,
       title: game.title,
       filledIcon: game.filledIcon,
+      subtitle: _settings.timerEnabled ? AppStrings.practiceGameSeconds(_settings.secondsFor(game.mode)) : null,
       onTap: () => _openGame(game, selected),
     );
   }

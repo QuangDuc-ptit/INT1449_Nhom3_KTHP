@@ -46,8 +46,8 @@ class FeedbackBanner extends StatelessWidget {
       case AnswerResult.wrong:
         color = AppColors.errorRed;
         tint = AppColors.quizWrongTint;
-        icon = Icons.close_rounded;
-        title = AppStrings.feedbackWrong;
+        icon = record.timedOut ? Icons.timer_off_outlined : Icons.close_rounded;
+        title = record.timedOut ? AppStrings.feedbackTimeUp : AppStrings.feedbackWrong;
         break;
     }
 

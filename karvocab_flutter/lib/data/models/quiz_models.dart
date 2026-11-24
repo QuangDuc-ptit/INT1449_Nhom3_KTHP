@@ -96,11 +96,15 @@ class QuizAnswerRecord {
   final AnswerResult result;
   final int responseTimeMs;
 
+  /// Hết thời gian đếm ngược mà chưa trả lời (tính là sai, `userAnswer` rỗng).
+  final bool timedOut;
+
   const QuizAnswerRecord({
     required this.question,
     required this.userAnswer,
     required this.result,
     required this.responseTimeMs,
+    this.timedOut = false,
   });
 
   bool get isCorrect => result != AnswerResult.wrong;
