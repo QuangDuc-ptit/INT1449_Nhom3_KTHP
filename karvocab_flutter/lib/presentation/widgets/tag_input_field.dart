@@ -8,8 +8,9 @@ import '../../core/theme/app_typography.dart';
 
 /// Ô nhập nhiều từ dạng thẻ (Màn 09 / 24: từ đồng nghĩa, trái nghĩa).
 ///
-/// Gõ một từ rồi nhấn dấu cách, dấu phẩy hoặc Enter thì từ đó thành một thẻ
-/// có nút × để xoá. Dán "logical, consistent" cũng tách thành 2 thẻ.
+/// Gõ một từ hoặc cụm từ rồi nhấn dấu phẩy, chấm phẩy hoặc Enter thì nó thành
+/// một thẻ có nút × để xoá. Dấu cách KHÔNG tách thẻ để nhập được cụm như
+/// "give up". Dán "logical, consistent" cũng tách thành 2 thẻ.
 /// Ô trống mà nhấn Backspace (bàn phím rời) thì xoá thẻ cuối.
 /// Từ trùng (không phân biệt hoa thường) bị bỏ qua.
 class TagInputField extends StatefulWidget {
@@ -36,13 +37,14 @@ class TagInputField extends StatefulWidget {
 
   static const int maxTagCount = 10;
   static const int maxTagLength = 40;
-  static final RegExp _separator = RegExp(r'[\s,]+');
+  static final RegExp _separator = RegExp(r'[,;\n]+');
+  static final RegExp _spaces = RegExp(r'\s+');
 
   /// Gộp [raw] (có thể chứa nhiều từ cách nhau bởi dấu cách / dấu phẩy) vào [values].
   static List<String> merge(List<String> values, String raw, {int maxTags = maxTagCount}) {
     final result = List<String>.of(values);
     for (final part in raw.split(_separator)) {
-      final word = part.trim();
+      final word = part.trim().replaceAll(_spaces, ' ');
       if (word.isEmpty || result.length >= maxTags) continue;
       final clipped = word.length > maxTagLength ? word.substring(0, maxTagLength) : word;
       if (result.any((w) => w.toLowerCase() == clipped.toLowerCase())) continue;

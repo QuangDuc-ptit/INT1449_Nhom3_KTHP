@@ -36,6 +36,15 @@ Widget _launcher(Widget Function() builder) {
   );
 }
 
+/// Mở ô chọn [key] rồi chọn mục có chữ [label].
+Future<void> _pick(WidgetTester tester, Key key, String label) async {
+  await tester.ensureVisible(find.byKey(key));
+  await tester.tap(find.byKey(key));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(label).last);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   group('Màn 02 · Đăng nhập', () {
     testWidgets('Icon con mắt ẩn/hiện mật khẩu', (tester) async {
@@ -191,6 +200,26 @@ void main() {
       expect(find.text('Từ "Coherent" đã có trong học phần này'), findsOneWidget);
     });
 
+    testWidgets('Thêm từ mới: Từ loại, Trình độ không chọn sẵn; chưa chọn thì báo lỗi', (tester) async {
+      final store = _freshStore();
+      await tester.pumpWidget(_launcher(() => WordFormScreen(collectionId: 'col-1', store: store)));
+      await tester.tap(find.text('Mở'));
+      await tester.pumpAndSettle();
+      expect(find.text(AppStrings.wordFormPosHint), findsOneWidget);
+      expect(find.text(AppStrings.wordFormLevelHint), findsOneWidget);
+      // Ô bắt buộc có dấu * (trình đọc màn hình đọc là "bắt buộc")
+      expect(find.textContaining(AppStrings.requiredField), findsNWidgets(4));
+
+      await tester.enterText(find.byType(TextField).at(0), 'resilient');
+      await tester.enterText(find.byType(TextField).at(2), 'kiên cường');
+      await tester.ensureVisible(find.widgetWithText(AppButton, 'Lưu vào học phần'));
+      await tester.tap(find.widgetWithText(AppButton, 'Lưu vào học phần'));
+      await tester.pumpAndSettle();
+      expect(find.text(AppStrings.wordFormPosRequired), findsOneWidget);
+      expect(find.text(AppStrings.wordFormLevelRequired), findsOneWidget);
+      expect(store.wordsOf('col-1').length, 5);
+    });
+
     testWidgets('Lưu hợp lệ → thêm vào store, chuẩn hoá IPA và quay lại màn trước', (tester) async {
       final store = _freshStore();
       await tester.pumpWidget(_launcher(() => WordFormScreen(collectionId: 'col-1', store: store)));
@@ -200,6 +229,9 @@ void main() {
       await tester.enterText(find.byType(TextField).at(0), 'resilient');
       await tester.enterText(find.byType(TextField).at(1), 'rɪˈzɪliənt');
       await tester.enterText(find.byType(TextField).at(2), 'kiên cường');
+      // Từ loại và Trình độ không còn chọn sẵn: phải tự chọn
+      await _pick(tester, const Key('word_form_pos'), 'Tính từ (Adjective)');
+      await _pick(tester, const Key('word_form_level'), AppStrings.cefrOption('B2'));
       await tester.ensureVisible(find.widgetWithText(AppButton, 'Lưu vào học phần'));
       await tester.tap(find.widgetWithText(AppButton, 'Lưu vào học phần'));
       await tester.pumpAndSettle();
@@ -209,6 +241,8 @@ void main() {
       expect(words.length, 6);
       expect(words.first.term, 'resilient');
       expect(words.first.ipa, '/rɪˈzɪliənt/');
+      expect(words.first.partOfSpeech, 'adj');
+      expect(words.first.cefrLevel, 'B2');
       expect(store.findCollection('col-1')!.totalWords, 6);
     });
   });

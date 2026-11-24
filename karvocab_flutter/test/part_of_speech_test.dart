@@ -45,8 +45,8 @@ void main() {
       await tester.tap(find.text('Mở'));
       await tester.pumpAndSettle();
 
-      // Mặc định là Danh từ.
-      expect(find.text('Danh từ'), findsOneWidget);
+      // Thêm từ mới: chưa chọn sẵn từ loại.
+      expect(find.text('Chọn từ loại'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('word_form_pos')));
       await tester.pumpAndSettle();
@@ -58,6 +58,10 @@ void main() {
 
       await tester.enterText(find.byType(TextField).at(0), 'give up');
       await tester.enterText(find.byType(TextField).at(2), 'từ bỏ');
+      await tester.tap(find.byKey(const Key('word_form_level')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('B1 · Trung cấp').last);
+      await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(AppButton, 'Lưu vào học phần'));
       await tester.pumpAndSettle();
 

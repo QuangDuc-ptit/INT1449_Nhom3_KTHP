@@ -34,7 +34,6 @@ class WordFormScreen extends StatefulWidget {
 
 class _WordFormScreenState extends State<WordFormScreen> {
   static const List<String> cefrLevels = ['A1', 'A2', 'B1', 'B2', 'C1'];
-  static const String defaultCefr = 'B1';
 
   late final TextEditingController _termController;
   late final TextEditingController _ipaController;
@@ -46,10 +45,13 @@ class _WordFormScreenState extends State<WordFormScreen> {
   late List<String> _synonyms;
   late List<String> _antonyms;
 
-  late String _partOfSpeech;
-  late String _cefrLevel;
+  /// `null` khi thêm từ mới: bắt người dùng tự chọn, tránh lưu nhầm giá trị mặc định.
+  String? _partOfSpeech;
+  String? _cefrLevel;
   String? _termError;
   String? _defViError;
+  String? _posError;
+  String? _levelError;
 
   CollectionStore get _store => widget.store ?? CollectionStore.instance;
 
@@ -66,8 +68,11 @@ class _WordFormScreenState extends State<WordFormScreen> {
     _noteController = TextEditingController(text: w?.note ?? '');
     _synonyms = List.of(w?.synonyms ?? const <String>[]);
     _antonyms = List.of(w?.antonyms ?? const <String>[]);
-    _partOfSpeech = PartOfSpeech.of(w?.partOfSpeech ?? '') != null ? w!.partOfSpeech : PartOfSpeech.defaultKey;
-    _cefrLevel = cefrLevels.contains(w?.cefrLevel) ? w!.cefrLevel : defaultCefr;
+    if (w != null) {
+      // Từ cũ có dữ liệu lạ thì rơi về giá trị đầu danh sách thay vì bắt chọn lại.
+      _partOfSpeech = PartOfSpeech.of(w.partOfSpeech) != null ? w.partOfSpeech : PartOfSpeech.defaultKey;
+      _cefrLevel = cefrLevels.contains(w.cefrLevel) ? w.cefrLevel : cefrLevels.first;
+    }
   }
 
   @override
@@ -98,11 +103,17 @@ class _WordFormScreenState extends State<WordFormScreen> {
       termError = AppStrings.wordFormDuplicate(term);
     }
     final defViError = Validators.required(_defViController.text, AppStrings.wordFormMeaningRequired);
+    final posError = _partOfSpeech == null ? AppStrings.wordFormPosRequired : null;
+    final levelError = _cefrLevel == null ? AppStrings.wordFormLevelRequired : null;
     setState(() {
       _termError = termError;
       _defViError = defViError;
+      _posError = posError;
+      _levelError = levelError;
     });
-    if (termError != null || defViError != null) return;
+    if (termError != null || defViError != null || posError != null || levelError != null) return;
+    final partOfSpeech = _partOfSpeech!;
+    final cefrLevel = _cefrLevel!;
 
     // Chữ còn gõ dở trong ô đồng nghĩa / trái nghĩa vẫn được lưu thành thẻ.
     _synonyms = TagInputField.commitPending(_synonyms, _synonymInput);
@@ -115,20 +126,20 @@ class _WordFormScreenState extends State<WordFormScreen> {
           id: '',
           collectionId: widget.collectionId,
           term: term,
-          partOfSpeech: _partOfSpeech,
+          partOfSpeech: partOfSpeech,
           ipa: '',
           definitionVi: '',
           definitionEn: '',
           exampleSentence: '',
-          cefrLevel: _cefrLevel,
+          cefrLevel: cefrLevel,
         );
     final word = base.copyWith(
       term: term,
-      partOfSpeech: _partOfSpeech,
+      partOfSpeech: partOfSpeech,
       ipa: _normalizeIpa(_ipaController.text),
       definitionVi: _defViController.text.trim(),
       exampleSentence: _exampleController.text.trim(),
-      cefrLevel: _cefrLevel,
+      cefrLevel: cefrLevel,
       note: _noteController.text.trim(),
       synonyms: List.unmodifiable(_synonyms),
       antonyms: List.unmodifiable(_antonyms),
@@ -157,6 +168,7 @@ class _WordFormScreenState extends State<WordFormScreen> {
         children: [
           _FormGroup(
             label: AppStrings.wordFormTerm,
+            required: true,
             child: _FormTextField(
               controller: _termController,
               hint: hint(AppStrings.wordFormTermHint),
@@ -175,6 +187,7 @@ class _WordFormScreenState extends State<WordFormScreen> {
           ),
           _FormGroup(
             label: AppStrings.wordFormMeaning,
+            required: true,
             child: _FormTextField(
               controller: _defViController,
               hint: hint(AppStrings.wordFormMeaningHint),
@@ -188,11 +201,17 @@ class _WordFormScreenState extends State<WordFormScreen> {
           ),
           _FormGroup(
             label: AppStrings.wordFormPartOfSpeech,
+            required: true,
             child: _FormSelect(
               fieldKey: const Key('word_form_pos'),
               value: _partOfSpeech,
+              hint: AppStrings.wordFormPosHint,
+              errorText: _posError,
               items: [for (final pos in PartOfSpeech.values) (pos.key, pos.label, pos.shortLabel)],
-              onChanged: (key) => setState(() => _partOfSpeech = key),
+              onChanged: (key) => setState(() {
+                _partOfSpeech = key;
+                _posError = null;
+              }),
             ),
           ),
           _FormGroup(
@@ -227,13 +246,19 @@ class _WordFormScreenState extends State<WordFormScreen> {
           ),
           _FormGroup(
             label: AppStrings.wordFormLevel,
+            required: true,
             child: _FormSelect(
               fieldKey: const Key('word_form_level'),
               value: _cefrLevel,
+              hint: AppStrings.wordFormLevelHint,
+              errorText: _levelError,
               items: [
                 for (final level in cefrLevels) (level, AppStrings.cefrOption(level), AppStrings.cefrOption(level)),
               ],
-              onChanged: (level) => setState(() => _cefrLevel = level),
+              onChanged: (level) => setState(() {
+                _cefrLevel = level;
+                _levelError = null;
+              }),
             ),
           ),
           _FormGroup(
@@ -290,7 +315,10 @@ class _FormGroup extends StatelessWidget {
   final Widget child;
   final bool last;
 
-  const _FormGroup({required this.label, required this.child, this.last = false});
+  /// Ô bắt buộc: thêm dấu * đỏ sau nhãn.
+  final bool required;
+
+  const _FormGroup({required this.label, required this.child, this.last = false, this.required = false});
 
   @override
   Widget build(BuildContext context) {
@@ -301,7 +329,20 @@ class _FormGroup extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(label, style: AppTypography.wordFormLabel),
+            Text.rich(
+              TextSpan(
+                text: label,
+                children: [
+                  if (required)
+                    const TextSpan(
+                      text: ' *',
+                      style: TextStyle(color: AppColors.errorRed),
+                      semanticsLabel: ' ${AppStrings.requiredField}',
+                    ),
+                ],
+              ),
+              style: AppTypography.wordFormLabel,
+            ),
             const SizedBox(height: AppDimensions.wordFormLabelGap),
             child,
           ],
@@ -394,11 +435,20 @@ class _FormTextField extends StatelessWidget {
 /// Ô chọn có chevron xuống. Mỗi mục là (giá trị, nhãn trong danh sách, nhãn khi đã chọn).
 class _FormSelect extends StatelessWidget {
   final Key fieldKey;
-  final String value;
+  final String? value;
+  final String? hint;
+  final String? errorText;
   final List<(String, String, String)> items;
   final ValueChanged<String> onChanged;
 
-  const _FormSelect({required this.fieldKey, required this.value, required this.items, required this.onChanged});
+  const _FormSelect({
+    required this.fieldKey,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+    this.hint,
+    this.errorText,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -412,7 +462,8 @@ class _FormSelect extends StatelessWidget {
       style: AppTypography.wordFormInput,
       icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.practiceTextSecondary),
       // Dòng chữ của ô chọn cao hơn ô nhập nên dùng padding dọc riêng để cùng cao 52.
-      decoration: _fieldDecoration(verticalPadding: AppDimensions.wordFormSelectPaddingV),
+      hint: hint == null ? null : Text(hint!, style: AppTypography.wordFormHint),
+      decoration: _fieldDecoration(verticalPadding: AppDimensions.wordFormSelectPaddingV, errorText: errorText),
       selectedItemBuilder: (context) => [for (final item in items) Text(item.$3, overflow: TextOverflow.ellipsis)],
       items: [for (final item in items) DropdownMenuItem(value: item.$1, child: Text(item.$2))],
       onChanged: (v) {

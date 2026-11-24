@@ -8,9 +8,10 @@ import 'package:karvocab_flutter/presentation/widgets/tag_input_field.dart';
 
 void main() {
   group('Ô nhập dạng thẻ', () {
-    test('Tách theo dấu cách / dấu phẩy, bỏ từ trùng', () {
+    test('Tách theo dấu phẩy / chấm phẩy, giữ nguyên cụm từ có dấu cách, bỏ từ trùng', () {
       expect(TagInputField.merge(const [], 'logical, consistent'), ['logical', 'consistent']);
-      expect(TagInputField.merge(const ['logical'], 'Logical clear'), ['logical', 'clear']);
+      expect(TagInputField.merge(const ['logical'], 'Logical; clear'), ['logical', 'clear']);
+      expect(TagInputField.merge(const [], '  give   up , look forward to'), ['give up', 'look forward to']);
       expect(TagInputField.merge(const [], '  ,  '), isEmpty);
     });
 
@@ -46,11 +47,15 @@ void main() {
 
     Set<String> savedAntonyms() => store.wordsOf('col-1').firstWhere((w) => w.term == 'coherent').antonyms.toSet();
 
-    testWidgets('Gõ từ rồi nhấn cách thì thành thẻ; bấm × thì xoá', (tester) async {
+    testWidgets('Gõ từ rồi nhấn dấu phẩy thì thành thẻ; dấu cách không tách cụm; bấm × thì xoá', (tester) async {
       await openEdit(tester);
       final before = savedAntonyms();
 
-      await tester.enterText(antonymInput(), 'chaotic ');
+      await tester.enterText(antonymInput(), 'fall apart');
+      await tester.pump();
+      expect(tester.widget<TextField>(antonymInput()).controller!.text, 'fall apart');
+      await tester.enterText(antonymInput(), '');
+      await tester.enterText(antonymInput(), 'chaotic,');
       await tester.pump();
       expect(find.text('chaotic'), findsOneWidget);
       expect(tester.widget<TextField>(antonymInput()).controller!.text, isEmpty);
@@ -59,7 +64,7 @@ void main() {
       await tester.pump();
       expect(find.text('chaotic'), findsNothing);
 
-      // Chữ đang gõ dở (chưa nhấn cách) vẫn được lưu khi bấm Lưu thay đổi.
+      // Chữ đang gõ dở (chưa nhấn dấu phẩy) vẫn được lưu khi bấm Lưu thay đổi.
       await tester.enterText(antonymInput(), 'muddled');
       await tester.ensureVisible(find.widgetWithText(AppButton, 'Lưu thay đổi'));
       await tester.tap(find.widgetWithText(AppButton, 'Lưu thay đổi'));

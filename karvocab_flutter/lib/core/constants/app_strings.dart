@@ -194,23 +194,29 @@ class AppStrings {
   static const String wordFormEditTitle = 'Sửa từ vựng';
   static const String wordFormAddTitle = 'Thêm từ vựng';
   static const String wordFormTerm = 'Từ tiếng Anh';
-  static const String wordFormTermHint = 'resilient';
+  static const String wordFormTermHint = 'VD: resilient';
   static const String wordFormIpa = 'IPA';
-  static const String wordFormIpaHint = '/rɪˈzɪliənt/';
+  static const String wordFormIpaHint = 'VD: /rɪˈzɪliənt/';
   static const String wordFormMeaning = 'Nghĩa tiếng Việt';
-  static const String wordFormMeaningHint = 'Kiên cường, bền bỉ';
+  static const String wordFormMeaningHint = 'VD: Kiên cường, bền bỉ';
   static const String wordFormPartOfSpeech = 'Từ loại';
   static const String wordFormExample = 'Ví dụ';
-  static const String wordFormExampleHint = 'She stayed resilient through challenges.';
+  static const String wordFormExampleHint = 'VD: She stayed resilient through challenges.';
   static const String wordFormLevel = 'Trình độ';
   static const String wordFormNote = 'Ghi chú';
   static const String wordFormSynonyms = 'Từ đồng nghĩa';
   static const String wordFormAntonyms = 'Từ trái nghĩa';
-  static const String wordFormTagHint = 'Gõ từ rồi nhấn dấu cách';
+  static const String wordFormTagHint = 'Gõ từ hoặc cụm từ rồi nhấn dấu phẩy';
   static String tagRemove(String word) => 'Xoá "$word"';
-  static const String wordFormNoteHint = 'Gợi nhớ: đứng dậy sau những khó khăn.';
+  static const String wordFormNoteHint = 'VD: Gợi nhớ đứng dậy sau những khó khăn.';
   static const String wordFormSaveChanges = 'Lưu thay đổi';
   static const String wordFormMeaningRequired = 'Vui lòng nhập nghĩa tiếng Việt';
+  static const String wordFormPosHint = 'Chọn từ loại';
+  static const String wordFormPosRequired = 'Vui lòng chọn từ loại';
+  static const String wordFormLevelHint = 'Chọn trình độ';
+  static const String wordFormLevelRequired = 'Vui lòng chọn trình độ';
+  /// Nhãn đọc cho dấu * của ô bắt buộc (không hiển thị).
+  static const String requiredField = 'bắt buộc';
   static String wordFormDuplicate(String term) => 'Từ "$term" đã có trong học phần này';
 
   // Màn 07 · Chi tiết từ vựng
