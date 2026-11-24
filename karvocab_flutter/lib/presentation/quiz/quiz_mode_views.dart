@@ -20,8 +20,10 @@ extension QuizModeIcon on QuizMode {
   IconData get icon {
     switch (this) {
       case QuizMode.listenChoose:
-      case QuizMode.listenType:
         return Icons.headphones_rounded;
+      case QuizMode.listenType:
+        return Icons.keyboard_rounded; // nghe rồi gõ — khác icon với "Nghe và chọn từ"
+
       case QuizMode.meaningChoose:
         return Icons.menu_book_rounded;
       case QuizMode.recallType:

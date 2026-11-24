@@ -177,12 +177,15 @@ class _WordListScreenState extends State<WordListScreen> {
               Expanded(child: _buildList(allWords, filtered)),
             ],
           ),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: _openAddMenu,
-            backgroundColor: AppColors.actionPrimary,
-            icon: const Icon(Icons.add_rounded, color: AppColors.white),
-            label: Text('Thêm từ', style: AppTypography.buttonText),
-          ),
+          // Học phần trống đã có nút "Thêm từ mới ngay" ở giữa màn → ẩn FAB để không có 2 nút cùng việc.
+          floatingActionButton: allWords.isEmpty
+              ? null
+              : FloatingActionButton.extended(
+                  onPressed: _openAddMenu,
+                  backgroundColor: AppColors.actionPrimary,
+                  icon: const Icon(Icons.add_rounded, color: AppColors.white),
+                  label: Text('Thêm từ', style: AppTypography.buttonText),
+                ),
         );
       },
     );
@@ -191,7 +194,7 @@ class _WordListScreenState extends State<WordListScreen> {
   Widget _buildList(List<VocabularyModel> allWords, List<VocabularyModel> filtered) {
     if (allWords.isEmpty) {
       return EmptyStateWidget(
-        icon: Icons.pets_rounded,
+        mascot: true,
         title: 'Chưa có từ vựng',
         message: 'Hãy thêm từ đầu tiên vào học phần này nhé!',
         actionText: 'Thêm từ mới ngay',

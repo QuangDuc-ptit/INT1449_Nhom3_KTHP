@@ -121,8 +121,6 @@ class PracticeOrderButton extends StatelessWidget {
 class PracticeGameCard extends StatelessWidget {
   final IconData icon;
   final String title;
-  /// true: icon trắng trên nền xanh đậm (thẻ "Luyện phát âm"); false: icon xanh trên nền xanh nhạt.
-  final bool filledIcon;
   final VoidCallback onTap;
 
   /// Dòng phụ dưới tên trò, vd thời gian mỗi câu "35 giây/câu".
@@ -133,7 +131,6 @@ class PracticeGameCard extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.onTap,
-    this.filledIcon = false,
     this.subtitle,
   });
 
@@ -163,13 +160,13 @@ class PracticeGameCard extends StatelessWidget {
                       width: AppDimensions.practiceGameIconBox,
                       height: AppDimensions.practiceGameIconBox,
                       decoration: BoxDecoration(
-                        color: filledIcon ? AppColors.practicePrimary : AppColors.practiceSelectedFill,
+                        color: AppColors.practiceSelectedFill,
                         borderRadius: BorderRadius.circular(AppDimensions.practiceGameIconRadius),
                       ),
                       child: Icon(
                         icon,
                         size: AppDimensions.iconSmall,
-                        color: filledIcon ? AppColors.white : AppColors.practicePrimary,
+                        color: AppColors.practicePrimary,
                       ),
                     ),
                     const Spacer(),
@@ -181,7 +178,19 @@ class PracticeGameCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: AppDimensions.space10),
-                Text(title, style: AppTypography.practiceGameTitle),
+                // Luôn giữ chỗ 2 dòng cho tên trò để mọi thẻ cao bằng nhau
+                // (tên dài như "Đồng nghĩa và trái nghĩa" xuống dòng).
+                Stack(
+                  children: [
+                    const Text(' \n ', style: AppTypography.practiceGameTitle),
+                    Text(
+                      title,
+                      style: AppTypography.practiceGameTitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
                 if (subtitle != null) ...[
                   const SizedBox(height: AppDimensions.space4),
                   Row(

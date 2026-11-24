@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/app_assets.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_dimensions.dart';
 import '../theme/app_typography.dart';
@@ -12,6 +13,9 @@ class EmptyStateWidget extends StatelessWidget {
   final VoidCallback? onAction;
   final IconData icon;
 
+  /// `true`: dùng hình Axolotl thay cho [icon] (rubric: Empty State có Axolotl).
+  final bool mascot;
+
   const EmptyStateWidget({
     super.key,
     required this.title,
@@ -19,6 +23,7 @@ class EmptyStateWidget extends StatelessWidget {
     this.actionText,
     this.onAction,
     this.icon = Icons.inbox_outlined,
+    this.mascot = false,
   });
 
   @override
@@ -30,15 +35,23 @@ class EmptyStateWidget extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: AppDimensions.stateIllustrationSize,
-              height: AppDimensions.stateIllustrationSize,
-              decoration: const BoxDecoration(
-                color: AppColors.softBlueSurface,
-                shape: BoxShape.circle,
+            if (mascot)
+              Image.asset(
+                AppAssets.logo,
+                width: AppDimensions.libraryEmptyLogoSize,
+                height: AppDimensions.libraryEmptyLogoSize,
+                excludeFromSemantics: true,
+              )
+            else
+              Container(
+                width: AppDimensions.stateIllustrationSize,
+                height: AppDimensions.stateIllustrationSize,
+                decoration: const BoxDecoration(
+                  color: AppColors.softBlueSurface,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: AppDimensions.iconState, color: AppColors.primaryBlue),
               ),
-              child: Icon(icon, size: AppDimensions.iconState, color: AppColors.primaryBlue),
-            ),
             const SizedBox(height: AppDimensions.space20),
             Text(
               title,
@@ -53,10 +66,10 @@ class EmptyStateWidget extends StatelessWidget {
             ),
             if (actionText != null && onAction != null) ...[
               const SizedBox(height: AppDimensions.space24),
-              AppButton(
-                text: actionText!,
-                onPressed: onAction,
-                width: AppDimensions.emptyActionWidth,
+              // Rộng tối thiểu 220dp, chữ dài / cỡ chữ lớn thì nút giãn theo (không tràn).
+              ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: AppDimensions.emptyActionWidth),
+                child: IntrinsicWidth(child: AppButton(text: actionText!, onPressed: onAction)),
               ),
             ],
           ],

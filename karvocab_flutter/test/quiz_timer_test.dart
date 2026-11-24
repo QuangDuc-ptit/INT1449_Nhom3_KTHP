@@ -216,7 +216,7 @@ void main() {
   });
 
   group('Giao diện đếm ngược', () {
-    testWidgets('Màn làm bài hiện số giây, hết giờ hiện "Hết giờ!" kèm đáp án đúng', (tester) async {
+    testWidgets('Màn làm bài hiện số giây, hết giờ hiện "Hết giờ!" và tô xanh đáp án đúng', (tester) async {
       final settings = QuizSettingsStore()..setSeconds(QuizMode.meaningChoose, 10);
       await tester.pumpWidget(MaterialApp(
         home: QuizSessionScreen(questions: _questions(QuizMode.meaningChoose), settings: settings),
@@ -229,7 +229,9 @@ void main() {
       await tester.pump(const Duration(seconds: 7));
       await tester.pumpAndSettle();
       expect(find.text(AppStrings.feedbackTimeUp), findsOneWidget);
-      expect(find.text(AppStrings.feedbackCorrectAnswer), findsOneWidget);
+      // Trắc nghiệm: đáp án đúng được tô xanh trên lựa chọn, bảng phản hồi không nhắc lại
+      expect(find.byIcon(Icons.check_circle_rounded), findsOneWidget);
+      expect(find.text(AppStrings.feedbackCorrectAnswer), findsNothing);
     });
 
     testWidgets('Nút loa mở chỉnh âm lượng và tạm dừng đồng hồ trong lúc chỉnh', (tester) async {

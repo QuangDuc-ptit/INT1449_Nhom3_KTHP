@@ -11,6 +11,7 @@ import '../../data/models/vocabulary_model.dart';
 import '../../data/repositories/collection_store.dart';
 import '../../data/repositories/quiz_question_factory.dart';
 import '../../data/repositories/quiz_settings_store.dart';
+import 'quiz_mode_views.dart';
 import 'quiz_session_screen.dart';
 import 'widgets/practice_widgets.dart';
 import 'widgets/quiz_settings_sheet.dart';
@@ -57,12 +58,13 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
   // Trò dễ, không cần thiết bị đặc biệt lên trước; Luyện phát âm cần micro và
   // quyền ghi âm nên để cuối.
   static const List<_Game> _games = [
-    _Game(AppStrings.gameChooseMeaning, Icons.menu_book_rounded, QuizMode.meaningChoose, filledIcon: true),
-    _Game(AppStrings.gameListenChoose, Icons.headphones_rounded, QuizMode.listenChoose),
-    _Game(AppStrings.gameListenType, Icons.headphones_rounded, QuizMode.listenType),
-    _Game(AppStrings.gameRecallType, Icons.edit_note_rounded, QuizMode.recallType),
-    _Game(AppStrings.gameSynonymAntonym, Icons.compare_arrows_rounded, QuizMode.synonymAntonym),
-    _Game(AppStrings.gamePronunciation, Icons.mic_rounded, QuizMode.pronunciation),
+    // Icon lấy từ QuizModeIcon để thẻ trò chơi và màn chơi luôn giống nhau.
+    _Game(AppStrings.gameChooseMeaning, QuizMode.meaningChoose),
+    _Game(AppStrings.gameListenChoose, QuizMode.listenChoose),
+    _Game(AppStrings.gameListenType, QuizMode.listenType),
+    _Game(AppStrings.gameRecallType, QuizMode.recallType),
+    _Game(AppStrings.gameSynonymAntonym, QuizMode.synonymAntonym),
+    _Game(AppStrings.gamePronunciation, QuizMode.pronunciation),
   ];
 
   // ---------------------------------------------------------------------------
@@ -478,9 +480,8 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
 
   Widget _buildGameCard(_Game game, List<String> selected) {
     return PracticeGameCard(
-      icon: game.icon,
+      icon: game.mode.icon,
       title: game.title,
-      filledIcon: game.filledIcon,
       subtitle: _settings.timerEnabled ? AppStrings.practiceGameSeconds(_settings.secondsFor(game.mode)) : null,
       onTap: () => _openGame(game, selected),
     );
@@ -489,11 +490,9 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
 
 class _Game {
   final String title;
-  final IconData icon;
   final QuizMode mode;
-  final bool filledIcon;
 
-  const _Game(this.title, this.icon, this.mode, {this.filledIcon = false});
+  const _Game(this.title, this.mode);
 }
 
 /// Khung bottom sheet chọn giá trị: thanh kéo, tiêu đề, danh sách lựa chọn, nút "Xong" (tuỳ chọn).

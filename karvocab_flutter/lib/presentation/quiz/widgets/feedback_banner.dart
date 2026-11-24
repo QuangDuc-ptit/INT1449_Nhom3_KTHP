@@ -10,7 +10,8 @@ import '../../../data/models/quiz_models.dart';
 import '../../../data/services/speech_service.dart';
 
 /// Bảng phản hồi đáp án (Màn 11) trượt lên từ đáy:
-/// xanh = đúng, cam = suýt đúng, đỏ = sai kèm đáp án đúng. Luôn nhắc lại từ, phiên âm và nghĩa.
+/// xanh = đúng, cam = suýt đúng, đỏ = sai (game gõ chữ kèm đáp án đúng; game trắc nghiệm
+/// đã tô xanh lựa chọn đúng nên không lặp lại). Luôn nhắc lại từ, phiên âm và nghĩa.
 class FeedbackBanner extends StatelessWidget {
   final QuizAnswerRecord record;
   final VoidCallback onContinue;
@@ -53,6 +54,9 @@ class FeedbackBanner extends StatelessWidget {
 
     final question = record.question;
     final vocab = question.vocab;
+    // Game trắc nghiệm đã tô xanh đáp án đúng ngay trên lựa chọn → không nhắc lại
+    // lần nữa để bảng phản hồi thấp hơn, không che các lựa chọn bên dưới.
+    final showCorrectAnswer = record.result == AnswerResult.wrong && question.options.isEmpty;
     // Màn 25 hỏi nghĩa: đáp án đúng chính là nghĩa, không cần nhắc lại lần hai.
     final showMeaning = question.correctAnswer != vocab.definitionVi;
 
@@ -98,7 +102,7 @@ class FeedbackBanner extends StatelessWidget {
                       ),
                     ],
                   ),
-                  if (record.result == AnswerResult.wrong) ...[
+                  if (showCorrectAnswer) ...[
                     const SizedBox(height: AppDimensions.space12),
                     Text(AppStrings.feedbackCorrectAnswer, style: AppTypography.quizCaption),
                     const SizedBox(height: AppDimensions.space4),

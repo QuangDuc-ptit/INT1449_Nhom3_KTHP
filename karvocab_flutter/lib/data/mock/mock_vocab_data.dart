@@ -104,7 +104,7 @@ class MockVocabData {
       exampleSentence: 'Building vocabulary every single day is the best investment in yourself.',
       cefrLevel: 'B1',
       synonyms: ['funding', 'stake'],
-      antonyms: ['withdrawal'],
+      antonyms: ['divestment'],
     ),
 
     // Collection 2: Du lịch
@@ -144,7 +144,7 @@ class MockVocabData {
       exampleSentence: 'We rented a motorbike to explore the remote corners of the island.',
       cefrLevel: 'A2',
       synonyms: ['discover', 'investigate'],
-      antonyms: ['ignore', 'neglect'],
+      antonyms: [], // không có trái nghĩa chuẩn; 'ignore' dễ gây tranh cãi trong game
     ),
     const VocabularyModel(
       id: 'voc-9',
@@ -171,7 +171,7 @@ class MockVocabData {
       exampleSentence: 'She is an ambitious student who aims to win a full scholarship.',
       cefrLevel: 'B1',
       synonyms: ['determined', 'driven'],
-      antonyms: ['unambitious', 'lazy'],
+      antonyms: ['unambitious', 'unmotivated'],
     ),
     const VocabularyModel(
       id: 'voc-11',
@@ -184,7 +184,7 @@ class MockVocabData {
       exampleSentence: 'Persistent practice is the key to mastering English pronunciation.',
       cefrLevel: 'B2',
       synonyms: ['determined', 'tenacious'],
-      antonyms: ['irresolute', 'hesitant'],
+      antonyms: ['irresolute', 'wavering'],
     ),
     const VocabularyModel(
       id: 'voc-12',
@@ -197,7 +197,7 @@ class MockVocabData {
       exampleSentence: 'Never miss an opportunity to practice speaking with foreigners.',
       cefrLevel: 'A2',
       synonyms: ['chance', 'opening'],
-      antonyms: ['obstacle', 'setback'],
+      antonyms: [], // 'obstacle' không phải trái nghĩa thật
     ),
   ];
 }
