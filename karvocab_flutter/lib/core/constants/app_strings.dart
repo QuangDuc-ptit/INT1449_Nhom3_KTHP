@@ -8,6 +8,10 @@ class AppStrings {
   // Màn 02 · Đăng nhập — lỗi hiển thị dưới ô nhập
   static const String loginEmailNotRegistered = 'Email chưa được đăng ký';
   static const String loginWrongPassword = 'Mật khẩu không đúng';
+  static const String loginInvalidCredentials = 'Email hoặc mật khẩu không đúng';
+  static const String authServerError = 'Máy chủ trả về dữ liệu không hợp lệ, vui lòng thử lại.';
+  static const String authRateLimited = 'Bạn thử quá nhiều lần, vui lòng đợi một chút rồi thử lại.';
+  static String authRateLimitedSeconds(int seconds) => 'Bạn thử quá nhiều lần, vui lòng thử lại sau $seconds giây.';
 
   // Màn 21 · Quên mật khẩu
   static const String forgotPasswordTitle = 'Quên mật khẩu';

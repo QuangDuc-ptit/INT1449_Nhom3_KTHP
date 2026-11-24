@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/utils/member_id.dart';
 import '../models/user_profile_model.dart';
+import '../remote/api_client.dart';
 
 /// Ô nhập mà lỗi xác thực gắn vào (để hiển thị lỗi ngay dưới ô đó).
 enum AuthErrorField { email, password }
@@ -45,17 +46,18 @@ class _OtpTicket {
 
 /// Kho xác thực của Track A (Màn 01, 02, 03, 21, 23).
 ///
-/// Bản hiện tại chạy offline với tài khoản lưu trong bộ nhớ (chế độ Demo, không lộ API key).
-/// Sprint 3 thay thân các hàm bằng lời gọi `/auth/login`, `/auth/register`,
-/// `/auth/forgot-password`, `/auth/reset-password` của backend (`be/develop`)
-/// và lưu refresh token vào Secure Storage — chữ ký hàm giữ nguyên.
+/// Có [api] (chạy app với `--dart-define=API_BASE_URL=...`): đăng nhập, đăng ký, Google / Facebook
+/// và đăng xuất gọi backend (`/auth/login`, `/auth/register`, `/auth/social-login`, `/auth/logout`).
+/// Token chỉ giữ trong bộ nhớ. Không có [api]: chạy offline với tài khoản trong bộ nhớ (Demo Mode).
+/// Chế độ Dùng thử luôn chạy offline. Các phần khác (quên mật khẩu, đổi mật khẩu) vẫn offline.
 class AuthRepository extends ChangeNotifier {
-  AuthRepository({this.latency = const Duration(milliseconds: 600), Random? random})
-      : _random = random ?? Random() {
+  AuthRepository({this.latency = const Duration(milliseconds: 600), Random? random, ApiClient? apiClient})
+      : _random = random ?? Random(),
+        _api = apiClient {
     _seedAccounts();
   }
 
-  static final AuthRepository instance = AuthRepository();
+  static final AuthRepository instance = AuthRepository(apiClient: ApiClient.instance);
 
   /// Tài khoản mẫu để giảng viên đăng nhập thử.
   static const String demoEmail = 'learner@karvocab.com';
@@ -66,6 +68,10 @@ class AuthRepository extends ChangeNotifier {
 
   final Duration latency;
   final Random _random;
+  final ApiClient? _api;
+
+  /// `true` khi đăng nhập / đăng ký đi qua backend thật.
+  bool get usesBackend => _api != null;
 
   final Map<String, _Account> _accounts = {};
   final Map<String, _OtpTicket> _otpTickets = {};
@@ -86,6 +92,14 @@ class AuthRepository extends ChangeNotifier {
 
   /// Màn 02: đăng nhập email + mật khẩu.
   Future<UserProfileModel> login(String email, String password) async {
+    final api = _api;
+    if (api != null) {
+      return _remoteSession(
+        api,
+        () => api.post('/auth/login', auth: false, body: {'email': email.trim(), 'password': password}),
+        password: password,
+      );
+    }
     await Future<void>.delayed(latency);
     final key = _normalize(email);
     final account = _accounts[key];
@@ -100,10 +114,22 @@ class AuthRepository extends ChangeNotifier {
 
   /// Màn 02: đăng nhập Google / Facebook (verifier giả lập — backend cũng dùng mock).
   Future<UserProfileModel> loginWithSocial(SocialProvider provider) async {
-    await Future<void>.delayed(latency);
     final isGoogle = provider == SocialProvider.google;
     final email = isGoogle ? 'google.user@gmail.com' : 'facebook.user@facebook.com';
     final name = isGoogle ? 'Người dùng Google' : 'Người dùng Facebook';
+    final api = _api;
+    if (api != null) {
+      // BE chạy SOCIAL_AUTH_MODE=mock nhận token dạng `mock:<providerId>:<email>:<họ tên>`.
+      final providerName = isGoogle ? 'google' : 'facebook';
+      return _remoteSession(
+        api,
+        () => api.post('/auth/social-login', auth: false, body: {
+          'provider': providerName,
+          'idToken': 'mock:$providerName-demo:$email:$name',
+        }),
+      );
+    }
+    await Future<void>.delayed(latency);
     // Google / Facebook không trả ngày sinh: chưa có mã ID cho tới khi người dùng bổ sung.
     final account = _accounts.putIfAbsent(email, () => _Account(fullName: name, password: _randomPassword()));
     return _startSession(_profileFor(email, account, isNew: false));
@@ -111,6 +137,7 @@ class AuthRepository extends ChangeNotifier {
 
   /// Màn 02: Chế độ Dùng thử — vào thẳng app với hồ sơ mẫu, không cần mạng.
   UserProfileModel enterDemoMode() {
+    _api?.setTokens(null); // Dùng thử không gọi BE: AI dùng kho từ mẫu.
     final account = _accounts[demoEmail]!;
     return _startSession(_profileFor(demoEmail, account, isNew: false), demo: true);
   }
@@ -123,6 +150,20 @@ class AuthRepository extends ChangeNotifier {
     required String password,
     DateTime? birthDate,
   }) async {
+    final api = _api;
+    if (api != null) {
+      return _remoteSession(
+        api,
+        () => api.post('/auth/register', auth: false, body: {
+          'email': email.trim(),
+          'password': password,
+          'fullName': fullName.trim(),
+        }),
+        password: password,
+        birthDate: birthDate,
+        isNew: true,
+      );
+    }
     await Future<void>.delayed(latency);
     final key = _normalize(email);
     if (_accounts.containsKey(key)) {
@@ -148,6 +189,13 @@ class AuthRepository extends ChangeNotifier {
 
   /// Màn 23: đăng xuất — xoá phiên hiện tại.
   void logout() {
+    final api = _api;
+    final refresh = api?.refreshToken;
+    if (api != null && refresh != null) {
+      // Thu hồi token ở BE; lỗi mạng cũng không chặn việc đăng xuất trên máy.
+      api.post('/auth/logout', body: {'refreshToken': refresh}).catchError((Object _) => null);
+    }
+    api?.setTokens(null);
     _currentUser = null;
     _isDemo = false;
     notifyListeners();
@@ -233,6 +281,56 @@ class AuthRepository extends ChangeNotifier {
   // ---------------------------------------------------------------------------
 
   String _normalize(String email) => email.trim().toLowerCase();
+
+  /// Gọi API xác thực, lưu token, rồi dựng hồ sơ từ `data.user` của BE.
+  /// Tài khoản được ghi lại trên máy để ngày sinh / mã ID (chưa có API) vẫn dùng được.
+  Future<UserProfileModel> _remoteSession(
+    ApiClient api,
+    Future<dynamic> Function() call, {
+    String? password,
+    DateTime? birthDate,
+    bool isNew = false,
+  }) async {
+    final Object? data;
+    try {
+      data = await call();
+    } on ApiException catch (e) {
+      throw _authErrorFrom(e);
+    }
+    final user = data is Map<String, dynamic> ? data['user'] : null;
+    if (data is! Map<String, dynamic> || user is! Map<String, dynamic> || user['email'] is! String) {
+      throw const AuthException(AppStrings.authServerError);
+    }
+    api.saveTokensFrom(data);
+    final key = _normalize(user['email'] as String);
+    final fullName = (user['fullName'] as String?) ?? key;
+    final account = _accounts.putIfAbsent(
+      key,
+      () => _Account(fullName: fullName, password: password ?? _randomPassword()),
+    )..fullName = fullName;
+    if (password != null) account.password = password;
+    if (birthDate != null) _assignBirthDate(account, birthDate);
+    return _startSession(_profileFor(key, account, isNew: isNew));
+  }
+
+  static AuthException _authErrorFrom(ApiException e) {
+    switch (e.errorCode) {
+      case 'INVALID_CREDENTIALS':
+        return const AuthException(AppStrings.loginInvalidCredentials, field: AuthErrorField.password);
+      case 'EMAIL_EXISTS':
+        return const AuthException(AppStrings.registerEmailTaken, field: AuthErrorField.email);
+      case 'RATE_LIMITED':
+        final s = e.retryAfterSeconds;
+        return AuthException(s == null ? AppStrings.authRateLimited : AppStrings.authRateLimitedSeconds(s));
+    }
+    if (e.fieldErrors.containsKey('email')) {
+      return AuthException(e.fieldErrors['email']!, field: AuthErrorField.email);
+    }
+    if (e.fieldErrors.containsKey('password')) {
+      return AuthException(e.fieldErrors['password']!, field: AuthErrorField.password);
+    }
+    return AuthException(e.message);
+  }
 
   /// Tài khoản mẫu: chỉ có tài khoản demo.
   void _seedAccounts() {
