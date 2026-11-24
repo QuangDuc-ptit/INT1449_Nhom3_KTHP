@@ -131,6 +131,7 @@ void main() {
       );
       addTearDown(c.dispose);
 
+      c.releaseCountdown(); // âm thanh đã phát xong
       await tester.pump(const Duration(seconds: 3));
       c.submitChoice(c.current.correctAnswer);
       await tester.pump(const Duration(seconds: 30));
@@ -139,6 +140,36 @@ void main() {
 
       c.next();
       expect(c.remainingSeconds, 20);
+    });
+
+    testWidgets('trò Nghe chờ phát xong âm thanh mới đếm; trò Phát âm giữ đồng hồ khi đang nghe micro',
+        (tester) async {
+      final settings = QuizSettingsStore()
+        ..setSeconds(QuizMode.listenType, 20)
+        ..setSeconds(QuizMode.pronunciation, 20);
+      final listen = QuizController(questions: _questions(QuizMode.listenType), feedback: feedback, settings: settings);
+      addTearDown(listen.dispose);
+      expect(listen.isCountdownHeld, isTrue);
+      await tester.pump(const Duration(seconds: 5));
+      expect(listen.remainingSeconds, 20);
+      listen.releaseCountdown();
+      await tester.pump(const Duration(seconds: 2));
+      expect(listen.remainingSeconds, 18);
+
+      final speak = QuizController(
+        questions: _questions(QuizMode.pronunciation),
+        feedback: feedback,
+        settings: settings,
+      );
+      addTearDown(speak.dispose);
+      expect(speak.isCountdownHeld, isFalse);
+      await tester.pump(const Duration(seconds: 2));
+      speak.holdCountdown(); // đang hỏi quyền micro / đang nghe
+      await tester.pump(const Duration(seconds: 10));
+      expect(speak.remainingSeconds, 18);
+      speak.releaseCountdown();
+      await tester.pump(const Duration(seconds: 1));
+      expect(speak.remainingSeconds, 17);
     });
 
     testWidgets('tạm dừng thì không đếm; tắt đếm ngược thì không có đồng hồ', (tester) async {

@@ -136,10 +136,18 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
     switch (q.mode) {
       case QuizMode.listenChoose:
         return ListenChooseView(
-            key: key, question: q, record: record, onSubmit: _controller.submitChoice);
+            key: key,
+            question: q,
+            record: record,
+            onSubmit: _controller.submitChoice,
+            onAudioReady: _controller.releaseCountdown);
       case QuizMode.listenType:
         return ListenTypeView(
-            key: key, question: q, record: record, onSubmit: _controller.submitTyped);
+            key: key,
+            question: q,
+            record: record,
+            onSubmit: _controller.submitTyped,
+            onAudioReady: _controller.releaseCountdown);
       case QuizMode.meaningChoose:
         return MeaningChooseView(
             key: key, question: q, record: record, onSubmit: _controller.submitChoice);
@@ -152,7 +160,9 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
             question: q,
             record: record,
             onSubmit: _controller.submitSpoken,
-            onSkip: _controller.skip);
+            onSkip: _controller.skip,
+            onListeningChanged: (listening) =>
+                listening ? _controller.holdCountdown() : _controller.releaseCountdown());
       case QuizMode.synonymAntonym:
         return SynonymAntonymView(
             key: key, question: q, record: record, onSubmit: _controller.submitChoice);
@@ -173,8 +183,6 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
       );
     }
 
-    final mode = widget.questions.first.mode;
-
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -193,7 +201,6 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
               child: Column(
                 children: [
                   _centered(_buildHeader()),
-                  if (_controller.isTimed) _centered(_buildTimer()),
                   Expanded(
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.only(bottom: AppDimensions.space24),
@@ -201,11 +208,14 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            // Tên trò đã nằm trong câu hướng dẫn của thẻ câu hỏi nên
+                            // dòng này chỉ còn đồng hồ đếm ngược và chip "Thử lại".
                             Wrap(
                               spacing: AppDimensions.space8,
                               runSpacing: AppDimensions.space8,
+                              crossAxisAlignment: WrapCrossAlignment.center,
                               children: [
-                                QuizChip(icon: mode.icon, label: mode.title),
+                                if (_controller.isTimed) _buildTimer(),
                                 if (widget.isRetry)
                                   const QuizChip(
                                     icon: Icons.replay_rounded,
@@ -322,7 +332,8 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
     );
   }
 
-  /// Đồng hồ đếm ngược của câu hiện tại: số giây còn lại + thanh thời gian.
+  /// Đồng hồ đếm ngược của câu hiện tại: viên tròn có vòng thời gian + số giây,
+  /// khác hẳn thanh tiến độ câu ở trên để không nhầm hai thanh với nhau.
   /// 5 giây cuối chuyển sang màu đỏ (cùng lúc có tiếng tích tắc).
   Widget _buildTimer() {
     final remaining = _controller.remainingSeconds;
@@ -332,41 +343,40 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
       liveRegion: warning,
       label: AppStrings.quizTimeLeft(remaining),
       excludeSemantics: true,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: AppDimensions.space8),
+      child: Container(
+        key: const Key('quiz_timer'),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.space12,
+          vertical: AppDimensions.space6,
+        ),
+        decoration: BoxDecoration(
+          color: warning ? AppColors.quizWrongTint : AppColors.practiceSelectedFill,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+        ),
         child: Row(
-          key: const Key('quiz_timer'),
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              _controller.isPaused ? Icons.pause_circle_outline_rounded : Icons.timer_outlined,
-              size: AppDimensions.iconSmall,
-              color: color,
-            ),
-            const SizedBox(width: AppDimensions.space8),
-            Expanded(
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(end: _controller.remainingRatio),
-                duration: AppDurations.fast,
-                builder: (context, value, _) => ClipRRect(
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
-                  child: LinearProgressIndicator(
-                    value: value,
-                    minHeight: AppDimensions.quizTimerBarHeight,
-                    backgroundColor: AppColors.practiceSelectedFill,
-                    valueColor: AlwaysStoppedAnimation<Color>(color),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: AppDimensions.space8),
             SizedBox(
-              width: AppDimensions.minTouchTarget,
-              child: Text(
-                _controller.isPaused ? AppStrings.quizPaused : AppStrings.secondsShort(remaining),
-                key: const Key('quiz_timer_text'),
-                textAlign: TextAlign.end,
-                style: AppTypography.quizCounter.copyWith(color: color),
-              ),
+              width: AppDimensions.quizTimerRingSize,
+              height: AppDimensions.quizTimerRingSize,
+              child: _controller.isPaused
+                  ? Icon(Icons.pause_rounded, size: AppDimensions.quizTimerRingSize, color: color)
+                  : TweenAnimationBuilder<double>(
+                      tween: Tween(end: _controller.remainingRatio),
+                      duration: AppDurations.fast,
+                      builder: (context, value, _) => CircularProgressIndicator(
+                        value: value,
+                        strokeWidth: AppDimensions.quizTimerRingStroke,
+                        backgroundColor: AppColors.white,
+                        valueColor: AlwaysStoppedAnimation<Color>(color),
+                      ),
+                    ),
+            ),
+            const SizedBox(width: AppDimensions.space8),
+            Text(
+              _controller.isPaused ? AppStrings.quizPaused : AppStrings.secondsShort(remaining),
+              key: const Key('quiz_timer_text'),
+              style: AppTypography.quizCounter.copyWith(color: color),
             ),
           ],
         ),

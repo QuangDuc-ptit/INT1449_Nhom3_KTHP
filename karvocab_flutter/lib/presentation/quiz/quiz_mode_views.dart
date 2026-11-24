@@ -80,11 +80,15 @@ class ListenChooseView extends StatelessWidget {
   final QuizAnswerRecord? record;
   final ValueChanged<String> onSubmit;
 
+  /// Phát xong âm thanh lần đầu: đồng hồ đếm ngược bắt đầu chạy.
+  final VoidCallback? onAudioReady;
+
   const ListenChooseView({
     super.key,
     required this.question,
     required this.record,
     required this.onSubmit,
+    this.onAudioReady,
   });
 
   @override
@@ -93,7 +97,7 @@ class ListenChooseView extends StatelessWidget {
       children: [
         QuizCard(
           prompt: AppStrings.quizPromptListenChoose,
-          child: AudioPlayButton(text: question.vocab.term),
+          child: AudioPlayButton(text: question.vocab.term, onFirstPlayDone: onAudioReady),
         ),
         const SizedBox(height: AppDimensions.space20),
         _OptionsList(question: question, record: record, onSelect: onSubmit),
@@ -159,11 +163,15 @@ class ListenTypeView extends StatelessWidget {
   final QuizAnswerRecord? record;
   final ValueChanged<String> onSubmit;
 
+  /// Phát xong âm thanh lần đầu: đồng hồ đếm ngược bắt đầu chạy.
+  final VoidCallback? onAudioReady;
+
   const ListenTypeView({
     super.key,
     required this.question,
     required this.record,
     required this.onSubmit,
+    this.onAudioReady,
   });
 
   @override
@@ -172,7 +180,7 @@ class ListenTypeView extends StatelessWidget {
       children: [
         QuizCard(
           prompt: AppStrings.quizPromptListenType,
-          child: AudioPlayButton(text: question.vocab.term),
+          child: AudioPlayButton(text: question.vocab.term, onFirstPlayDone: onAudioReady),
         ),
         const SizedBox(height: AppDimensions.space20),
         TypingAnswerField(
@@ -250,12 +258,16 @@ class PronunciationView extends StatefulWidget {
   final ValueChanged<List<String>> onSubmit;
   final VoidCallback onSkip;
 
+  /// Bắt đầu / kết thúc nghe micro: đồng hồ đứng yên trong lúc hỏi quyền và đang nghe.
+  final ValueChanged<bool>? onListeningChanged;
+
   const PronunciationView({
     super.key,
     required this.question,
     required this.record,
     required this.onSubmit,
     required this.onSkip,
+    this.onListeningChanged,
   });
 
   @override
@@ -286,6 +298,7 @@ class _PronunciationViewState extends State<PronunciationView> {
       _heard = '';
       _failure = null;
     });
+    widget.onListeningChanged?.call(true);
     try {
       final alternatives = await _recognizer.listenOnce(
         onPartial: (text) {
@@ -297,8 +310,10 @@ class _PronunciationViewState extends State<PronunciationView> {
         _listening = false;
         _heard = alternatives.first;
       });
+      widget.onListeningChanged?.call(false);
       widget.onSubmit(alternatives);
     } on RecognitionException catch (e) {
+      widget.onListeningChanged?.call(false);
       if (mounted) {
         setState(() {
           _listening = false;

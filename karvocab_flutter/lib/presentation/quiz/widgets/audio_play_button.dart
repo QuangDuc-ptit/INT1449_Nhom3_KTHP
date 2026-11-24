@@ -13,10 +13,14 @@ class AudioPlayButton extends StatefulWidget {
   final String text;
   final bool autoPlay;
 
+  /// Gọi một lần khi phát xong lượt đầu (kể cả phát lỗi), để đồng hồ bắt đầu đếm.
+  final VoidCallback? onFirstPlayDone;
+
   const AudioPlayButton({
     super.key,
     required this.text,
     this.autoPlay = true,
+    this.onFirstPlayDone,
   });
 
   @override
@@ -27,6 +31,7 @@ class _AudioPlayButtonState extends State<AudioPlayButton>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulse;
   bool _playing = false;
+  bool _firstPlayReported = false;
 
   @override
   void initState() {
@@ -43,7 +48,13 @@ class _AudioPlayButtonState extends State<AudioPlayButton>
     _pulse.repeat(reverse: true);
     try {
       await SpeechService.instance.speak(widget.text);
+    } catch (_) {
+      // Máy không phát được (thiếu TTS...) vẫn phải cho đồng hồ chạy.
     } finally {
+      if (!_firstPlayReported) {
+        _firstPlayReported = true;
+        widget.onFirstPlayDone?.call();
+      }
       if (mounted) {
         _pulse
           ..stop()

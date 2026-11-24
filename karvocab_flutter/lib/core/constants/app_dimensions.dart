@@ -181,8 +181,9 @@ class AppDimensions {
   // Thanh tiến độ phiên làm bài
   static const double quizProgressHeight = 8.0;
 
-  /// Thanh đếm ngược thời gian mỗi câu
-  static const double quizTimerBarHeight = 6.0;
+  /// Viên đếm ngược thời gian mỗi câu: vòng tròn thời gian còn lại
+  static const double quizTimerRingSize = 18.0;
+  static const double quizTimerRingStroke = 3.0;
 
   // ---------------------------------------------------------------------------
   // Màn 10 · Luyện tập

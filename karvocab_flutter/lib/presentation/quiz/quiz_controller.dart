@@ -13,6 +13,10 @@ import '../../data/services/feedback_service.dart';
 ///
 /// Mỗi câu có đồng hồ đếm ngược theo trò chơi ([QuizSettingsStore.timeLimitFor]).
 /// 5 giây cuối phát tiếng tích tắc; hết giờ thì câu đó tính là sai.
+///
+/// Đồng hồ không đếm trong lúc máy đang làm việc thay người dùng: trò Nghe chờ
+/// phát xong âm thanh lần đầu mới đếm ([releaseCountdown]); trò Phát âm giữ
+/// đồng hồ trong lúc hỏi quyền micro và đang nghe ([holdCountdown]).
 class QuizController extends ChangeNotifier {
   QuizController({
     required this.questions,
@@ -35,6 +39,12 @@ class QuizController extends ChangeNotifier {
   int? _timeLimit;
   int _remaining = 0;
   bool _paused = false;
+
+  /// Đồng hồ đang được giữ (chờ âm thanh phát xong / đang nghe micro).
+  bool _held = false;
+
+  /// Các trò phải nghe âm thanh trước: chỉ bắt đầu đếm khi phát xong lần đầu.
+  static const Set<QuizMode> waitForAudioModes = {QuizMode.listenChoose, QuizMode.listenType};
 
   /// UUID của phiên, gửi kèm khi nộp bài.
   final String clientSessionId = generateClientSessionId();
@@ -71,6 +81,23 @@ class QuizController extends ChangeNotifier {
       isTimed && !isAnswered && _remaining <= QuizSettingsStore.warningSeconds;
 
   bool get isPaused => _paused;
+
+  /// Đồng hồ đang chờ (chưa phát xong âm thanh, hoặc đang nghe micro).
+  bool get isCountdownHeld => _held;
+
+  /// Giữ đồng hồ đứng yên, vd trong lúc hỏi quyền micro và nghe người dùng nói.
+  void holdCountdown() {
+    if (_held || isAnswered) return;
+    _held = true;
+    notifyListeners();
+  }
+
+  /// Cho đồng hồ chạy tiếp (âm thanh đã phát xong / micro đã nghe xong).
+  void releaseCountdown() {
+    if (!_held) return;
+    _held = false;
+    notifyListeners();
+  }
 
   /// Chế độ trắc nghiệm: so khớp tuyệt đối với đáp án đúng.
   void submitChoice(String option) {
@@ -127,6 +154,7 @@ class QuizController extends ChangeNotifier {
     _ticker?.cancel();
     _ticker = null;
     _timeLimit = _settings.timeLimitFor(current.mode);
+    _held = waitForAudioModes.contains(current.mode);
     final limit = _timeLimit;
     if (limit == null) return;
     _remaining = limit;
@@ -134,7 +162,7 @@ class QuizController extends ChangeNotifier {
   }
 
   void _onTick() {
-    if (_paused || isAnswered) return;
+    if (_paused || _held || isAnswered) return;
     _remaining -= 1;
     if (_remaining <= 0) {
       _remaining = 0;
