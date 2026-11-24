@@ -342,3 +342,10 @@
 - Màn 05 Thư viện: nút "+" thêm chữ "Tạo mới" (giữ tooltip). Không thêm lại tiến độ vào thẻ học phần vì nhóm đã chủ động bỏ số "đã thuộc" ở Thư viện.
 - Hàm dùng chung `reviewDueText` / `calendarDaysBetween` (`core/utils/review_schedule.dart`), tính theo ngày lịch nên không lệch khi đổi giờ mùa hè.
 - Thêm `test/low_priority_ux_test.dart` (6 test). `flutter analyze` 0 error / 0 warning; `flutter test` 172/172 pass.
+
+#### 5. Nhận xét lại vai trò BA và sửa nhóm mức cao lần 2 (Prompt: "nhận xét lại app với vai trò BA" → "sửa nhóm mức cao từ 1 đến 3 đi"):
+- Chụp lại 28 trạng thái màn hình (kể cả trống / tải / lỗi, phản hồi quiz, AI) để đánh giá; mục mức cao được xác minh thêm trong code.
+- Màn 02 Đăng nhập: kiểm tra email / mật khẩu trên máy trước khi gửi (dùng `Validators.email`, `Validators.loginPassword` như form Đăng ký). Trước đó để trống email bị báo nhầm "Email chưa được đăng ký".
+- Dữ liệu Demo (`DashboardStore._seed`): bỏ số "đã học sáng nay" cố định (4) khiến Trang chủ ghi 4/10 trong khi Hồ sơ ghi 0 từ đã học. Nay mỗi từ mẫu có cấp SM-2 riêng (`_seedPlan`): 9 từ đã học, 1 từ đã thuộc, 3 từ mới; hôm nay chưa học nên mục tiêu 0/N khớp với streak tính tới hôm qua; từ quá hạn có đủ 3 mức màu ở Màn 16. Màn 07: từ chưa học hiện "Lịch ôn sẽ có sau lần luyện tập đầu tiên" thay vì "Ôn lại hôm nay".
+- Màn 04 Trang chủ: người dùng chưa có học phần thấy thẻ trạng thái trống (Axolotl + "Tạo học phần" + "Tạo từ vựng bằng AI") thay cho các ô số 0, nút bị khoá và biểu đồ rỗng. `MainShellScreen` nối nút tạo với sheet tạo học phần rồi mở Màn 06, nút AI mở Màn 13.
+- Thêm `test/high_priority_ux_test.dart` (3 test), cập nhật test trạng thái trống Trang chủ và test Hồ sơ theo dữ liệu mẫu mới. `flutter analyze` 0 error / 0 warning; `flutter test` 175/175 pass.
