@@ -32,6 +32,7 @@ class AppStrings {
   static const String libraryEmpty = 'Bạn chưa có học phần nào';
   static const String libraryNoResults = 'Không tìm thấy học phần phù hợp';
   static const String libraryCreateCourse = 'Tạo học phần mới';
+  static const String libraryCreateShort = 'Tạo mới';
   static String libraryCourseCreated(String title) => 'Đã tạo học phần "$title"';
   static const String libraryLoadErrorTitle = 'Không tải được thư viện';
   static const String libraryLoadErrorFallback = 'Đã có lỗi xảy ra.';

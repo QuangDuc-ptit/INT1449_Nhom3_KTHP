@@ -228,9 +228,20 @@ class _LibraryViewState extends State<LibraryView> {
               key: const Key('library_create_course'),
               borderRadius: radius,
               onTap: widget.onCreateCourseClick,
-              child: const SizedBox.square(
-                dimension: AppDimensions.minTouchTarget,
-                child: Icon(Icons.add_rounded, color: AppColors.white, size: AppDimensions.iconLarge),
+              // Có chữ "Tạo mới" để không phải đoán nút "+" làm gì.
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: AppDimensions.minTouchTarget),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space12),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.add_rounded, color: AppColors.white, size: AppDimensions.iconMedium),
+                      const SizedBox(width: AppDimensions.space4),
+                      Text(AppStrings.libraryCreateShort, style: AppTypography.buttonText),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
