@@ -1,5 +1,8 @@
 import 'dart:math';
 
+import '../mock/mock_ai_vocab_bank.dart';
+import '../remote/api_client.dart';
+import '../remote/remote_ai_vocab_repository.dart';
 import '../models/ai_vocab_draft.dart';
 
 /// Lỗi từ API AI, mang `errorCode` của BE (FE-BE-ALIGNMENT mục 2).
@@ -18,89 +21,84 @@ class AiVocabException implements Exception {
 }
 
 /// Hợp đồng gọi `POST /api/v1/ai/generate-vocab`.
-/// Khi BE sẵn sàng, tạo `RemoteAiVocabRepository` implement lớp này (khoá Gemini nằm ở server, KHÔNG nằm trong app).
+/// Bản gọi BE thật: `RemoteAiVocabRepository` (khoá Gemini nằm ở server, KHÔNG nằm trong app).
 abstract class AiVocabRepository {
+  /// Đã đăng nhập qua backend thì gọi AI thật; Demo Mode / Chế độ Dùng thử thì dùng kho từ mẫu.
+  static AiVocabRepository forCurrentSession() {
+    final api = ApiClient.instance;
+    return api != null && api.hasSession ? RemoteAiVocabRepository(api) : MockAiVocabRepository();
+  }
+
+  /// [topic] nhập bằng tiếng Anh hoặc tiếng Việt. [cefrLevel] = `null` khi người dùng không chọn
+  /// trình độ: AI tự chọn từ phù hợp với chủ đề, mỗi từ ghi đúng trình độ của nó.
   Future<List<AiVocabDraft>> generate({
     required String topic,
-    required String cefrLevel,
+    String? cefrLevel,
     required int wordCount,
   });
 }
 
-/// Bản Demo offline: trả dữ liệu mẫu sau ~2 giây, có công tắc giả lập lỗi để trình diễn Error State.
+/// Bản Demo offline: lấy từ trong [MockAiVocabBank] sau ~2 giây, có công tắc giả lập lỗi để trình diễn Error State.
+///
+/// Chỉ trả về từ đúng chủ đề (không chèn từ chủ đề khác cho đủ số lượng). Chủ đề chưa có trong
+/// kho Demo thì báo lỗi `TOPIC_UNSUPPORTED` kèm gợi ý chủ đề có sẵn.
 class MockAiVocabRepository implements AiVocabRepository {
   /// Bật để mô phỏng mất mạng / AI timeout (Màn 13 - Error state).
   static bool simulateFailure = false;
 
-  static const List<Map<String, String>> _bank = [
-    {'t': 'boarding', 'p': 'noun', 'i': '/ˈbɔːdɪŋ/', 'e': 'The process of getting on a plane, ship or train.', 'v': 'Việc lên máy bay, tàu thuyền', 's': 'Boarding starts at gate 12 in twenty minutes.'},
-    {'t': 'luggage', 'p': 'noun', 'i': '/ˈlʌɡɪdʒ/', 'e': 'Bags and suitcases that you take on a journey.', 'v': 'Hành lý', 's': 'Please keep your luggage with you at all times.'},
-    {'t': 'departure', 'p': 'noun', 'i': '/dɪˈpɑːtʃə/', 'e': 'The act of leaving a place.', 'v': 'Sự khởi hành', 's': 'The departure time has been delayed by an hour.'},
-    {'t': 'customs', 'p': 'noun', 'i': '/ˈkʌstəmz/', 'e': 'The place where your bags are checked when you enter a country.', 'v': 'Hải quan', 's': 'We had to go through customs after landing.'},
-    {'t': 'layover', 'p': 'noun', 'i': '/ˈleɪəʊvə/', 'e': 'A short stop between two parts of a journey.', 'v': 'Điểm dừng chân quá cảnh', 's': 'I have a four-hour layover in Singapore.'},
-    {'t': 'algorithm', 'p': 'noun', 'i': '/ˈælɡərɪðəm/', 'e': 'A set of rules for solving a problem step by step.', 'v': 'Thuật toán', 's': 'The search algorithm ranks results by relevance.'},
-    {'t': 'interface', 'p': 'noun', 'i': '/ˈɪntəfeɪs/', 'e': 'The way a user interacts with a program or device.', 'v': 'Giao diện', 's': 'The app has a clean and simple interface.'},
-    {'t': 'bandwidth', 'p': 'noun', 'i': '/ˈbændwɪdθ/', 'e': 'The amount of data that can be sent over a connection.', 'v': 'Băng thông', 's': 'Video calls need a lot of bandwidth.'},
-    {'t': 'encryption', 'p': 'noun', 'i': '/ɪnˈkrɪpʃn/', 'e': 'Turning data into a secret code to protect it.', 'v': 'Sự mã hoá', 's': 'Encryption keeps your messages private.'},
-    {'t': 'prototype', 'p': 'noun', 'i': '/ˈprəʊtətaɪp/', 'e': 'A first model of something from which others are developed.', 'v': 'Bản mẫu thử nghiệm', 's': 'The team built a prototype in two weeks.'},
-    {'t': 'roast', 'p': 'verb', 'i': '/rəʊst/', 'e': 'To heat coffee beans until they turn brown.', 'v': 'Rang (cà phê)', 's': 'They roast their beans fresh every morning.'},
-    {'t': 'brew', 'p': 'verb', 'i': '/bruː/', 'e': 'To make coffee or tea by adding hot water.', 'v': 'Pha, ủ (cà phê, trà)', 's': 'I like to brew a strong cup before work.'},
-    {'t': 'barista', 'p': 'noun', 'i': '/bəˈriːstə/', 'e': 'A person who makes and serves coffee in a café.', 'v': 'Nhân viên pha chế cà phê', 's': 'The barista drew a leaf on my latte.'},
-    {'t': 'espresso', 'p': 'noun', 'i': '/eˈspresəʊ/', 'e': 'Strong coffee made by forcing steam through ground beans.', 'v': 'Cà phê espresso', 's': 'He ordered a double espresso.'},
-    {'t': 'aroma', 'p': 'noun', 'i': '/əˈrəʊmə/', 'e': 'A pleasant and noticeable smell.', 'v': 'Hương thơm', 's': 'The aroma of fresh coffee filled the room.'},
-    {'t': 'negotiate', 'p': 'verb', 'i': '/nɪˈɡəʊʃieɪt/', 'e': 'To discuss something to reach an agreement.', 'v': 'Đàm phán, thương lượng', 's': 'We need to negotiate the price with the supplier.'},
-    {'t': 'deadline', 'p': 'noun', 'i': '/ˈdedlaɪn/', 'e': 'The latest time by which something must be done.', 'v': 'Hạn chót', 's': 'The deadline for the report is Friday.'},
-    {'t': 'revenue', 'p': 'noun', 'i': '/ˈrevənjuː/', 'e': 'Money that a company receives from its business.', 'v': 'Doanh thu', 's': 'Annual revenue grew by fifteen percent.'},
-    {'t': 'proposal', 'p': 'noun', 'i': '/prəˈpəʊzl/', 'e': 'A formal plan or suggestion put forward for consideration.', 'v': 'Bản đề xuất', 's': 'She submitted a proposal for a new marketing campaign.'},
-    {'t': 'stakeholder', 'p': 'noun', 'i': '/ˈsteɪkhəʊldə/', 'e': 'A person with an interest or concern in a business.', 'v': 'Bên liên quan', 's': 'Every stakeholder must approve the plan.'},
-  ];
+  static const List<String> _levels = ['A1', 'A2', 'B1', 'B2', 'C1'];
 
-  // Từ khoá chủ đề → các chỉ số trong ngân hàng mẫu
-  static const Map<String, List<int>> _topicIndex = {
-    'airport': [0, 1, 2, 3, 4],
-    'travel': [0, 1, 2, 3, 4],
-    'technology': [5, 6, 7, 8, 9],
-    'tech': [5, 6, 7, 8, 9],
-    'coffee': [10, 11, 12, 13, 14],
-    'business': [15, 16, 17, 18, 19],
-  };
+  final Duration latency;
+  final Random _random;
+
+  MockAiVocabRepository({this.latency = const Duration(seconds: 2), Random? random}) : _random = random ?? Random();
 
   @override
   Future<List<AiVocabDraft>> generate({
     required String topic,
-    required String cefrLevel,
+    String? cefrLevel,
     required int wordCount,
   }) async {
-    await Future<void>.delayed(const Duration(seconds: 2));
+    await Future<void>.delayed(latency);
     if (simulateFailure) {
       throw const AiVocabException('AI_UNAVAILABLE');
     }
 
-    final lower = topic.toLowerCase();
-    final preferred = <int>[];
-    _topicIndex.forEach((key, indexes) {
-      if (lower.contains(key)) {
-        for (final i in indexes) {
-          if (!preferred.contains(i)) preferred.add(i);
-        }
-      }
-    });
+    final matched = MockAiVocabBank.match(topic);
+    if (matched.isEmpty) {
+      throw const AiVocabException('TOPIC_UNSUPPORTED');
+    }
 
-    final rest = List<int>.generate(_bank.length, (i) => i)
-      ..removeWhere(preferred.contains)
-      ..shuffle(Random());
-    final order = [...preferred, ...rest].take(wordCount);
+    // Xen kẽ từ của các chủ đề khớp (vd "du lịch và ẩm thực"), bỏ từ trùng.
+    var pool = <MockAiWord>[];
+    final seen = <String>{};
+    final lists = [for (final t in matched) [...t.words]..shuffle(_random)];
+    for (var i = 0; lists.any((l) => i < l.length); i++) {
+      for (final l in lists) {
+        if (i < l.length && seen.add(l[i].term)) pool.add(l[i]);
+      }
+    }
+
+    // Có chọn trình độ: ưu tiên đúng cấp, thiếu thì lấy cấp liền kề trong cùng chủ đề.
+    // Nhãn CEFR của mỗi từ luôn là trình độ thật của từ đó.
+    final target = cefrLevel == null ? -1 : _levels.indexOf(cefrLevel);
+    if (target >= 0) {
+      int distance(MockAiWord w) => (_levels.indexOf(w.cefrLevel) - target).abs();
+      pool = [
+        for (var d = 0; d <= 1; d++) ...pool.where((w) => distance(w) == d),
+      ];
+    }
 
     return [
-      for (final i in order)
+      for (final w in pool.take(wordCount))
         AiVocabDraft.fromJson({
-          'term': _bank[i]['t'],
-          'partOfSpeech': _bank[i]['p'],
-          'ipaUk': _bank[i]['i'],
-          'definitionEn': _bank[i]['e'],
-          'definitionVi': _bank[i]['v'],
-          'exampleSentence': _bank[i]['s'],
-          'cefrLevel': cefrLevel,
+          'term': w.term,
+          'partOfSpeech': w.partOfSpeech,
+          'ipaUk': w.ipa,
+          'definitionEn': w.definitionEn,
+          'definitionVi': w.definitionVi,
+          'exampleSentence': w.example,
+          'cefrLevel': w.cefrLevel,
         }),
     ];
   }

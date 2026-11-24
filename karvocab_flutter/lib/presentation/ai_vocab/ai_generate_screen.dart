@@ -9,14 +9,17 @@ import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_toast.dart';
 import '../../core/widgets/state_widgets.dart';
+import '../../data/mock/mock_ai_vocab_bank.dart';
 import '../../data/models/ai_vocab_draft.dart';
 import '../../data/repositories/ai_vocab_repository.dart';
 import 'ai_preview_screen.dart';
 
 enum _GenState { idle, loading, error }
 
-/// Màn 13 — Tạo từ vựng bằng AI (nhập chủ đề, chọn CEFR, chọn số lượng 3–20).
+/// Màn 13 — Tạo từ vựng bằng AI: nhập chủ đề (tiếng Anh / tiếng Việt), kéo chọn số lượng 3–20.
+/// Không chọn CEFR: AI chọn từ hợp chủ đề, mỗi từ ghi đúng trình độ của nó.
 class AiGenerateScreen extends StatefulWidget {
   /// Cho phép tiêm repository khác (ví dụ bản gọi BE thật hoặc bản test).
   final AiVocabRepository? repository;
@@ -41,6 +44,8 @@ class AiGenerateScreen extends StatefulWidget {
         return AppStrings.aiErrorUnavailable;
       case 'UNAUTHORIZED':
         return AppStrings.aiErrorUnauthorized;
+      case 'TOPIC_UNSUPPORTED':
+        return AppStrings.aiErrorTopicUnsupported([for (final t in MockAiVocabBank.topics) t.name]);
       default:
         return e.message ?? AppStrings.aiErrorDefault;
     }
@@ -57,13 +62,11 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> with SingleTickerPr
   static const int _topicCounterFrom = 80;
   static const int _minWords = 3;
   static const int _maxWords = 20;
-  static const List<String> _levels = ['A1', 'A2', 'B1', 'B2', 'C1'];
 
   final TextEditingController _topicController = TextEditingController();
   late final AnimationController _shimmer;
   late final AiVocabRepository _repo;
 
-  String _level = 'B1';
   int _count = 5;
   _GenState _state = _GenState.idle;
   String _errorMessage = '';
@@ -71,7 +74,7 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> with SingleTickerPr
   @override
   void initState() {
     super.initState();
-    _repo = widget.repository ?? MockAiVocabRepository();
+    _repo = widget.repository ?? AiVocabRepository.forCurrentSession();
     _shimmer = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100));
   }
 
@@ -92,11 +95,13 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> with SingleTickerPr
 
     try {
       final List<AiVocabDraft> drafts = await _repo
-          .generate(topic: _topicController.text.trim(), cefrLevel: _level, wordCount: _count)
-          .timeout(const Duration(seconds: 15));
+          .generate(topic: _topicController.text.trim(), wordCount: _count)
+          .timeout(_repo is MockAiVocabRepository ? const Duration(seconds: 15) : const Duration(seconds: 25));
       if (!mounted) return;
       _shimmer.stop();
       setState(() => _state = _GenState.idle);
+      // Không chèn từ chủ đề khác cho đủ số lượng: báo rõ khi ít hơn số đã chọn.
+      if (drafts.length < _count) AppToast.info(context, AppStrings.aiFewerWords(drafts.length, _count));
       final saved = await Navigator.of(context).push<bool>(
         MaterialPageRoute<bool>(
           builder: (_) => AiPreviewScreen(
@@ -178,7 +183,7 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> with SingleTickerPr
           const SizedBox(height: AppDimensions.space12),
           Text(AppStrings.aiLoadingTitle, style: AppTypography.headingMedium),
           const SizedBox(height: AppDimensions.space4),
-          Text(AppStrings.aiLoadingSubtitle(_count, _level), style: AppTypography.bodyMedium),
+          Text(AppStrings.aiLoadingSubtitle(_count), style: AppTypography.bodyMedium),
           const SizedBox(height: AppDimensions.space24),
           for (var i = 0; i < 4; i++) ...[
             AnimatedBuilder(
@@ -257,47 +262,46 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> with SingleTickerPr
                 ],
               ),
               const SizedBox(height: AppDimensions.space24),
-              Text(AppStrings.aiCefrLabel, style: AppTypography.bodyBold),
-              const SizedBox(height: AppDimensions.space8),
               Row(
                 children: [
-                  for (final l in _levels)
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: AppDimensions.space8),
-                        child: _Pill(
-                          label: l,
-                          selected: _level == l,
-                          expand: true,
-                          onTap: () => setState(() => _level = l),
-                        ),
-                      ),
-                    ),
+                  const Expanded(child: Text(AppStrings.aiWordCountTitle, style: AppTypography.bodyBold)),
+                  Text(
+                    AppStrings.aiWordCountValue(_count),
+                    key: const Key('ai_word_count_value'),
+                    style: AppTypography.bodyBold.copyWith(color: AppColors.primaryBlue),
+                  ),
                 ],
               ),
-              const SizedBox(height: AppDimensions.space24),
-              Text(AppStrings.aiWordCountLabel(_minWords, _maxWords), style: AppTypography.bodyBold),
-              const SizedBox(height: AppDimensions.space8),
+              SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  activeTrackColor: AppColors.primaryBlue,
+                  inactiveTrackColor: AppColors.borderLight,
+                  thumbColor: AppColors.primaryBlue,
+                  overlayColor: AppColors.primaryBlue.withValues(alpha: 0.12),
+                  activeTickMarkColor: AppColors.transparent,
+                  inactiveTickMarkColor: AppColors.transparent,
+                  valueIndicatorColor: AppColors.primaryBlue,
+                ),
+                child: Slider(
+                  key: const Key('ai_word_count_slider'),
+                  value: _count.toDouble(),
+                  min: _minWords.toDouble(),
+                  max: _maxWords.toDouble(),
+                  divisions: _maxWords - _minWords,
+                  label: '$_count',
+                  semanticFormatterCallback: (v) => AppStrings.aiWordCountValue(v.round()),
+                  onChanged: (v) => setState(() => _count = v.round()),
+                ),
+              ),
               Row(
                 children: [
-                  _StepButton(
-                    icon: Icons.remove_rounded,
-                    tooltip: AppStrings.aiDecrease,
-                    onPressed: _count > _minWords ? () => setState(() => _count--) : null,
-                  ),
-                  SizedBox(
-                    width: 80,
-                    child: Text('$_count', textAlign: TextAlign.center, style: AppTypography.headingLarge),
-                  ),
-                  _StepButton(
-                    icon: Icons.add_rounded,
-                    tooltip: AppStrings.aiIncrease,
-                    onPressed: _count < _maxWords ? () => setState(() => _count++) : null,
-                  ),
+                  Text('$_minWords', style: AppTypography.caption),
+                  const Spacer(),
+                  Text('$_maxWords', style: AppTypography.caption),
                 ],
               ),
               // Công cụ kiểm thử Error State: chỉ hiện ở bản debug, ẩn ở bản phát hành.
-              if (kDebugMode) ...[
+              if (kDebugMode && _repo is MockAiVocabRepository) ...[
                 const SizedBox(height: AppDimensions.space16),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
@@ -331,10 +335,9 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> with SingleTickerPr
 class _Pill extends StatelessWidget {
   final String label;
   final bool selected;
-  final bool expand;
   final VoidCallback onTap;
 
-  const _Pill({required this.label, required this.selected, required this.onTap, this.expand = false});
+  const _Pill({required this.label, required this.selected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -349,9 +352,9 @@ class _Pill extends StatelessWidget {
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: AppDimensions.minTouchTarget),
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: expand ? 0 : AppDimensions.space16),
+            padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space16),
             child: Row(
-              mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
+              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
@@ -362,38 +365,6 @@ class _Pill extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StepButton extends StatelessWidget {
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback? onPressed;
-
-  const _StepButton({required this.icon, required this.tooltip, required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onPressed != null;
-    return Material(
-      color: enabled ? AppColors.white : AppColors.background,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        side: BorderSide(color: enabled ? AppColors.primaryBlue : AppColors.borderLight),
-      ),
-      child: InkWell(
-        customBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimensions.radiusButton)),
-        onTap: onPressed,
-        child: Tooltip(
-          message: tooltip,
-          child: SizedBox(
-            width: AppDimensions.buttonHeight,
-            height: AppDimensions.buttonHeight,
-            child: Icon(icon, color: enabled ? AppColors.primaryBlue : AppColors.textMuted),
           ),
         ),
       ),

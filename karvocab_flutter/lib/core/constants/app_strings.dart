@@ -371,22 +371,22 @@ class AppStrings {
   // Màn 13 · Tạo từ vựng bằng AI
   static const String aiGenerateTitle = 'Tạo từ vựng bằng AI';
   static const String aiTopicLabel = 'Chủ đề bạn muốn học';
-  static const String aiTopicHint = 'VD: Airport, Travel...';
+  static const String aiTopicHint = 'VD: Du lịch, Công nghệ, Airport...';
   static const List<String> aiTopicSuggestions = [
-    'IELTS Speaking Part 2',
+    'Du lịch',
     'Technology',
-    'Coffee Culture',
+    'Ẩm thực & cà phê',
     'Business Negotiation',
   ];
-  static const String aiCefrLabel = 'Cấp độ CEFR';
-  static String aiWordCountLabel(int min, int max) => 'Số lượng từ ($min – $max)';
-  static const String aiDecrease = 'Giảm';
-  static const String aiIncrease = 'Tăng';
+  static const String aiWordCountTitle = 'Số lượng từ';
+  static String aiWordCountValue(int count) => '$count từ';
   static const String aiSimulateFailure = 'Mô phỏng lỗi AI (Demo)';
   static const String aiGenerateButton = 'Tạo từ vựng ngay';
   static const String aiLoadingTitle = 'Axolotl đang suy nghĩ...';
-  static String aiLoadingSubtitle(int count, String level) =>
-      'Đang tạo $count từ vựng cấp $level';
+  static String aiLoadingSubtitle(int count) => 'Đang tạo $count từ vựng';
+  static String aiErrorTopicUnsupported(List<String> topics) =>
+      'Bản Demo chưa có dữ liệu cho chủ đề này (chưa nối AI thật). Hãy thử: ${topics.join(', ')}.';
+  static String aiFewerWords(int got, int asked) => 'Chỉ có $got/$asked từ đúng chủ đề này.';
   static const String aiErrorTitle = 'Tạo từ vựng thất bại';
   static const String aiErrorRateLimited = 'Bạn thao tác quá nhanh. Vui lòng chờ một lát rồi thử lại.';
   static String aiErrorRateLimitedSeconds(int s) =>

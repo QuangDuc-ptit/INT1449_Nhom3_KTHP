@@ -27,7 +27,7 @@ class _FailingAiRepository implements AiVocabRepository {
   @override
   Future<List<AiVocabDraft>> generate({
     required String topic,
-    required String cefrLevel,
+    String? cefrLevel,
     required int wordCount,
   }) async {
     throw Exception('offline');
