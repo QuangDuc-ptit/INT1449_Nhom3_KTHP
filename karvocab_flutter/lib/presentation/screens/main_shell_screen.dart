@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/widgets/app_toast.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/collection_store.dart';
 import '../../data/repositories/dashboard_store.dart';
+import '../ai_vocab/ai_generate_screen.dart';
 import '../dashboard/review_today_screen.dart';
 import '../home/home_state_builder.dart';
 import '../home/home_ui_state.dart';
@@ -10,6 +13,7 @@ import '../notifications/notification_ui_state.dart';
 import '../quiz/practice_mode_screen.dart';
 import '../widgets/notification_popup.dart';
 import '../widgets/app_bottom_nav_bar.dart';
+import '../widgets/collection_form_sheet.dart';
 import 'home_screen.dart';
 import 'library_screen.dart';
 import 'profile_screen.dart';
@@ -113,6 +117,8 @@ class _MainShellScreenState extends State<MainShellScreen> {
           onStatClick: _onStatClick,
           onSeeAllCoursesClick: () => _selectTab(_libraryTab),
           onCourseClick: _openCourse,
+          onCreateCourseClick: _createFirstCourse,
+          onAiGenerateClick: _openAiGenerate,
         ),
       ),
       const LibraryScreen(), // Tab Thư viện do FE1 phát triển
@@ -156,6 +162,22 @@ class _MainShellScreenState extends State<MainShellScreen> {
       case HomeStat.streak:
         _selectTab(_profileTab);
     }
+  }
+
+  /// Trang chủ trống → mở sheet tạo học phần (như nút "Tạo mới" ở Thư viện), xong vào Màn 06.
+  Future<void> _createFirstCourse() async {
+    final store = CollectionStore.instance;
+    final created = await showCollectionFormSheet(context, store: store);
+    if (created == null || !mounted) return;
+    AppToast.success(context, AppStrings.libraryCourseCreated(created.title));
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => WordListScreen(collection: created, store: store)),
+    );
+  }
+
+  /// Trang chủ trống → Màn 13 (tạo từ bằng AI, có thể tạo học phần mới ở bước lưu).
+  void _openAiGenerate() {
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const AiGenerateScreen()));
   }
 
   /// Học phần ở Trang chủ → Màn 06.

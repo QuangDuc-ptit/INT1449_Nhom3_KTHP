@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widget_previews.dart';
 
+import '../../core/constants/app_assets.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_strings.dart';
@@ -38,6 +39,10 @@ class HomeScreen extends StatelessWidget {
   final VoidCallback? onSeeAllCoursesClick;
   final ValueChanged<HomeCourse>? onCourseClick;
 
+  /// Trạng thái trống (chưa có học phần): tạo học phần / tạo từ bằng AI.
+  final VoidCallback? onCreateCourseClick;
+  final VoidCallback? onAiGenerateClick;
+
   /// Số học phần tối đa hiển thị trên Trang chủ.
   static const int maxCourses = 3;
 
@@ -50,7 +55,12 @@ class HomeScreen extends StatelessWidget {
     this.onStatClick,
     this.onSeeAllCoursesClick,
     this.onCourseClick,
+    this.onCreateCourseClick,
+    this.onAiGenerateClick,
   });
+
+  /// Người dùng mới: chưa có học phần nào nên mọi số liệu đều 0.
+  bool get _isNewUser => state.courses.isEmpty && state.totalWords == 0;
 
   @override
   Widget build(BuildContext context) {
@@ -69,26 +79,74 @@ class HomeScreen extends StatelessWidget {
           children: [
             _Header(notifications: notifications, notificationCallbacks: notificationCallbacks),
             blockGap,
-            _StatGrid(state: state, onStatClick: onStatClick),
-            blockGap,
-            _DailyGoalCard(done: state.reviewedToday, goal: state.dailyGoal),
-            blockGap,
-            // Một khối duy nhất: thông tin phiên ôn tập + nút bắt đầu (trước đây là 2 nút cùng chức năng).
-            _ReviewPanel(
-              wordsToReview: state.wordsToReview,
-              reviewMinutes: state.reviewMinutes,
-              onStart: onStartReviewClick,
-            ),
-            blockGap,
-            _WeeklyActivityCard(weeklyStats: state.weeklyStats, todayIndex: state.todayIndex),
-            blockGap,
-            _CoursesSection(
-              courses: state.courses,
-              onSeeAllCoursesClick: onSeeAllCoursesClick,
-              onCourseClick: onCourseClick,
-            ),
+            if (_isNewUser)
+              _NewUserCard(onCreateCourse: onCreateCourseClick, onAiGenerate: onAiGenerateClick)
+            else ...[
+              _StatGrid(state: state, onStatClick: onStatClick),
+              blockGap,
+              _DailyGoalCard(done: state.reviewedToday, goal: state.dailyGoal),
+              blockGap,
+              // Một khối duy nhất: thông tin phiên ôn tập + nút bắt đầu (trước đây là 2 nút cùng chức năng).
+              _ReviewPanel(
+                wordsToReview: state.wordsToReview,
+                reviewMinutes: state.reviewMinutes,
+                onStart: onStartReviewClick,
+              ),
+              blockGap,
+              _WeeklyActivityCard(weeklyStats: state.weeklyStats, todayIndex: state.todayIndex),
+              blockGap,
+              _CoursesSection(
+                courses: state.courses,
+                onSeeAllCoursesClick: onSeeAllCoursesClick,
+                onCourseClick: onCourseClick,
+              ),
+            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Trạng thái trống của Trang chủ (rubric: Axolotl + CTA) thay cho các ô số 0,
+/// nút "Không có từ cần ôn" bị khoá và biểu đồ rỗng.
+class _NewUserCard extends StatelessWidget {
+  final VoidCallback? onCreateCourse;
+  final VoidCallback? onAiGenerate;
+
+  const _NewUserCard({required this.onCreateCourse, required this.onAiGenerate});
+
+  @override
+  Widget build(BuildContext context) {
+    return _HomeCard(
+      child: Column(
+        key: const Key('home_empty_state'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Image.asset(
+            AppAssets.logo,
+            width: AppDimensions.libraryEmptyLogoSize,
+            height: AppDimensions.libraryEmptyLogoSize,
+            excludeFromSemantics: true,
+          ),
+          const SizedBox(height: AppDimensions.space16),
+          const Text(AppStrings.homeEmptyTitle, style: AppTypography.headingMedium, textAlign: TextAlign.center),
+          const SizedBox(height: AppDimensions.space8),
+          const Text(AppStrings.homeEmptyMessage, style: AppTypography.bodyMedium, textAlign: TextAlign.center),
+          const SizedBox(height: AppDimensions.space20),
+          AppButton(
+            key: const Key('home_empty_create'),
+            text: AppStrings.homeEmptyCreate,
+            onPressed: onCreateCourse ?? () {},
+          ),
+          const SizedBox(height: AppDimensions.space12),
+          AppButton(
+            key: const Key('home_empty_ai'),
+            text: AppStrings.homeEmptyAi,
+            variant: AppButtonVariant.outline,
+            onPressed: onAiGenerate ?? () {},
+          ),
+        ],
       ),
     );
   }

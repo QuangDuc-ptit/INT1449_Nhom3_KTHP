@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:karvocab_flutter/core/constants/app_strings.dart';
 import 'package:karvocab_flutter/core/widgets/app_button.dart';
 import 'package:karvocab_flutter/presentation/home/home_sample_data.dart';
 import 'package:karvocab_flutter/presentation/home/home_ui_state.dart';
@@ -57,16 +58,25 @@ void main() {
       expect(find.text('12/10 từ'), findsOneWidget);
     });
 
-    testWidgets('Trạng thái trống: ẩn thẻ nhắc, nút bị khoá, báo chưa có học phần', (tester) async {
-      await tester.pumpWidget(_app(const HomeScreen(state: HomeSampleData.empty)));
+    testWidgets('Trạng thái trống: Axolotl + 2 nút tạo, không còn ô số 0 và nút bị khoá', (tester) async {
+      var created = 0, ai = 0;
+      await tester.pumpWidget(_app(HomeScreen(
+        state: HomeSampleData.empty,
+        onCreateCourseClick: () => created++,
+        onAiGenerateClick: () => ai++,
+      )));
 
+      expect(find.byKey(const Key('home_empty_state')), findsOneWidget);
+      expect(find.text(AppStrings.homeEmptyTitle), findsOneWidget);
       expect(find.byKey(const Key('home_review_reminder')), findsNothing);
       expect(find.byKey(const Key('home_notification_badge')), findsNothing);
-      final start = find.widgetWithText(AppButton, 'Không có từ cần ôn');
-      expect(tester.widget<AppButton>(start).isEnabled, isFalse);
+      expect(find.widgetWithText(AppButton, AppStrings.homeNoWordsToReview), findsNothing);
+      expect(find.byKey(const Key('home_daily_goal')), findsNothing);
 
-      await tester.scrollUntilVisible(find.text('Bạn chưa có học phần nào'), 200);
-      expect(find.text('Bạn chưa có học phần nào'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('home_empty_create')));
+      await tester.ensureVisible(find.byKey(const Key('home_empty_ai')));
+      await tester.tap(find.byKey(const Key('home_empty_ai')));
+      expect((created, ai), (1, 1));
     });
 
     testWidgets('Badge chuông = số chưa đọc; > 99 hiện "99+"; bằng 0 thì ẩn', (tester) async {

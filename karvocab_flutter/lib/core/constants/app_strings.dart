@@ -89,6 +89,11 @@ class AppStrings {
   static const String homeSeeAll = 'Xem tất cả';
   static String homeCourseWordCount(int words) => '$words từ';
   static const String homeNoCourses = 'Bạn chưa có học phần nào';
+  static const String homeEmptyTitle = 'Bắt đầu với học phần đầu tiên';
+  static const String homeEmptyMessage =
+      'Tạo học phần rồi thêm từ, hoặc để Axolotl gợi ý từ vựng bằng AI. Lịch ôn tập sẽ tự có sau buổi học đầu.';
+  static const String homeEmptyCreate = 'Tạo học phần';
+  static const String homeEmptyAi = 'Tạo từ vựng bằng AI';
 
   // Popup thông báo (Màn 04)
   static const String notificationBadgeOverflow = '99+';
