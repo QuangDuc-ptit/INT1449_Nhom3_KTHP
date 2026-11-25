@@ -39,10 +39,12 @@ void main() {
       expect(Validators.email('user gmail.com'), isNotNull);
     });
 
-    test('loginPassword: tối thiểu 6 ký tự', () {
+    test('loginPassword: khớp LoginDto (bắt buộc, tối đa 72 ký tự, không đòi mật khẩu mạnh)', () {
       expect(Validators.loginPassword(''), 'Vui lòng nhập mật khẩu');
-      expect(Validators.loginPassword('12345'), isNotNull);
-      expect(Validators.loginPassword('123456'), isNull);
+      expect(Validators.loginPassword(null), 'Vui lòng nhập mật khẩu');
+      expect(Validators.loginPassword('1'), isNull);
+      expect(Validators.loginPassword('a' * 72), isNull);
+      expect(Validators.loginPassword('a' * 73), 'Mật khẩu tối đa 72 ký tự');
     });
 
     test('strongPassword: ≥ 8 ký tự, có chữ hoa và chữ số', () {

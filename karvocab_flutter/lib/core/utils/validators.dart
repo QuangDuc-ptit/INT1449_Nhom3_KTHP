@@ -16,11 +16,12 @@ class Validators {
     return null;
   }
 
-  /// Mật khẩu khi đăng nhập: bắt buộc, tối thiểu 6 ký tự (Màn 02).
+  /// Mật khẩu khi đăng nhập (Màn 02), khớp `LoginDto` của backend: bắt buộc, tối đa 72 ký tự.
+  /// Không đòi mật khẩu mạnh: sai mật khẩu do máy chủ / AuthRepository báo.
   static String? loginPassword(String? value) {
     final v = value ?? '';
     if (v.isEmpty) return 'Vui lòng nhập mật khẩu';
-    if (v.length < 6) return 'Mật khẩu phải có ít nhất 6 ký tự';
+    if (v.length > 72) return 'Mật khẩu tối đa 72 ký tự';
     return null;
   }
 

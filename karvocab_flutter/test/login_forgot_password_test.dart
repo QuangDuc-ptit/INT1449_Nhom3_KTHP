@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:karvocab_flutter/core/constants/app_strings.dart';
+import 'package:karvocab_flutter/core/utils/validators.dart';
 import 'package:karvocab_flutter/core/widgets/app_button.dart';
 import 'package:karvocab_flutter/core/widgets/app_text_field.dart';
 import 'package:karvocab_flutter/data/repositories/auth_repository.dart';
@@ -62,6 +63,20 @@ void main() {
       expect(find.text(AppStrings.loginEmailNotRegistered), findsOneWidget);
       expect(field(tester, 'login_email').errorText, AppStrings.loginEmailNotRegistered);
       expect(field(tester, 'login_password').errorText, isNull);
+    });
+
+    testWidgets('Mật khẩu trống → lỗi Validators dưới ô Mật khẩu', (tester) async {
+      await login(tester, AuthRepository.demoEmail, '');
+
+      expect(field(tester, 'login_password').errorText, Validators.loginPassword(''));
+      expect(find.byType(LoginScreen), findsOneWidget);
+    });
+
+    testWidgets('Mật khẩu ngắn không bị chặn ở máy (khớp LoginDto): để AuthRepository báo sai mật khẩu',
+        (tester) async {
+      await login(tester, AuthRepository.demoEmail, '1');
+
+      expect(field(tester, 'login_password').errorText, AppStrings.loginWrongPassword);
     });
 
     testWidgets('Gõ lại vào ô bị lỗi thì lỗi biến mất', (tester) async {

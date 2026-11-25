@@ -42,7 +42,8 @@ Lỗi:
 
 | Chỗ trong FE | Hiện tại | Theo BE |
 | --- | --- | --- |
-| `login_screen.dart`, hộp thoại đổi mật khẩu ở `settings_screen.dart` | Mật khẩu ≥ 6 ký tự | **≥ 8 ký tự, có ít nhất 1 chữ hoa và 1 chữ số** |
+| `login_screen.dart` (`Validators.loginPassword`) | Mật khẩu ≥ 6 ký tự | Theo `LoginDto`: **bắt buộc, tối đa 72 ký tự**, không đòi mật khẩu mạnh (sai mật khẩu do BE trả `INVALID_CREDENTIALS`) |
+| Hộp thoại đổi mật khẩu ở `settings_screen.dart`, Màn 21 đặt lại mật khẩu (`Validators.strongPassword`) | Mật khẩu ≥ 6 ký tự | Theo `ChangePasswordDto` / `ResetPasswordDto`: **≥ 8 ký tự, có ít nhất 1 chữ hoa và 1 chữ số**, tối đa 72 ký tự |
 | `VocabularyModel.ipa` | Một trường `ipa` | `ipaUk`, `ipaUs` (có thể null). Hiển thị `ipaUk ?? ipaUs` |
 | `VocabularyModel` (audio) | Chưa có | `audioUkUrl`, `audioUsUrl` (có thể null khi đang sinh, worker điền sau vài giây) |
 | `VocabularyModel.definitionEn`, `exampleSentence` | Bắt buộc | Có thể null |
