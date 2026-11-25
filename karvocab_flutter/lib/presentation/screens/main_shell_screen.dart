@@ -5,6 +5,7 @@ import '../../data/local/local_store.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/collection_store.dart';
 import '../../data/repositories/dashboard_store.dart';
+import '../../data/repositories/track_sync.dart';
 import '../ai_vocab/ai_generate_screen.dart';
 import '../dashboard/review_today_screen.dart';
 import '../home/home_state_builder.dart';
@@ -25,7 +26,7 @@ import 'word_list_screen.dart';
 class MainShellScreen extends StatefulWidget {
   final int initialTabIndex;
 
-  const MainShellScreen({super.key, this.initialTabIndex = 1}); // Mặc định mở Thư viện
+  const MainShellScreen({super.key, this.initialTabIndex = 0}); // Mặc định mở Trang chủ
 
   @override
   State<MainShellScreen> createState() => _MainShellScreenState();
@@ -41,11 +42,17 @@ class _MainShellScreenState extends State<MainShellScreen> {
   /// Id thông báo đã đọc gần nhất, lưu trên máy để mở lại app vẫn nhớ.
   String? _readId;
 
+  /// Khoá lưu "đã đọc" riêng cho từng tài khoản.
+  String get _readKey {
+    final user = TrackSync.userKeyOf(AuthRepository.instance);
+    return user == null ? StorageKeys.notificationRead : StorageKeys.forUser(StorageKeys.notificationRead, user);
+  }
+
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialTabIndex;
-    _readId = LocalStore.app.read(StorageKeys.notificationRead);
+    _readId = LocalStore.app.read(_readKey);
     _refreshNotifications();
     DashboardStore.instance.addListener(_refreshNotifications);
     CollectionStore.instance.addListener(_refreshNotifications);
@@ -73,7 +80,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
   void _markRead(String id) {
     _readId = id;
-    LocalStore.app.write(StorageKeys.notificationRead, id);
+    LocalStore.app.write(_readKey, id);
     _refreshNotifications();
   }
 
@@ -136,14 +143,21 @@ class _MainShellScreenState extends State<MainShellScreen> {
       const ProfileScreen(), // Tab Hồ sơ cá nhân do FE1 phát triển (Màn 15)
     ];
 
-    return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: pages,
-      ),
-      bottomNavigationBar: AppBottomNavBar(
-        currentIndex: _currentIndex,
-        onTabSelected: _selectTab,
+    // Nút Back của Android: đang ở tab khác thì về Trang chủ, đang ở Trang chủ mới thoát app.
+    return PopScope(
+      canPop: _currentIndex == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _selectTab(0);
+      },
+      child: Scaffold(
+        body: IndexedStack(
+          index: _currentIndex,
+          children: pages,
+        ),
+        bottomNavigationBar: AppBottomNavBar(
+          currentIndex: _currentIndex,
+          onTabSelected: _selectTab,
+        ),
       ),
     );
   }

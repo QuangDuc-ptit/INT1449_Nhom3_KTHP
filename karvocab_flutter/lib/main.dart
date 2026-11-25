@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/theme/app_theme.dart';
 import 'data/local/local_store.dart';
@@ -39,6 +40,10 @@ class KarVocabApp extends StatelessWidget {
       title: 'KarVocab',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      // Giao diện tiếng Việt cho widget có sẵn của Flutter (vd lịch chọn ngày sinh).
+      locale: const Locale('vi'),
+      supportedLocales: const [Locale('vi'), Locale('en')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       home: const SplashScreen(),
     );
   }

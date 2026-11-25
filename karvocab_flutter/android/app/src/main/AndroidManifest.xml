@@ -1,10 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Game "Luyện phát âm": thu giọng để nhận dạng (speech_to_text). -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <!-- Gọi backend (đăng nhập, AI tạo từ). Bản debug đã có sẵn, bản release cần khai báo ở đây. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- usesCleartextTraffic: cho phép gọi backend qua http:// trong mạng LAN khi demo
+         (vd http://192.168.1.10:3100). Khi backend có HTTPS thì nên bỏ dòng này. -->
     <application
-        android:label="karvocab_flutter"
+        android:label="KarVocab"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"

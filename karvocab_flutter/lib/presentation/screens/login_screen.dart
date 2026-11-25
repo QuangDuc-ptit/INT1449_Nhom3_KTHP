@@ -13,6 +13,7 @@ import '../../core/widgets/app_text_field.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../forgot_password/forgot_password_flow.dart';
 import '../widgets/birth_date_picker.dart';
+import 'info_screen.dart';
 import 'main_shell_screen.dart';
 
 /// Màn 02 · Đăng nhập & Màn 03 · Đăng ký — một màn, đổi form bằng thanh tab.
@@ -115,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
     if (!mounted) return;
-    // Mở tab 0 · Trang chủ (MainShellScreen mặc định mở tab Thư viện).
+    // Mở tab 0 · Trang chủ.
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const MainShellScreen(initialTabIndex: 0)),
       (route) => false,
@@ -218,13 +219,28 @@ class _LoginScreenState extends State<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _buildForm(),
-                  const Padding(
-                    padding: EdgeInsets.only(top: AppDimensions.space32, bottom: AppDimensions.space24),
-                    child: Text(
-                      'Tiếp tục nghĩa là bạn đồng ý với\n'
-                      'Điều khoản sử dụng và Chính sách bảo mật.',
-                      style: AppTypography.caption,
-                      textAlign: TextAlign.center,
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppDimensions.space32, bottom: AppDimensions.space16),
+                    child: Column(
+                      children: [
+                        const Text('Tiếp tục nghĩa là bạn đồng ý với', style: AppTypography.caption),
+                        // Mở Điều khoản & Quyền riêng tư; vùng chạm ≥ 48dp.
+                        TextButton(
+                          key: const Key('login_terms'),
+                          onPressed: () => Navigator.of(context)
+                              .push(MaterialPageRoute<void>(builder: (_) => const InfoScreen.terms())),
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size(AppDimensions.minTouchTarget, AppDimensions.minTouchTarget),
+                          ),
+                          child: Text(
+                            'Điều khoản sử dụng và Chính sách bảo mật',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.navyBlue,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -359,6 +375,7 @@ class _LoginScreenState extends State<LoginScreen> {
         controller: _loginPasswordController,
         isPassword: true,
         textInputAction: TextInputAction.done,
+        onSubmitted: (_) => _handleLogin(),
         borderColor: AppColors.softBlueSurface,
         errorText: _loginPasswordError,
         onChanged: (_) {
@@ -444,6 +461,7 @@ class _LoginScreenState extends State<LoginScreen> {
         controller: _registerConfirmController,
         isPassword: true,
         textInputAction: TextInputAction.done,
+        onSubmitted: (_) => _handleRegister(),
         borderColor: AppColors.softBlueSurface,
         errorText: _registerConfirmError,
       ),

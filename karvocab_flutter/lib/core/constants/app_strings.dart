@@ -227,7 +227,7 @@ class AppStrings {
   static const String profileMore = 'Tùy chọn khác';
   static const String profileOpenSettings = 'Cài đặt tài khoản & Mục tiêu';
   static const String profileHelp = 'Hướng dẫn & Trợ giúp';
-  static const String profileHelpMessage = 'Hệ thống học từ vựng Spaced Repetition (SM-2) KarVocab.';
+  static const String termsTitle = 'Điều khoản & Quyền riêng tư';
 
   // Màn 03 · Đăng ký
   static const String registerFullName = 'Họ và tên';

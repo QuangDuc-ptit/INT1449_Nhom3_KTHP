@@ -11,6 +11,7 @@ import '../../core/widgets/app_toast.dart';
 import '../../data/models/user_profile_model.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/services/reminder_service.dart';
+import 'info_screen.dart';
 import 'login_screen.dart';
 
 /// Màn 23 · Cài đặt tài khoản (Account Settings Screen)
@@ -304,14 +305,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       size: AppDimensions.iconXSmall,
                       color: AppColors.textMuted,
                     ),
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('KarVocab tuân thủ tiêu chí Bảo mật theo Rubric INT1449.'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
+                    onTap: () => Navigator.of(context)
+                        .push(MaterialPageRoute<void>(builder: (_) => const InfoScreen.terms())),
                   ),
                 ],
               ),

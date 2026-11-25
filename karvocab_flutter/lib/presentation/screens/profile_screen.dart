@@ -14,6 +14,7 @@ import '../../data/repositories/collection_store.dart';
 import '../../data/repositories/dashboard_store.dart';
 import '../../core/widgets/streak_flame.dart';
 import '../widgets/birth_date_picker.dart';
+import 'info_screen.dart';
 import 'settings_screen.dart';
 import '../widgets/tab_header.dart';
 
@@ -248,7 +249,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             leading: const Icon(Icons.help_outline_rounded, color: AppColors.practicePrimary),
             title: const Text(AppStrings.profileHelp, style: AppTypography.quizOption),
             trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.practiceTextSecondary),
-            onTap: () => _showMessage(AppStrings.profileHelpMessage),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const InfoScreen.help())),
           ),
         ],
       ),

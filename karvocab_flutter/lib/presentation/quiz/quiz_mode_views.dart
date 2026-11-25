@@ -57,11 +57,14 @@ class _OptionsList extends StatelessWidget {
       children: [
         for (var i = 0; i < question.options.length; i++) ...[
           if (i > 0) const SizedBox(height: AppDimensions.quizOptionGap),
-          QuizOptionTile(
-            letter: letters[i],
-            text: question.options[i],
-            state: _stateOf(question.options[i], answered),
-            onTap: answered ? null : () => onSelect(question.options[i]),
+          _RevealWhenAnswered(
+            reveal: answered && question.options[i] == question.correctAnswer,
+            child: QuizOptionTile(
+              letter: letters[i],
+              text: question.options[i],
+              state: _stateOf(question.options[i], answered),
+              onTap: answered ? null : () => onSelect(question.options[i]),
+            ),
           ),
         ],
       ],
@@ -74,6 +77,38 @@ class _OptionsList extends StatelessWidget {
     if (option == record!.userAnswer) return OptionVisualState.wrong;
     return OptionVisualState.dimmed;
   }
+}
+
+/// Khi vừa trả lời, cuộn để đáp án đúng nằm trong vùng nhìn thấy: bảng phản hồi
+/// hiện ở đáy làm vùng câu hỏi thấp lại, màn thấp có thể che mất lựa chọn C / D.
+class _RevealWhenAnswered extends StatefulWidget {
+  final bool reveal;
+  final Widget child;
+
+  const _RevealWhenAnswered({required this.reveal, required this.child});
+
+  @override
+  State<_RevealWhenAnswered> createState() => _RevealWhenAnsweredState();
+}
+
+class _RevealWhenAnsweredState extends State<_RevealWhenAnswered> {
+  @override
+  void didUpdateWidget(_RevealWhenAnswered oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.reveal && !oldWidget.reveal) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Scrollable.ensureVisible(
+          context,
+          duration: AppDurations.fast,
+          alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+        );
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 /// Màn 08 — Luyện nghe chọn từ
