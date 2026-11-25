@@ -249,4 +249,9 @@ void main() {
       expect(reminders.isScheduled, isFalse);
     });
   });
+
+  test('Mật khẩu mạnh: tối đa 72 ký tự như BE', () {
+    expect(Validators.strongPassword('Abcdefg1${'a' * 64}'), isNull); // 72 ký tự
+    expect(Validators.strongPassword('Abcdefg1${'a' * 65}'), 'Mật khẩu tối đa 72 ký tự');
+  });
 }

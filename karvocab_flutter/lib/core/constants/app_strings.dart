@@ -387,13 +387,15 @@ class AppStrings {
   ];
   static const String aiWordCountTitle = 'Số lượng từ';
   static String aiWordCountValue(int count) => '$count từ';
-  static const String aiSimulateFailure = 'Mô phỏng lỗi AI (Demo)';
   static const String aiGenerateButton = 'Tạo từ vựng ngay';
   static const String aiLoadingTitle = 'Axolotl đang suy nghĩ...';
   static String aiLoadingSubtitle(int count) => 'Đang tạo $count từ vựng';
-  static String aiErrorTopicUnsupported(List<String> topics) =>
-      'Bản Demo chưa có dữ liệu cho chủ đề này (chưa nối AI thật). Hãy thử: ${topics.join(', ')}.';
-  static String aiFewerWords(int got, int asked) => 'Chỉ có $got/$asked từ đúng chủ đề này.';
+  static String aiFewerWords(int got, int asked) => 'AI trả về $got/$asked từ hợp lệ.';
+  static String aiTopicTooShort(int min) => 'Chủ đề cần ít nhất $min ký tự';
+  static const String aiNoServerTitle = 'Chưa kết nối máy chủ';
+  static const String aiNoServerMessage = 'Tạo từ bằng AI chạy trên máy chủ KarVocab. Bản app này chưa được kết nối máy chủ.';
+  static const String aiNeedsLoginTitle = 'Cần đăng nhập tài khoản';
+  static const String aiNeedsLoginMessage = 'Chế độ Dùng thử không dùng được AI. Đăng nhập tài khoản để tạo từ.';
   static const String aiErrorTitle = 'Tạo từ vựng thất bại';
   static const String aiErrorRateLimited = 'Bạn thao tác quá nhanh. Vui lòng chờ một lát rồi thử lại.';
   static String aiErrorRateLimitedSeconds(int s) =>

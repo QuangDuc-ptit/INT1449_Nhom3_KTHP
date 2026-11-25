@@ -29,6 +29,7 @@ class Validators {
     final v = value ?? '';
     if (v.isEmpty) return 'Vui lòng nhập mật khẩu';
     if (v.length < 8) return 'Mật khẩu phải có ít nhất 8 ký tự';
+    if (v.length > 72) return 'Mật khẩu tối đa 72 ký tự';
     if (!RegExp(r'[A-Z]').hasMatch(v)) return 'Mật khẩu cần ít nhất 1 chữ hoa';
     if (!RegExp(r'[0-9]').hasMatch(v)) return 'Mật khẩu cần ít nhất 1 chữ số';
     return null;

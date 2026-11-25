@@ -207,7 +207,7 @@ class AuthRepository extends ChangeNotifier {
 
   /// Màn 02: Chế độ Dùng thử — vào thẳng app với hồ sơ mẫu, không cần mạng.
   UserProfileModel enterDemoMode() {
-    _api?.setTokens(null); // Dùng thử không gọi BE: AI dùng kho từ mẫu.
+    _api?.setTokens(null); // Dùng thử không gọi BE nên không dùng được AI tạo từ.
     final account = _accounts[demoEmail]!;
     return _startSession(_profileFor(demoEmail, account), demo: true);
   }

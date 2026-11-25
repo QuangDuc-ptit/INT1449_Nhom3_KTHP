@@ -11,7 +11,6 @@ import '../../core/theme/app_typography.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_toast.dart';
 import '../../core/widgets/state_widgets.dart';
-import '../../data/mock/mock_ai_vocab_bank.dart';
 import '../../data/models/ai_vocab_draft.dart';
 import '../../data/repositories/ai_vocab_repository.dart';
 import 'ai_preview_screen.dart';
@@ -44,8 +43,6 @@ class AiGenerateScreen extends StatefulWidget {
         return AppStrings.aiErrorUnavailable;
       case 'UNAUTHORIZED':
         return AppStrings.aiErrorUnauthorized;
-      case 'TOPIC_UNSUPPORTED':
-        return AppStrings.aiErrorTopicUnsupported([for (final t in MockAiVocabBank.topics) t.name]);
       default:
         return e.message ?? AppStrings.aiErrorDefault;
     }
@@ -56,16 +53,20 @@ class AiGenerateScreen extends StatefulWidget {
 }
 
 class _AiGenerateScreenState extends State<AiGenerateScreen> with SingleTickerProviderStateMixin {
-  static const int _maxTopicLength = 100;
+  static const int _minTopicLength = AiVocabRepository.minTopicLength;
+  static const int _maxTopicLength = AiVocabRepository.maxTopicLength;
 
   /// Bộ đếm ký tự chỉ hiện khi sắp chạm giới hạn, để ô chủ đề gọn một dòng.
   static const int _topicCounterFrom = 80;
-  static const int _minWords = 3;
-  static const int _maxWords = 20;
+  static const int _minWords = AiVocabRepository.minWordCount;
+  static const int _maxWords = AiVocabRepository.maxWordCount;
 
   final TextEditingController _topicController = TextEditingController();
   late final AnimationController _shimmer;
-  late final AiVocabRepository _repo;
+
+  /// `null` khi chưa gọi được BE: màn hiện lý do và khoá nút tạo.
+  late final AiVocabRepository? _repo;
+  late final AiConnection _connection;
 
   int _count = 5;
   _GenState _state = _GenState.idle;
@@ -75,6 +76,7 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> with SingleTickerPr
   void initState() {
     super.initState();
     _repo = widget.repository ?? AiVocabRepository.forCurrentSession();
+    _connection = widget.repository != null ? AiConnection.ready : AiVocabRepository.connection;
     _shimmer = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100));
   }
 
@@ -85,30 +87,34 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> with SingleTickerPr
     super.dispose();
   }
 
-  bool get _canGenerate => _topicController.text.trim().isNotEmpty;
+  String get _topic => _topicController.text.trim();
+
+  /// Chủ đề 1–2 ký tự: BE trả VALIDATION_ERROR, nên báo ngay dưới ô nhập.
+  bool get _topicTooShort => _topic.isNotEmpty && _topic.length < _minTopicLength;
+
+  bool get _canGenerate => _repo != null && _topic.length >= _minTopicLength;
 
   Future<void> _generate() async {
-    if (!_canGenerate) return;
+    final repo = _repo;
+    if (repo == null || !_canGenerate) return;
     FocusScope.of(context).unfocus();
     setState(() => _state = _GenState.loading);
     _shimmer.repeat(reverse: true);
 
     try {
-      final List<AiVocabDraft> drafts = await _repo
-          .generate(topic: _topicController.text.trim(), wordCount: _count)
-          .timeout(_repo is MockAiVocabRepository ? const Duration(seconds: 15) : const Duration(seconds: 25));
+      // ApiClient tự ngắt sau 20 giây; mốc này chỉ chặn trường hợp treo ngoài dự kiến.
+      final List<AiVocabDraft> drafts = await repo
+          .generate(topic: _topic, wordCount: _count)
+          .timeout(const Duration(seconds: 25));
       if (!mounted) return;
       _shimmer.stop();
       setState(() => _state = _GenState.idle);
-      // Không chèn từ chủ đề khác cho đủ số lượng: báo rõ khi ít hơn số đã chọn.
+      // BE bỏ từ trùng / sai định dạng nên có thể trả ít hơn số đã chọn: báo rõ.
       if (drafts.length < _count) AppToast.info(context, AppStrings.aiFewerWords(drafts.length, _count));
       final saved = await Navigator.of(context).push<bool>(
         MaterialPageRoute<bool>(
-          builder: (_) => AiPreviewScreen(
-            drafts: drafts,
-            topic: _topicController.text.trim(),
-            initialCollectionId: widget.initialCollectionId,
-          ),
+          builder: (_) =>
+              AiPreviewScreen(drafts: drafts, topic: _topic, initialCollectionId: widget.initialCollectionId),
         ),
       );
       // Lưu xong thì đóng luôn Màn 13, quay về màn đã mở nó (Trang chủ hoặc Màn 06).
@@ -215,6 +221,10 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> with SingleTickerPr
           child: ListView(
             padding: const EdgeInsets.all(AppDimensions.screenMargin),
             children: [
+              if (_connection != AiConnection.ready) ...[
+                _ConnectionNotice(connection: _connection),
+                const SizedBox(height: AppDimensions.space16),
+              ],
               Text(AppStrings.aiTopicLabel, style: AppTypography.bodyBold),
               const SizedBox(height: AppDimensions.space8),
               Container(
@@ -234,8 +244,8 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> with SingleTickerPr
                   onChanged: (_) => setState(() {}),
                   buildCounter: (context, {required currentLength, required isFocused, maxLength}) =>
                       currentLength >= _topicCounterFrom
-                          ? Text('$currentLength/$maxLength', style: AppTypography.caption)
-                          : null,
+                      ? Text('$currentLength/$maxLength', style: AppTypography.caption)
+                      : null,
                   style: AppTypography.bodyLarge,
                   decoration: InputDecoration(
                     hintText: AppStrings.aiTopicHint,
@@ -244,6 +254,14 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> with SingleTickerPr
                   ),
                 ),
               ),
+              if (_topicTooShort) ...[
+                const SizedBox(height: AppDimensions.space4),
+                Text(
+                  AppStrings.aiTopicTooShort(_minTopicLength),
+                  key: const Key('ai_topic_too_short'),
+                  style: AppTypography.caption.copyWith(color: AppColors.errorRed),
+                ),
+              ],
               const SizedBox(height: AppDimensions.space8),
               Wrap(
                 spacing: AppDimensions.space8,
@@ -300,16 +318,6 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> with SingleTickerPr
                   Text('$_maxWords', style: AppTypography.caption),
                 ],
               ),
-              // Công cụ kiểm thử Error State: chỉ hiện ở bản debug, ẩn ở bản phát hành.
-              if (kDebugMode && _repo is MockAiVocabRepository) ...[
-                const SizedBox(height: AppDimensions.space16),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(AppStrings.aiSimulateFailure, style: AppTypography.bodyMedium),
-                  value: MockAiVocabRepository.simulateFailure,
-                  onChanged: (v) => setState(() => MockAiVocabRepository.simulateFailure = v),
-                ),
-              ],
             ],
           ),
         ),
@@ -367,6 +375,50 @@ class _Pill extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Lý do chưa tạo được từ bằng AI (không có máy chủ / chưa đăng nhập tài khoản).
+class _ConnectionNotice extends StatelessWidget {
+  final AiConnection connection;
+
+  const _ConnectionNotice({required this.connection});
+
+  @override
+  Widget build(BuildContext context) {
+    final needsLogin = connection == AiConnection.needsLogin;
+    return Container(
+      key: const Key('ai_connection_notice'),
+      padding: const EdgeInsets.all(AppDimensions.space16),
+      decoration: BoxDecoration(
+        color: AppColors.secondaryBackground,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.cloud_off_rounded, color: AppColors.primaryBlue, size: AppDimensions.iconMedium),
+          const SizedBox(width: AppDimensions.space12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  needsLogin ? AppStrings.aiNeedsLoginTitle : AppStrings.aiNoServerTitle,
+                  style: AppTypography.bodyBold,
+                ),
+                const SizedBox(height: AppDimensions.space4),
+                Text(
+                  needsLogin ? AppStrings.aiNeedsLoginMessage : AppStrings.aiNoServerMessage,
+                  style: AppTypography.bodyMedium,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
