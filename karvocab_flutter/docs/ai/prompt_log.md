@@ -385,3 +385,15 @@
 - **Huy hiệu ở Hồ sơ (đặc tả §4.6):** `Chuỗi 7 ngày`, `100 từ đầu tiên`, `Nhà thám hiểm`; chưa mở thì xám kèm điều kiện và tiến độ.
 - **Tài liệu:** README, `prompt_log` và `CLAUDE.md` mô tả đúng kiến trúc (`ChangeNotifier`, không BLoC) và cách lưu dữ liệu.
 - Thêm Empty State cho Luyện tập khi chưa có từ, chào bằng tên gọi. Thêm `test/persistence_test.dart` (7 test) và 2 test ở `high_priority_ux_test.dart`. `flutter test` 204/204 pass.
+
+#### 12. Thông báo chỉ nhắc ôn tập (Prompt: "tôi nghĩ đến việc thông báo khi từ cần ôn tập thôi" → "làm cái 1"):
+- Chuông ở Trang chủ trước đây chỉ là giao diện, không có nguồn thông báo. Nay chỉ còn một loại: "Đến giờ ôn tập — Có N từ đến hạn ôn", lấy từ `DashboardStore` (`ReviewNotificationBuilder`).
+- Cùng luật với job nhắc ôn của backend (`review-reminder.job.ts`): chỉ đếm từ đã học đến hạn, từ mới không tính, không có từ đến hạn thì không báo, mỗi ngày một thông báo. Bấm vào thì đánh dấu đã đọc (lưu trên máy) và mở Màn 16 Ôn tập hôm nay; ôn xong hết thì thông báo tự mất.
+- Chưa làm thông báo hệ thống điện thoại (`flutter_local_notifications`). Thêm `test/review_notification_test.dart` (5 test), `flutter test` 209/209 pass.
+
+#### 13. Rà logic frontend theo hợp đồng backend (Prompt: "bọn tôi chỉ làm frontend dựa vào backend thôi nên là ko bịa thêm gì nhé hãy check xem logic frontend ổn chưa cả giao diện"):
+- **Bỏ kho từ AI dựng sẵn** (`MockAiVocabBank`, `MockAiVocabRepository`): Màn 13 chỉ tạo từ qua `POST /ai/generate-vocab`. Không nối máy chủ hoặc đang Dùng thử thì hiện lý do ("Chưa kết nối máy chủ" / "Cần đăng nhập tài khoản") và khoá nút tạo.
+- **Khớp `GenerateVocabDto`:** chủ đề 3–100 ký tự (báo lỗi ngay khi nhập 1–2 ký tự), số từ 3–20. BE có thể trả ít hơn số đã chọn (bỏ từ trùng / sai định dạng) nên app báo "AI trả về N/M từ hợp lệ".
+- **Mật khẩu** đăng ký / đặt lại: thêm giới hạn tối đa 72 ký tự như BE.
+- Đã kiểm tra: mã lỗi AI (RATE_LIMITED, AI_TIMEOUT, AI_BAD_RESPONSE, AI_UNAVAILABLE), thời gian chờ (BE 15 giây < app 20 giây), mục tiêu ngày 5–30 khớp BE và đồng bộ Cài đặt ↔ Trang chủ, các giới hạn độ dài khác ở app chặt hơn hoặc bằng BE.
+- Viết lại `test/ai_generate_vocab_test.dart` theo hợp đồng BE (5 test), thêm test mật khẩu 72 ký tự.

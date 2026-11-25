@@ -12,7 +12,7 @@ Dự án được xây dựng theo chuẩn **Rubric INT1449** với:
 * **Kiến trúc phân tầng `core` → `data` → `presentation`:** quản lý trạng thái bằng `ChangeNotifier` + `ListenableBuilder` của Flutter (không dùng thư viện BLoC). Các store/repository là singleton có thể tiêm vào màn hình để kiểm thử.
 * **Trải nghiệm tiếp cận người dùng (Accessibility):** 100% nút bấm và ô nhập liệu đạt kích thước cảm ứng tối thiểu $\ge 48$dp.
 * **Chạy ngoại tuyến, lưu dữ liệu trên máy:** tài khoản, học phần, từ vựng, tiến độ SM-2 và chuỗi ngày được lưu bằng `shared_preferences`, mở lại app vẫn còn. App bắt đầu trống, không có dữ liệu mẫu.
-* **Nối backend (tuỳ chọn):** chạy kèm `--dart-define=API_BASE_URL=http://localhost:3100/api/v1` để đăng nhập và tạo từ bằng AI qua backend (`backend/`).
+* **Nối backend:** chạy kèm `--dart-define=API_BASE_URL=http://localhost:3100/api/v1` để đăng nhập và tạo từ bằng AI qua backend (`backend/`). Tạo từ bằng AI chỉ chạy qua backend; app không có kho từ dựng sẵn.
 * **Quy trình kiểm thử tự động:** Đạt chuẩn `flutter test` $\ge 15$ tests và `flutter analyze` 0 lỗi, 0 cảnh báo.
 
 ---
