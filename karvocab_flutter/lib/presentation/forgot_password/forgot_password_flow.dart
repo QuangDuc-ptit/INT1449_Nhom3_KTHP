@@ -146,8 +146,17 @@ class _ForgotPasswordFlowState extends State<ForgotPasswordFlow> {
       await _auth.resetPassword(_state.email.trim(), _state.newPassword);
     } on AuthException catch (e) {
       if (!mounted) return;
-      _update((s) => s.copyWith(isSubmitting: false));
-      AppToast.error(context, e.message);
+      switch (e.field) {
+        case AuthErrorField.otp:
+          // Nối backend: mã chỉ được kiểm tra lúc đặt lại → lùi về bước OTP để nhập lại.
+          _update((s) => s.copyWith(isSubmitting: false, step: ForgotPasswordStep.otp, otpError: e.message));
+        case AuthErrorField.password:
+          _update((s) => s.copyWith(isSubmitting: false, newPasswordError: e.message));
+        case AuthErrorField.email:
+        case null:
+          _update((s) => s.copyWith(isSubmitting: false));
+          AppToast.error(context, e.message);
+      }
       return;
     }
     if (!mounted) return;

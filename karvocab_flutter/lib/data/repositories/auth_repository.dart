@@ -6,12 +6,13 @@ import 'package:flutter/foundation.dart';
 
 import '../../core/constants/app_strings.dart';
 import '../../core/utils/member_id.dart';
+import '../../core/utils/validators.dart';
 import '../local/local_store.dart';
 import '../models/user_profile_model.dart';
 import '../remote/api_client.dart';
 
 /// Ô nhập mà lỗi xác thực gắn vào (để hiển thị lỗi ngay dưới ô đó).
-enum AuthErrorField { email, password }
+enum AuthErrorField { email, password, otp }
 
 /// Lỗi nghiệp vụ xác thực, [message] hiển thị trực tiếp cho người dùng.
 /// [field] = ô nhập gây lỗi; `null` nếu lỗi không thuộc ô nào.
@@ -101,7 +102,9 @@ class _OtpTicket {
 /// và đăng xuất gọi backend (`/auth/login`, `/auth/register`, `/auth/social-login`, `/auth/logout`).
 /// Token chỉ giữ trong bộ nhớ. Không có [api]: chạy offline, tài khoản và phiên đăng nhập lưu
 /// trên máy qua [storage] (mở lại app vẫn còn đăng nhập).
-/// Chế độ Dùng thử luôn chạy offline. Các phần khác (quên mật khẩu, đổi mật khẩu) vẫn offline.
+/// Quên mật khẩu (`/auth/forgot-password`, `/auth/reset-password`) và đổi mật khẩu
+/// (`PATCH /users/password`) cũng gọi backend khi có [api].
+/// Chế độ Dùng thử luôn chạy offline.
 class AuthRepository extends ChangeNotifier {
   AuthRepository({
     this.latency = const Duration(milliseconds: 600),
@@ -133,6 +136,10 @@ class AuthRepository extends ChangeNotifier {
 
   final Map<String, _Account> _accounts = {};
   final Map<String, _OtpTicket> _otpTickets = {};
+
+  /// Khi nối backend: mã OTP người dùng nhập ở bước 2, giữ lại để gửi kèm
+  /// `/auth/reset-password` (BE không có API kiểm tra OTP riêng).
+  final Map<String, String> _pendingOtps = {};
 
   UserProfileModel? _currentUser;
   bool _isDemo = false;
@@ -284,13 +291,28 @@ class AuthRepository extends ChangeNotifier {
   }
 
   /// Màn 23: đổi mật khẩu (kiểm tra mật khẩu hiện tại).
+  /// Nối backend: `PATCH /users/password` trả cặp token mới, lưu đè token cũ.
   Future<void> changePassword(String currentPassword, String newPassword) async {
-    await Future<void>.delayed(latency);
     final user = _currentUser;
     if (user == null) throw const AuthException('Phiên đăng nhập đã hết hạn');
     if (_isDemo) {
       throw const AuthException('Không thể đổi mật khẩu ở Chế độ Dùng thử');
     }
+    final api = _api;
+    if (api != null) {
+      final data = await _callApi(() => api.patch('/users/password', body: {
+            'currentPassword': currentPassword,
+            'newPassword': newPassword,
+          }));
+      if (data is! Map<String, dynamic> || data['accessToken'] is! String || data['refreshToken'] is! String) {
+        throw const AuthException(AppStrings.authServerError);
+      }
+      api.saveTokensFrom(data);
+      _accounts[_normalize(user.email)]?.setPassword(newPassword);
+      _saveAccounts();
+      return;
+    }
+    await Future<void>.delayed(latency);
     final account = _accounts[_normalize(user.email)];
     if (account == null || !account.checkPassword(currentPassword)) {
       throw const AuthException('Mật khẩu hiện tại không đúng');
@@ -307,8 +329,15 @@ class AuthRepository extends ChangeNotifier {
   // ---------------------------------------------------------------------------
 
   /// Gửi mã OTP. Ở chế độ offline mã được trả về để hiển thị cho người dùng
-  /// (thay cho email); khi nối backend, hàm chỉ trả về sau khi server gửi mail.
+  /// (thay cho email). Khi nối backend, mã gửi qua email nên hàm trả về chuỗi rỗng;
+  /// BE luôn trả thành công dù email có tồn tại hay không.
   Future<String> requestPasswordReset(String email) async {
+    final api = _api;
+    if (api != null) {
+      await _callApi(() => api.post('/auth/forgot-password', auth: false, body: {'email': email.trim()}));
+      _pendingOtps.remove(_normalize(email));
+      return '';
+    }
     await Future<void>.delayed(latency);
     final key = _normalize(email);
     if (!_accounts.containsKey(key)) {
@@ -319,7 +348,15 @@ class AuthRepository extends ChangeNotifier {
     return code;
   }
 
+  /// Kiểm tra mã OTP. Khi nối backend chỉ kiểm tra định dạng rồi giữ mã lại:
+  /// BE kiểm tra mã lúc [resetPassword]; mã sai trả lỗi gắn [AuthErrorField.otp].
   Future<void> verifyOtp(String email, String code) async {
+    if (_api != null) {
+      final error = Validators.otp(code);
+      if (error != null) throw AuthException(error, field: AuthErrorField.otp);
+      _pendingOtps[_normalize(email)] = code.trim();
+      return;
+    }
     await Future<void>.delayed(latency);
     final ticket = _otpTickets[_normalize(email)];
     if (ticket == null) throw const AuthException('Vui lòng yêu cầu gửi mã OTP trước');
@@ -331,6 +368,21 @@ class AuthRepository extends ChangeNotifier {
   }
 
   Future<void> resetPassword(String email, String newPassword) async {
+    final api = _api;
+    if (api != null) {
+      final key = _normalize(email);
+      final otp = _pendingOtps[key];
+      if (otp == null) throw const AuthException('Vui lòng yêu cầu gửi mã OTP trước', field: AuthErrorField.otp);
+      await _callApi(() => api.post('/auth/reset-password', auth: false, body: {
+            'email': email.trim(),
+            'otp': otp,
+            'newPassword': newPassword,
+          }));
+      _pendingOtps.remove(key);
+      _accounts[key]?.setPassword(newPassword);
+      _saveAccounts();
+      return;
+    }
     await Future<void>.delayed(latency);
     final key = _normalize(email);
     final ticket = _otpTickets[key];
@@ -349,6 +401,7 @@ class AuthRepository extends ChangeNotifier {
     _accounts.clear();
     _seedAccounts();
     _otpTickets.clear();
+    _pendingOtps.clear();
     _currentUser = null;
     _isDemo = false;
     notifyListeners();
@@ -388,6 +441,38 @@ class AuthRepository extends ChangeNotifier {
     if (password != null) account.setPassword(password);
     if (birthDate != null) _assignBirthDate(account, birthDate);
     return _startSession(_profileFor(key, account));
+  }
+
+  /// Gọi API không tạo phiên (quên / đặt lại / đổi mật khẩu); lỗi server thành
+  /// [AuthException] giữ nguyên thông báo server trả về.
+  static Future<dynamic> _callApi(Future<dynamic> Function() call) async {
+    try {
+      return await call();
+    } on ApiException catch (e) {
+      throw _serverErrorFrom(e);
+    }
+  }
+
+  /// Ô nhập ứng với tên trường trong DTO của backend.
+  static const Map<String, AuthErrorField> _dtoFields = {
+    'otp': AuthErrorField.otp,
+    'email': AuthErrorField.email,
+    'newPassword': AuthErrorField.password,
+    'currentPassword': AuthErrorField.password,
+  };
+
+  static AuthException _serverErrorFrom(ApiException e) {
+    switch (e.errorCode) {
+      case 'OTP_INVALID':
+        return AuthException(e.message, field: AuthErrorField.otp);
+      case 'PASSWORD_INCORRECT':
+        return AuthException(e.message, field: AuthErrorField.password);
+    }
+    for (final entry in _dtoFields.entries) {
+      final message = e.fieldErrors[entry.key];
+      if (message != null) return AuthException(message, field: entry.value);
+    }
+    return AuthException(e.message);
   }
 
   static AuthException _authErrorFrom(ApiException e) {
