@@ -71,4 +71,8 @@ class StorageKeys {
   static const String dashboard = 'dashboard.state';
   static const String quizSettings = 'quiz.settings';
   static const String notificationRead = 'notifications.read';
+
+  /// Khoá riêng của một tài khoản, vd `library.collections@an@gmail.com`.
+  /// Dữ liệu học (học phần, tiến độ, thông báo đã đọc) tách theo tài khoản.
+  static String forUser(String base, String userKey) => '$base@$userKey';
 }

@@ -20,14 +20,23 @@ class CollectionStore extends ChangeNotifier {
     List<VocabularyModel>? vocabularies,
     this.latency = const Duration(milliseconds: 400),
     LocalStore? storage,
+    bool perUser = false,
   })  : _collections = collections ?? [],
         _vocabularies = vocabularies ?? [],
-        _storage = storage {
-    if (storage != null && collections == null && vocabularies == null) _restore(storage);
+        _storage = storage,
+        _perUser = perUser {
+    if (!perUser && storage != null && collections == null && vocabularies == null) _restore(storage);
   }
 
-  /// Instance dùng chung toàn app, lưu vào [LocalStore.app].
-  static final CollectionStore instance = CollectionStore(storage: LocalStore.app);
+  /// Instance dùng chung toàn app, lưu vào [LocalStore.app] theo từng tài khoản:
+  /// trống cho tới khi [switchUser] được gọi lúc đăng nhập (xem `TrackSync`).
+  static final CollectionStore instance = CollectionStore(storage: LocalStore.app, perUser: true);
+
+  /// `true`: dữ liệu tách theo tài khoản, khoá lưu có hậu tố [_userKey].
+  final bool _perUser;
+
+  /// Tài khoản đang mở dữ liệu (email chuẩn hoá), `null` khi chưa đăng nhập.
+  String? _userKey;
 
   final LocalStore? _storage;
 
@@ -160,7 +169,7 @@ class CollectionStore extends ChangeNotifier {
     final collection = CollectionModel(
       id: _newId('col'),
       title: cleanTitle,
-      description: description.trim().isEmpty ? 'Bộ sưu tập từ vựng cá nhân' : description.trim(),
+      description: description.trim(),
       category: category,
       iconName: iconForCategory(category),
       totalWords: 0,
@@ -186,7 +195,7 @@ class CollectionStore extends ChangeNotifier {
     }
     final updated = _collections[index].copyWith(
       title: cleanTitle,
-      description: description.trim().isEmpty ? 'Bộ sưu tập từ vựng cá nhân' : description.trim(),
+      description: description.trim(),
       category: category,
       iconName: iconForCategory(category),
     );
@@ -278,15 +287,20 @@ class CollectionStore extends ChangeNotifier {
     final index = _vocabularies.indexWhere((w) => w.id == id);
     if (index == -1) return null;
     final removed = _vocabularies.removeAt(index);
+    _deletedIndex[removed.id] = index;
     _syncCount(removed.collectionId);
     notifyListeners();
     return removed;
   }
 
-  /// Khôi phục một từ vừa xoá (nút "Hoàn tác" trên Toast).
+  /// Vị trí cũ của các từ vừa xoá, để "Hoàn tác" trả từ về đúng chỗ trong danh sách.
+  final Map<String, int> _deletedIndex = {};
+
+  /// Khôi phục một từ vừa xoá (nút "Hoàn tác" trên Toast) về vị trí cũ.
   void restoreWord(VocabularyModel word) {
     if (findWord(word.id) != null) return;
-    _vocabularies.insert(0, word);
+    final index = _deletedIndex.remove(word.id) ?? 0;
+    _vocabularies.insert(index.clamp(0, _vocabularies.length), word);
     _syncCount(word.collectionId);
     notifyListeners();
   }
@@ -301,20 +315,47 @@ class CollectionStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Đổi sang dữ liệu của tài khoản [userKey] (đăng nhập) hoặc về trống khi `null` (đăng xuất).
+  /// Mỗi tài khoản có học phần và từ vựng riêng, không thấy dữ liệu của nhau.
+  void switchUser(String? userKey) {
+    if (!_perUser || userKey == _userKey) return;
+    _userKey = userKey;
+    _collections.clear();
+    _vocabularies.clear();
+    _deletedIndex.clear();
+    _status = LoadStatus.initial;
+    _errorMessage = null;
+    final storage = _storage;
+    if (storage != null && userKey != null) _restore(storage);
+    super.notifyListeners();
+  }
+
+  /// Khoá lưu trữ; `null` khi không được lưu (store theo tài khoản mà chưa đăng nhập).
+  String? _key(String base) {
+    if (!_perUser) return base;
+    final user = _userKey;
+    return user == null ? null : StorageKeys.forUser(base, user);
+  }
+
   /// Mỗi lần dữ liệu đổi (đi qua [notifyListeners]) thì lưu lại trên máy.
   @override
   void notifyListeners() {
     final storage = _storage;
-    if (storage != null) {
-      storage.writeJson(StorageKeys.collections, [for (final c in _collections) c.toJson()]);
-      storage.writeJson(StorageKeys.vocabularies, [for (final w in _vocabularies) w.toJson()]);
+    final colKey = _key(StorageKeys.collections);
+    final wordKey = _key(StorageKeys.vocabularies);
+    if (storage != null && colKey != null && wordKey != null) {
+      storage.writeJson(colKey, [for (final c in _collections) c.toJson()]);
+      storage.writeJson(wordKey, [for (final w in _vocabularies) w.toJson()]);
     }
     super.notifyListeners();
   }
 
   void _restore(LocalStore storage) {
-    final cols = storage.readJson(StorageKeys.collections);
-    final words = storage.readJson(StorageKeys.vocabularies);
+    final colKey = _key(StorageKeys.collections);
+    final wordKey = _key(StorageKeys.vocabularies);
+    if (colKey == null || wordKey == null) return;
+    final cols = storage.readJson(colKey);
+    final words = storage.readJson(wordKey);
     try {
       if (cols is List) _collections.addAll([for (final c in cols) CollectionModel.fromJson(c as Map<String, dynamic>)]);
       if (words is List) {

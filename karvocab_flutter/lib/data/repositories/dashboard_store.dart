@@ -95,24 +95,30 @@ DateTime _previousDay(DateTime day) => DateTime(day.year, day.month, day.day - 1
 /// Bắt đầu trống (chưa học từ nào, chuỗi 0 ngày). Có [LocalStore] thì tiến độ, chuỗi ngày và
 /// lịch sử từng ngày được lưu trên máy.
 class DashboardStore extends ChangeNotifier {
+  /// Instance của app: dữ liệu tách theo tài khoản, trống cho tới khi [switchUser] được gọi.
   DashboardStore._()
       : _clock = DateTime.now,
         _collections = null,
-        _storage = LocalStore.app {
-    _restore();
-  }
+        _storage = LocalStore.app,
+        _perUser = true;
 
   static final DashboardStore instance = DashboardStore._();
 
   /// Dùng trong unit test để có store sạch. [clock] cho phép giả lập sang ngày mới;
   /// [collections] là nguồn từ vựng cho hàng đợi ôn tập (mặc định [CollectionStore.instance]).
   @visibleForTesting
-  DashboardStore.forTest({DateTime Function()? clock, this._collections, this._storage})
+  DashboardStore.forTest({DateTime Function()? clock, this._collections, this._storage, this._perUser = false})
       : _clock = clock ?? DateTime.now {
     _restore();
   }
 
   final DateTime Function() _clock;
+
+  /// `true`: lưu theo từng tài khoản (khoá có hậu tố [_userKey]).
+  final bool _perUser;
+
+  /// Tài khoản đang mở dữ liệu (email chuẩn hoá), `null` khi chưa đăng nhập.
+  String? _userKey;
   final CollectionStore? _collections;
   final LocalStore? _storage;
 
@@ -127,7 +133,9 @@ class DashboardStore extends ChangeNotifier {
   /// Ngày gần nhất có học (BE `lastStreakDate`), null nếu chưa học lần nào.
   DateTime? _lastStreakDate;
 
-  int _dailyGoal = 10;
+  static const int defaultDailyGoal = 10;
+
+  int _dailyGoal = defaultDailyGoal;
 
   /// Ngày mà [_learnedTodayIds] đang tính; sang ngày khác thì đếm lại từ 0.
   DateTime? _learnedDay;
@@ -166,6 +174,10 @@ class DashboardStore extends ChangeNotifier {
   /// Trang chủ ("Từ chưa học") và Hồ sơ ("Từ đã học") cùng dùng luật này để số liệu khớp nhau.
   bool isLearned(String vocabId) => (_progress[vocabId]?.repetitionLevel ?? 0) > 0;
 
+  /// Từ đã thuộc: lên level cao nhất của SM-2 (BE `mastered`). Luyện tập lọc
+  /// "Đã thuộc / Chưa thuộc" và Thư viện đếm % thuộc theo luật này.
+  bool isMastered(String vocabId) => _progress[vocabId]?.mastered ?? false;
+
   /// Các từ đến hạn ôn: từ mới (chưa có tiến độ) và từ có `next_review_at <= NOW`, kể cả
   /// từ đã mastered (BE vẫn cho ôn lại sau 35 ngày). Sắp theo hạn ôn sớm nhất trước.
   List<VocabularyModel> get dueVocabularies {
@@ -184,6 +196,11 @@ class DashboardStore extends ChangeNotifier {
 
   /// Xoá toàn bộ tiến độ (đăng xuất / kiểm thử).
   void clear() {
+    _reset();
+    notifyListeners();
+  }
+
+  void _reset() {
     _streak = 0;
     _highestStreak = 0;
     _lastStreakDate = null;
@@ -191,27 +208,47 @@ class DashboardStore extends ChangeNotifier {
     _learnedTodayIds.clear();
     _progress.clear();
     _history.clear();
-    notifyListeners();
+  }
+
+  /// Đổi sang tiến độ của tài khoản [userKey] (đăng nhập) hoặc về trống khi `null` (đăng xuất).
+  void switchUser(String? userKey) {
+    if (!_perUser || userKey == _userKey) return;
+    _userKey = userKey;
+    _reset();
+    _dailyGoal = defaultDailyGoal;
+    if (userKey != null) _restore();
+    super.notifyListeners();
+  }
+
+  /// Khoá lưu trữ; `null` khi không được lưu (store theo tài khoản mà chưa đăng nhập).
+  String? get _storageKey {
+    if (!_perUser) return StorageKeys.dashboard;
+    final user = _userKey;
+    return user == null ? null : StorageKeys.forUser(StorageKeys.dashboard, user);
   }
 
   /// Mỗi lần dữ liệu đổi thì lưu lại trên máy.
   @override
   void notifyListeners() {
-    _storage?.writeJson(StorageKeys.dashboard, {
-      'streak': _streak,
-      'highestStreak': _highestStreak,
-      'lastStreakDate': _lastStreakDate?.toIso8601String(),
-      'dailyGoal': _dailyGoal,
-      'learnedDay': _learnedDay?.toIso8601String(),
-      'learnedToday': _learnedTodayIds.toList(),
-      'progress': {for (final e in _progress.entries) e.key: e.value.toJson()},
-      'history': _history,
-    });
+    final key = _storageKey;
+    if (key != null) {
+      _storage?.writeJson(key, {
+        'streak': _streak,
+        'highestStreak': _highestStreak,
+        'lastStreakDate': _lastStreakDate?.toIso8601String(),
+        'dailyGoal': _dailyGoal,
+        'learnedDay': _learnedDay?.toIso8601String(),
+        'learnedToday': _learnedTodayIds.toList(),
+        'progress': {for (final e in _progress.entries) e.key: e.value.toJson()},
+        'history': _history,
+      });
+    }
     super.notifyListeners();
   }
 
   void _restore() {
-    final data = _storage?.readJson(StorageKeys.dashboard);
+    final key = _storageKey;
+    final data = key == null ? null : _storage?.readJson(key);
     if (data is! Map<String, dynamic>) return;
     try {
       DateTime? date(Object? v) => v is String ? DateTime.parse(v) : null;
@@ -233,7 +270,7 @@ class DashboardStore extends ChangeNotifier {
       }
     } on Object {
       // Dữ liệu lưu bị hỏng: bắt đầu lại từ đầu.
-      clear();
+      _reset();
     }
   }
 

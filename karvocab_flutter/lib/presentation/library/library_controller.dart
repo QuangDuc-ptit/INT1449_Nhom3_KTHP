@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show ChangeNotifier;
 
 import '../../core/utils/debouncer.dart';
 import '../../data/repositories/collection_store.dart';
+import '../../data/repositories/dashboard_store.dart';
 import '../widgets/collection_form_sheet.dart';
 import 'library_ui_state.dart';
 
@@ -13,14 +14,20 @@ import 'library_ui_state.dart';
 class LibraryController extends ChangeNotifier {
   LibraryController({
     required this._store,
+    DashboardStore? dashboard,
     String? initialCategoryId,
     Duration debounce = const Duration(milliseconds: 300),
-  })  : _selectedCategoryId = initialCategoryId,
+  })  : _dashboard = dashboard ?? DashboardStore.instance,
+        _selectedCategoryId = initialCategoryId,
         _debouncer = Debouncer(delay: debounce) {
     _store.addListener(notifyListeners);
+    _dashboard.addListener(notifyListeners);
   }
 
   final CollectionStore _store;
+
+  /// Tiến độ SM-2: số từ đã thuộc của mỗi học phần (cập nhật sau mỗi phiên luyện tập).
+  final DashboardStore _dashboard;
   final Debouncer _debouncer;
 
   String _query = '';
@@ -57,7 +64,7 @@ class LibraryController extends ChangeNotifier {
           name: c.title,
           level: c.level,
           wordCount: c.totalWords,
-          masteredCount: _store.wordsOf(c.id).where((w) => w.isMastered).length,
+          masteredCount: _store.wordsOf(c.id).where((w) => _dashboard.isMastered(w.id)).length,
           categoryId: c.category,
         ),
     ];
@@ -94,6 +101,7 @@ class LibraryController extends ChangeNotifier {
   @override
   void dispose() {
     _store.removeListener(notifyListeners);
+    _dashboard.removeListener(notifyListeners);
     _debouncer.dispose();
     super.dispose();
   }

@@ -10,6 +10,7 @@ import '../../data/models/collection_model.dart';
 import '../../data/models/quiz_models.dart';
 import '../../data/models/vocabulary_model.dart';
 import '../../data/repositories/collection_store.dart';
+import '../../data/repositories/dashboard_store.dart';
 import '../../data/repositories/quiz_question_factory.dart';
 import '../../data/repositories/quiz_settings_store.dart';
 import '../ai_vocab/ai_generate_screen.dart';
@@ -35,7 +36,10 @@ class PracticeModeScreen extends StatefulWidget {
   /// Thời gian đếm ngược & âm lượng (mặc định [QuizSettingsStore.instance]).
   final QuizSettingsStore? quizSettings;
 
-  const PracticeModeScreen({super.key, this.store, this.quizSettings});
+  /// Tiến độ SM-2 để lọc từ đã thuộc / chưa thuộc (mặc định [DashboardStore.instance]).
+  final DashboardStore? dashboard;
+
+  const PracticeModeScreen({super.key, this.store, this.quizSettings, this.dashboard});
 
   /// Các lựa chọn "Số lượng từ".
   static const List<int> countOptions = [10, 20, 30, 50];
@@ -47,6 +51,7 @@ class PracticeModeScreen extends StatefulWidget {
 class _PracticeModeScreenState extends State<PracticeModeScreen> {
   CollectionStore get _store => widget.store ?? CollectionStore.instance;
   QuizSettingsStore get _settings => widget.quizSettings ?? QuizSettingsStore.instance;
+  DashboardStore get _dashboard => widget.dashboard ?? DashboardStore.instance;
 
   List<String>? _selectedIds; // null = chưa khởi tạo, lấy mặc định từ store
   PracticeWordStatus _status = PracticeWordStatus.unmastered;
@@ -91,9 +96,9 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
     final words = [for (final id in selected) ..._store.wordsOf(id)].where((w) {
       switch (_status) {
         case PracticeWordStatus.unmastered:
-          return !w.isMastered;
+          return !_dashboard.isMastered(w.id);
         case PracticeWordStatus.mastered:
-          return w.isMastered;
+          return _dashboard.isMastered(w.id);
         case PracticeWordStatus.all:
           return true;
       }
@@ -260,7 +265,7 @@ class _PracticeModeScreenState extends State<PracticeModeScreen> {
       body: SafeArea(
         bottom: false,
         child: ListenableBuilder(
-          listenable: Listenable.merge([_store, _settings]),
+          listenable: Listenable.merge([_store, _settings, _dashboard]),
           builder: (context, _) {
             // Chưa có từ nào: Empty State thay cho danh sách trò chơi không chơi được.
             if (_store.totalWordCount == 0) return _buildEmpty();

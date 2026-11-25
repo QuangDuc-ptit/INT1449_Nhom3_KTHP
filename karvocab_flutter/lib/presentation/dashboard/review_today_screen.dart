@@ -73,8 +73,9 @@ class ReviewTodayScreen extends StatelessWidget {
                   separatorBuilder: (context, index) => const SizedBox(height: AppDimensions.space12),
                   itemBuilder: (context, i) {
                     final v = due[i];
-                    final p = store.progressOf(v.id)!;
-                    final urgency = overdueStyle(p.nextReviewAt, DateTime.now());
+                    // Từ mới chưa có tiến độ cũng nằm trong hàng đợi: coi như đến hạn hôm nay.
+                    final now = DateTime.now();
+                    final urgency = overdueStyle(store.progressOf(v.id)?.nextReviewAt ?? now, now);
                     return Container(
                       padding: const EdgeInsets.all(AppDimensions.space16),
                       decoration: BoxDecoration(
