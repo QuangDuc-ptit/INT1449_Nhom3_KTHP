@@ -11,16 +11,15 @@ import '../../core/utils/validators.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../../data/repositories/auth_repository.dart';
-import '../forgot_password/forgot_password_ui_state.dart';
+import '../forgot_password/forgot_password_flow.dart';
 import '../widgets/birth_date_picker.dart';
-import 'forgot_password_screen.dart';
 import 'main_shell_screen.dart';
 
 /// Màn 02 · Đăng nhập & Màn 03 · Đăng ký — một màn, đổi form bằng thanh tab.
 ///
 /// - "Đăng nhập" → kiểm tra qua [AuthRepository.login]. Đúng → Trang chủ
 ///   ([MainShellScreen]); email chưa đăng ký / sai mật khẩu → lỗi dưới ô tương ứng.
-/// - "Quên mật khẩu?" → Màn 21 ([ForgotPasswordScreen]).
+/// - "Quên mật khẩu?" → Màn 21 ([ForgotPasswordFlow]).
 /// - "Đăng ký" → tạo tài khoản qua [AuthRepository.register] (họ tên, email, ngày sinh, mật khẩu).
 /// - Google, Facebook → [AuthRepository.loginWithSocial] (verifier giả lập trong Demo Mode).
 class LoginScreen extends StatefulWidget {
@@ -199,7 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _openForgotPassword() {
     FocusScope.of(context).unfocus();
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const _ForgotPasswordRoute()));
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => ForgotPasswordFlow(authRepository: _auth)));
   }
 
   @override
@@ -455,29 +454,6 @@ class _LoginScreenState extends State<LoginScreen> {
         isLoading: _isSubmitting,
       ),
     ];
-  }
-}
-
-/// Nơi giữ [ForgotPasswordUiState] và nối callback của Màn 21.
-/// Chưa có backend: "Gửi liên kết đặt lại" chỉ gọi callback, chưa làm gì thêm.
-class _ForgotPasswordRoute extends StatefulWidget {
-  const _ForgotPasswordRoute();
-
-  @override
-  State<_ForgotPasswordRoute> createState() => _ForgotPasswordRouteState();
-}
-
-class _ForgotPasswordRouteState extends State<_ForgotPasswordRoute> {
-  ForgotPasswordUiState _state = const ForgotPasswordUiState();
-
-  @override
-  Widget build(BuildContext context) {
-    return ForgotPasswordScreen(
-      state: _state,
-      onEmailChange: (email) => setState(() => _state = _state.copyWith(email: email)),
-      onSendResetLinkClick: () {},
-      onBackClick: () => Navigator.of(context).pop(),
-    );
   }
 }
 

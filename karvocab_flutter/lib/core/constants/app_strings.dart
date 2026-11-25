@@ -21,9 +21,27 @@ class AppStrings {
   static const String forgotPasswordEmailLabel = emailLabel;
   static const String forgotPasswordEmailHint = emailHint;
   static const String forgotPasswordNote =
-      'Liên kết đặt lại mật khẩu sẽ được gửi đến địa chỉ email bạn đã đăng ký.';
-  static const String forgotPasswordSend = 'Gửi liên kết đặt lại';
+      'Mã OTP gồm 6 chữ số sẽ được gửi đến địa chỉ email bạn đã đăng ký.';
+  static const String forgotPasswordSend = 'Gửi mã OTP';
   static const String forgotPasswordBackToLogin = 'Quay lại đăng nhập';
+  // Bước 2 · Nhập mã OTP
+  static const String forgotPasswordOtpDescription = 'Nhập mã 6 số đã gửi đến';
+  static const String forgotPasswordOfflineTitle = 'Chế độ ngoại tuyến';
+  static String forgotPasswordOfflineCode(String code) => 'Mã của bạn: $code';
+  static const String forgotPasswordOtpLabel = 'Mã OTP';
+  static const String forgotPasswordOtpHint = 'Nhập mã 6 số';
+  static const String forgotPasswordVerify = 'Xác nhận mã';
+  static const String forgotPasswordResend = 'Gửi lại mã';
+  static String forgotPasswordResendIn(int seconds) => 'Gửi lại mã ($seconds giây)';
+  static const String forgotPasswordOtpResent = 'Đã gửi lại mã OTP';
+  // Bước 3 · Mật khẩu mới
+  static const String forgotPasswordNewPasswordDescription = 'Tạo mật khẩu mới cho tài khoản.';
+  static const String forgotPasswordNewPasswordLabel = 'Mật khẩu mới';
+  static const String forgotPasswordNewPasswordHint = 'Ít nhất 8 ký tự, có chữ hoa và chữ số';
+  static const String forgotPasswordConfirmLabel = 'Xác nhận mật khẩu';
+  static const String forgotPasswordConfirmHint = 'Nhập lại mật khẩu mới';
+  static const String forgotPasswordReset = 'Đặt lại mật khẩu';
+  static const String forgotPasswordResetSuccess = 'Đã đặt lại mật khẩu. Hãy đăng nhập bằng mật khẩu mới.';
   /// Nhãn đọc cho trình đọc màn hình của nút "<" (không hiển thị).
   static const String backButtonSemantics = 'Quay lại';
 
