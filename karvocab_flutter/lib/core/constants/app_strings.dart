@@ -108,6 +108,8 @@ class AppStrings {
   static const String notificationMarkAllRead = 'Đánh dấu tất cả đã đọc';
   static const String notificationLoadMore = 'Tải thêm';
   static const String notificationEmpty = 'Bạn chưa có thông báo nào';
+  static const String notificationReviewTitle = 'Đến giờ ôn tập';
+  static String notificationReviewPreview(int count) => 'Có $count từ đến hạn ôn. Bấm để ôn ngay.';
 
   // Thời gian tương đối
   static const String timeJustNow = 'Vừa xong';

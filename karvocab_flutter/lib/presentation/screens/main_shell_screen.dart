@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/widgets/app_toast.dart';
+import '../../data/local/local_store.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/collection_store.dart';
 import '../../data/repositories/dashboard_store.dart';
@@ -9,6 +10,7 @@ import '../dashboard/review_today_screen.dart';
 import '../home/home_state_builder.dart';
 import '../home/home_ui_state.dart';
 import '../notifications/notification_ui_state.dart';
+import '../notifications/review_notification_builder.dart';
 import '../quiz/practice_mode_screen.dart';
 import '../widgets/notification_popup.dart';
 import '../widgets/app_bottom_nav_bar.dart';
@@ -32,50 +34,67 @@ class MainShellScreen extends StatefulWidget {
 class _MainShellScreenState extends State<MainShellScreen> {
   late int _currentIndex;
 
-  /// Dữ liệu popup thông báo. Chưa có backend gửi thông báo nên bắt đầu trống
-  /// (Empty State); các thao tác `_on…` bên dưới giữ sẵn cho Sprint 3 nối API.
+  /// Popup thông báo: chỉ nhắc ôn tập khi có từ đã học đến hạn (xem
+  /// [ReviewNotificationBuilder]). Tự cập nhật khi tiến độ ôn tập thay đổi.
   final ValueNotifier<NotificationUiState> _notifications = ValueNotifier(NotificationUiState.empty);
+
+  /// Id thông báo đã đọc gần nhất, lưu trên máy để mở lại app vẫn nhớ.
+  String? _readId;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialTabIndex;
+    _readId = LocalStore.app.read(StorageKeys.notificationRead);
+    _refreshNotifications();
+    DashboardStore.instance.addListener(_refreshNotifications);
+    CollectionStore.instance.addListener(_refreshNotifications);
   }
 
   @override
   void dispose() {
+    DashboardStore.instance.removeListener(_refreshNotifications);
+    CollectionStore.instance.removeListener(_refreshNotifications);
     _notifications.dispose();
     super.dispose();
   }
 
   // ---------------------------------------------------------------------------
-  // Giả lập thao tác thông báo (Sprint 3 thay bằng gọi API, giữ nguyên chữ ký)
+  // Thông báo nhắc ôn tập
   // ---------------------------------------------------------------------------
 
-  void _setItems(List<NotificationItem> items, {int? totalCount, bool? canLoadMore}) {
-    _notifications.value = _notifications.value.copyWith(
-      items: items,
-      unreadCount: items.where((n) => !n.isRead).length,
-      totalCount: totalCount,
-      canLoadMore: canLoadMore,
+  void _refreshNotifications() {
+    _notifications.value = ReviewNotificationBuilder.build(
+      dashboard: DashboardStore.instance,
+      now: DateTime.now(),
+      readId: _readId,
     );
   }
 
+  void _markRead(String id) {
+    _readId = id;
+    LocalStore.app.write(StorageKeys.notificationRead, id);
+    _refreshNotifications();
+  }
+
+  /// Bấm thông báo nhắc ôn → đánh dấu đã đọc rồi mở Màn 16. Mở sau khung hình
+  /// hiện tại để popup đóng xong trước (popup đóng bằng `Navigator.pop`).
   void _onNotificationClick(String id) {
-    _setItems([
-      for (final n in _notifications.value.items) n.id == id ? n.copyWith(isRead: true) : n,
-    ]);
+    _markRead(id);
+    if (!ReviewNotificationBuilder.isReviewId(id)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _openReviewToday();
+    });
   }
 
   void _onMarkAllRead() {
-    _setItems([for (final n in _notifications.value.items) n.copyWith(isRead: true)]);
+    final items = _notifications.value.items;
+    if (items.isNotEmpty) _markRead(items.first.id);
   }
 
-  Future<void> _onRefresh() async {
-    // Chưa có API thông báo: không có gì mới để tải.
-    _notifications.value = _notifications.value.copyWith(isRefreshing: false);
-  }
+  Future<void> _onRefresh() async => _refreshNotifications();
 
+  /// Chỉ có tối đa một thông báo nên không có trang sau.
   Future<void> _onLoadMore() async {
     _notifications.value = _notifications.value.copyWith(isLoadingMore: false, canLoadMore: false);
   }

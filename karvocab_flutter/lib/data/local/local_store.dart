@@ -70,4 +70,5 @@ class StorageKeys {
   static const String vocabularies = 'library.vocabularies';
   static const String dashboard = 'dashboard.state';
   static const String quizSettings = 'quiz.settings';
+  static const String notificationRead = 'notifications.read';
 }
