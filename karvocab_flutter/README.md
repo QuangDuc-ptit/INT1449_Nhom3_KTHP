@@ -1,17 +1,17 @@
-# karvocab_flutter
+# KarVocab — App Flutter
 
-A new Flutter project.
+App di động học từ vựng tiếng Anh theo phương pháp lặp lại ngắt quãng SM-2 (đồ án INT1449, Nhóm 03).
 
-## Getting Started
+Hướng dẫn đầy đủ (tính năng, kiến trúc, chạy trên điện thoại thật, nối backend, kiểm thử) nằm ở [README gốc của repo](../README.md).
 
-This project is a starting point for a Flutter application.
+## Chạy nhanh
 
-A few resources to get you started if this is your first Flutter project:
+```bash
+flutter pub get
+flutter analyze
+flutter test
+flutter run                                                        # ngoại tuyến
+flutter run --dart-define=API_BASE_URL=http://localhost:3100/api/v1  # nối backend
+```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Tài khoản demo ở chế độ ngoại tuyến: `learner@karvocab.com` / `Karvocab1`.
