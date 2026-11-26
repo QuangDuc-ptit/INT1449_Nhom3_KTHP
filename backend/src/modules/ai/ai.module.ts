@@ -24,6 +24,7 @@ import { MockAiVocabProvider } from './mock-ai-vocab.provider';
                 apiKey: config.get('GEMINI_API_KEY', { infer: true }),
               }),
               config.get('GEMINI_MODEL', { infer: true }),
+              config.get('GEMINI_FALLBACK_MODELS', { infer: true }),
             )
           : new MockAiVocabProvider(),
     },

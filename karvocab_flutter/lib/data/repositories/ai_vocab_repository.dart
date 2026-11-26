@@ -52,5 +52,11 @@ abstract class AiVocabRepository {
   static const int maxWordCount = 20;
 
   /// [topic] nhập bằng tiếng Anh hoặc tiếng Việt. [cefrLevel] = `null` thì gửi mức mặc định của app.
-  Future<List<AiVocabDraft>> generate({required String topic, String? cefrLevel, required int wordCount});
+  /// [collectionId] (UUID trên BE): AI tránh sinh lại từ đã có trong học phần đó.
+  Future<List<AiVocabDraft>> generate({
+    required String topic,
+    String? cefrLevel,
+    required int wordCount,
+    String? collectionId,
+  });
 }

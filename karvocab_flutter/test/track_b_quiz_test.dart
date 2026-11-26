@@ -30,6 +30,7 @@ class _FailingAiRepository implements AiVocabRepository {
     required String topic,
     String? cefrLevel,
     required int wordCount,
+    String? collectionId,
   }) async {
     throw Exception('offline');
   }
