@@ -93,6 +93,11 @@ class ApiClient {
 
   Future<dynamic> patch(String path, {Object? body, bool auth = true}) => _send('PATCH', path, body: body, auth: auth);
 
+  Future<dynamic> put(String path, {Object? body, bool auth = true}) => _send('PUT', path, body: body, auth: auth);
+
+  Future<dynamic> delete(String path, {Object? body, bool auth = true}) =>
+      _send('DELETE', path, body: body, auth: auth);
+
   Future<dynamic> _send(String method, String path, {Object? body, required bool auth, bool retried = false}) async {
     final request = http.Request(method, Uri.parse('$baseUrl$path'))
       ..headers['Accept'] = 'application/json';

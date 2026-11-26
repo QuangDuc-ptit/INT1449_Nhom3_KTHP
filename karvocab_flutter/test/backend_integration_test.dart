@@ -8,10 +8,14 @@ import 'package:karvocab_flutter/core/constants/app_strings.dart';
 import 'package:karvocab_flutter/core/utils/validators.dart';
 import 'package:karvocab_flutter/core/widgets/app_text_field.dart';
 import 'package:karvocab_flutter/data/local/local_store.dart';
+import 'package:karvocab_flutter/data/models/quiz_models.dart';
+import 'package:karvocab_flutter/data/models/vocabulary_model.dart';
 import 'package:karvocab_flutter/data/remote/api_client.dart';
 import 'package:karvocab_flutter/data/remote/remote_ai_vocab_repository.dart';
 import 'package:karvocab_flutter/data/repositories/ai_vocab_repository.dart';
 import 'package:karvocab_flutter/data/repositories/auth_repository.dart';
+import 'package:karvocab_flutter/data/repositories/collection_store.dart';
+import 'package:karvocab_flutter/data/repositories/dashboard_store.dart';
 import 'package:karvocab_flutter/presentation/forgot_password/forgot_password_flow.dart';
 
 /// Kiểm tra lớp nối backend bằng client HTTP giả (không cần chạy BE thật).
@@ -384,6 +388,168 @@ void main() {
       auth.logout();
       expect(storage.read(StorageKeys.tokens), isNull);
       expect(await AuthRepository(latency: Duration.zero, storage: storage).restoreSession(), isFalse);
+    });
+  });
+
+  group('Đồng bộ Học phần, Từ vựng & Quiz lên Backend', () {
+    const colUuid = '11111111-1111-4111-8111-111111111111';
+    const vocUuid = '22222222-2222-4222-8222-222222222222';
+    const sesUuid = '33333333-3333-4333-8333-333333333333';
+
+    test('Tạo học phần rồi thêm từ + nộp quiz tuần tự dùng UUID thật của BE', () async {
+      final calls = <String>[];
+      late Map<String, dynamic> submittedBody;
+
+      final api = ApiClient(
+        baseUrl: 'http://be/api/v1',
+        httpClient: MockClient((r) async {
+          calls.add('${r.method} ${r.url.path}');
+          if (r.method == 'POST' && r.url.path.endsWith('/collections')) {
+            return ok({
+              'id': colUuid,
+              'title': 'IELTS Core',
+              'description': '',
+              'category': 'academic',
+              'iconName': 'school_rounded',
+              'totalWords': 0,
+            });
+          }
+          if (r.method == 'POST' && r.url.path.endsWith('/collections/$colUuid/words')) {
+            return ok({
+              'id': vocUuid,
+              'collectionId': colUuid,
+              'term': 'coherent',
+              'partOfSpeech': 'adj',
+              'ipaUk': '/kəʊˈhɪərənt/',
+              'definitionEn': 'logical',
+              'definitionVi': 'mạch lạc',
+              'exampleSentence': 'A coherent plan.',
+              'cefrLevel': 'B2',
+              'progress': null,
+            });
+          }
+          if (r.method == 'POST' && r.url.path.endsWith('/practice/submit-session')) {
+            submittedBody = jsonDecode(r.body) as Map<String, dynamic>;
+            return ok({
+              'sessionId': sesUuid,
+              'streak': {'currentStreak': 4, 'highestStreak': 7, 'isStreakActiveToday': true},
+            });
+          }
+          return ok(null);
+        }),
+      )..setTokens(const AuthTokens('access-1', 'refresh-1'));
+
+      final collections = CollectionStore(latency: Duration.zero, apiClient: api);
+      final dashboard = DashboardStore.forTest(collections: collections, apiClient: api);
+
+      // Tạo học phần -> thêm từ -> nộp quiz liền mạch ngay trong 1 nhịp
+      final col = collections.createCollection(title: 'IELTS Core', category: 'academic');
+      final word = collections.addWord(
+        VocabularyModel(
+          id: '',
+          collectionId: col.id,
+          term: 'coherent',
+          partOfSpeech: 'adj',
+          ipa: '/kəʊˈhɪərənt/',
+          definitionVi: 'mạch lạc',
+          definitionEn: 'logical',
+          exampleSentence: 'A coherent plan.',
+          cefrLevel: 'B2',
+        ),
+      );
+      dashboard.recordSessionResult(
+        QuizSummary(
+          clientSessionId: sesUuid,
+          durationSeconds: 30,
+          records: [
+            QuizAnswerRecord(
+              question: QuizQuestion(
+                id: 'q1',
+                vocab: word,
+                mode: QuizMode.meaningChoose,
+                options: const ['mạch lạc', 'mờ nhạt', 'nhanh chóng', 'chậm chạp'],
+                correctAnswer: 'mạch lạc',
+              ),
+              userAnswer: 'mạch lạc',
+              result: AnswerResult.correct,
+              responseTimeMs: 1200,
+            ),
+          ],
+        ),
+      );
+
+      await dashboard.pendingSync;
+
+      expect(calls, [
+        'POST /api/v1/collections',
+        'POST /api/v1/collections/$colUuid/words',
+        'POST /api/v1/practice/submit-session',
+      ]);
+      expect(collections.collections.single.id, colUuid);
+      expect(collections.allWords.single.id, vocUuid);
+      expect(submittedBody['collectionId'], colUuid);
+      expect((submittedBody['answers'] as List).single['vocabularyId'], vocUuid);
+      expect(dashboard.streak, 4);
+      expect(dashboard.highestStreak, 7);
+    });
+
+    test('load() tải học phần và từ vựng từ GET /collections + GET /collections/:id/words', () async {
+      final api = ApiClient(
+        baseUrl: 'http://be/api/v1',
+        httpClient: MockClient((r) async {
+          if (r.method == 'GET' && r.url.path.endsWith('/collections')) {
+            return ok({
+              'items': [
+                {
+                  'id': colUuid,
+                  'title': 'Du lịch',
+                  'description': 'Từ đi phượt',
+                  'category': 'travel',
+                  'iconName': 'flight_takeoff_rounded',
+                  'totalWords': 1,
+                },
+              ],
+              'meta': {'page': 1, 'limit': 50, 'total': 1, 'totalPages': 1},
+            });
+          }
+          if (r.method == 'GET' && r.url.path.endsWith('/collections/$colUuid/words')) {
+            return ok([
+              {
+                'id': vocUuid,
+                'collectionId': colUuid,
+                'term': 'itinerary',
+                'partOfSpeech': 'noun',
+                'ipaUk': '/aɪˈtɪnərəri/',
+                'definitionVi': 'lịch trình',
+                'cefrLevel': 'B2',
+                'progress': {'status': 'mastered', 'repetitionLevel': 5, 'nextReviewAt': null},
+              },
+            ]);
+          }
+          if (r.method == 'GET' && r.url.path.endsWith('/home/dashboard')) {
+            return ok({
+              'streak': {'currentStreak': 5, 'highestStreak': 9, 'isStreakActiveToday': true},
+              'dailyGoal': {'targetWords': 15, 'wordsLearnedToday': 6, 'progressPercentage': 40},
+            });
+          }
+          return ok(null);
+        }),
+      )..setTokens(const AuthTokens('access-1', 'refresh-1'));
+
+      final collections = CollectionStore(latency: Duration.zero, apiClient: api);
+      final dashboard = DashboardStore.forTest(collections: collections, apiClient: api);
+
+      await collections.load();
+      await dashboard.loadDashboard();
+
+      expect(collections.status, LoadStatus.ready);
+      expect(collections.collections.single.title, 'Du lịch');
+      expect(collections.allWords.single.term, 'itinerary');
+      expect(collections.allWords.single.isMastered, isTrue);
+      expect(dashboard.streak, 5);
+      expect(dashboard.highestStreak, 9);
+      expect(dashboard.dailyGoal, 15);
+      expect(dashboard.reviewedToday, 6);
     });
   });
 }

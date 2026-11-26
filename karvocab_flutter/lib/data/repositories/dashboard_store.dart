@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../local/local_store.dart';
 import '../models/quiz_models.dart';
 import '../models/vocabulary_model.dart';
+import '../remote/api_client.dart';
 import 'collection_store.dart';
 
 /// Tiến độ Spaced Repetition của 1 từ (bảng USER_VOCAB_PROGRESS phía BE).
@@ -100,6 +103,7 @@ class DashboardStore extends ChangeNotifier {
       : _clock = DateTime.now,
         _collections = null,
         _storage = LocalStore.app,
+        _api = ApiClient.instance,
         _perUser = true;
 
   static final DashboardStore instance = DashboardStore._();
@@ -107,8 +111,14 @@ class DashboardStore extends ChangeNotifier {
   /// Dùng trong unit test để có store sạch. [clock] cho phép giả lập sang ngày mới;
   /// [collections] là nguồn từ vựng cho hàng đợi ôn tập (mặc định [CollectionStore.instance]).
   @visibleForTesting
-  DashboardStore.forTest({DateTime Function()? clock, this._collections, this._storage, this._perUser = false})
-      : _clock = clock ?? DateTime.now {
+  DashboardStore.forTest({
+    DateTime Function()? clock,
+    this._collections,
+    this._storage,
+    ApiClient? apiClient,
+    this._perUser = false,
+  })  : _clock = clock ?? DateTime.now,
+        _api = apiClient {
     _restore();
   }
 
@@ -121,6 +131,14 @@ class DashboardStore extends ChangeNotifier {
   String? _userKey;
   final CollectionStore? _collections;
   final LocalStore? _storage;
+  final ApiClient? _api;
+
+  bool get _canSync => _api != null && _api.hasSession;
+  Future<void> _syncQueue = Future<void>.value();
+
+  /// Chờ các yêu cầu đồng bộ quiz lên backend hoàn tất (dùng trong unit test).
+  @visibleForTesting
+  Future<void> get pendingSync => _syncQueue;
 
   CollectionStore get _library => _collections ?? CollectionStore.instance;
 
@@ -143,6 +161,9 @@ class DashboardStore extends ChangeNotifier {
   /// Các từ khác nhau đã trả lời đúng trong ngày (BE đếm distinct vocabularyId).
   final Set<String> _learnedTodayIds = {};
 
+  /// Số từ học hôm nay đồng bộ từ BE `GET /home/dashboard` (khi máy mới đăng nhập chưa có id).
+  int _remoteLearnedToday = 0;
+
   final Map<String, SrsProgress> _progress = {};
 
   DateTime get _today => _dateOnly(_clock());
@@ -159,7 +180,12 @@ class DashboardStore extends ChangeNotifier {
   int get dailyGoal => _dailyGoal;
 
   /// Số từ khác nhau trả lời đúng hôm nay (BE `wordsLearnedToday`).
-  int get reviewedToday => _learnedDay == _today ? _learnedTodayIds.length : 0;
+  int get reviewedToday {
+    if (_learnedDay != _today) return 0;
+    return _learnedTodayIds.length > _remoteLearnedToday
+        ? _learnedTodayIds.length
+        : _remoteLearnedToday;
+  }
 
   /// BE `isStreakActiveToday`: hôm nay đã hoàn thành ít nhất một phiên.
   bool get studiedToday => _lastStreakDate == _today;
@@ -206,8 +232,10 @@ class DashboardStore extends ChangeNotifier {
     _lastStreakDate = null;
     _learnedDay = null;
     _learnedTodayIds.clear();
+    _remoteLearnedToday = 0;
     _progress.clear();
     _history.clear();
+    _syncQueue = Future<void>.value();
   }
 
   /// Đổi sang tiến độ của tài khoản [userKey] (đăng nhập) hoặc về trống khi `null` (đăng xuất).
@@ -218,6 +246,43 @@ class DashboardStore extends ChangeNotifier {
     _dailyGoal = defaultDailyGoal;
     if (userKey != null) _restore();
     super.notifyListeners();
+  }
+
+  /// Tải tổng quan Trang chủ (`GET /home/dashboard`) khi đang nối backend.
+  Future<void> loadDashboard() async {
+    if (!_canSync) return;
+    try {
+      await _syncQueue;
+      final data = await _api!.get('/home/dashboard');
+      if (data is! Map<String, dynamic>) return;
+      final today = _today;
+      final streakMap = data['streak'];
+      if (streakMap is Map<String, dynamic>) {
+        _streak = (streakMap['currentStreak'] as num?)?.toInt() ?? _streak;
+        _highestStreak = (streakMap['highestStreak'] as num?)?.toInt() ?? _highestStreak;
+        if (streakMap['isStreakActiveToday'] == true) {
+          _lastStreakDate = today;
+        }
+      }
+      final goalMap = data['dailyGoal'];
+      if (goalMap is Map<String, dynamic>) {
+        final target = (goalMap['targetWords'] as num?)?.toInt();
+        if (target != null) _dailyGoal = target.clamp(minDailyGoal, maxDailyGoal);
+        final learnedToday = (goalMap['wordsLearnedToday'] as num?)?.toInt();
+        if (learnedToday != null) {
+          if (_learnedDay != today) {
+            _learnedDay = today;
+            _learnedTodayIds.clear();
+          }
+          _remoteLearnedToday = learnedToday;
+          final currentCount = reviewedToday;
+          _history[_dayKey(today)] = currentCount;
+        }
+      }
+      notifyListeners();
+    } on Object {
+      // Ngoại tuyến hoặc lỗi tạm thời: giữ số liệu đã lưu trên máy.
+    }
   }
 
   /// Khoá lưu trữ; `null` khi không được lưu (store theo tài khoản mà chưa đăng nhập).
@@ -283,6 +348,13 @@ class DashboardStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  static const Set<QuizMode> _beQuizModes = {
+    QuizMode.listenChoose,
+    QuizMode.listenType,
+    QuizMode.meaningChoose,
+    QuizMode.recallType,
+  };
+
   /// Gọi khi kết thúc 1 phiên quiz: cập nhật SM-2, tiến độ ngày và streak.
   void recordSessionResult(QuizSummary summary) {
     if (summary.records.isEmpty) return; // BE từ chối phiên không có câu trả lời
@@ -309,11 +381,12 @@ class DashboardStore extends ChangeNotifier {
     if (_learnedDay != today) {
       _learnedDay = today;
       _learnedTodayIds.clear();
+      _remoteLearnedToday = 0;
     }
     for (final r in summary.records) {
       if (r.isCorrect) _learnedTodayIds.add(r.question.vocab.id);
     }
-    _history[_dayKey(today)] = _learnedTodayIds.length;
+    _history[_dayKey(today)] = reviewedToday;
 
     // Streak (BE computeStreak): mọi phiên đã nộp đều tính, mỗi ngày tăng tối đa 1.
     if (_lastStreakDate != today) {
@@ -324,5 +397,57 @@ class DashboardStore extends ChangeNotifier {
       _lastStreakDate = today;
     }
     notifyListeners();
+
+    final primaryMode = summary.records.first.question.mode;
+    if (_canSync && _beQuizModes.contains(primaryMode)) {
+      _syncQueue = _syncQueue.then((_) async {
+        try {
+          await _library.pendingSync;
+          final collectionIds = {
+            for (final r in summary.records)
+              _library.resolveRemoteId(r.question.vocab.collectionId),
+          };
+          final singleCollectionId =
+              collectionIds.length == 1 && _isUuid(collectionIds.first) ? collectionIds.first : null;
+
+          final answers = <Map<String, dynamic>>[];
+          for (final r in summary.records) {
+            final vocabId = _library.resolveRemoteId(r.question.vocab.id);
+            if (!_isUuid(vocabId)) continue;
+            answers.add({
+              'vocabularyId': vocabId,
+              'userAnswer': r.userAnswer,
+              'isCorrect': r.isCorrect,
+              'responseTimeMs': r.responseTimeMs.clamp(0, 600000),
+            });
+          }
+          if (answers.isEmpty) return;
+
+          final data = await _api!.post('/practice/submit-session', body: {
+            'clientSessionId': summary.clientSessionId,
+            if (singleCollectionId != null) 'collectionId': singleCollectionId,
+            'mode': primaryMode.apiKey,
+            'durationSeconds': summary.durationSeconds.clamp(0, 86400),
+            'answers': answers,
+          });
+          if (data is Map<String, dynamic> && data['streak'] is Map<String, dynamic>) {
+            final streakMap = data['streak'] as Map<String, dynamic>;
+            _streak = (streakMap['currentStreak'] as num?)?.toInt() ?? _streak;
+            _highestStreak = (streakMap['highestStreak'] as num?)?.toInt() ?? _highestStreak;
+            if (streakMap['isStreakActiveToday'] == true) {
+              _lastStreakDate = _today;
+            }
+            notifyListeners();
+          }
+        } on Object {
+          // Ngoại tuyến hoặc lỗi tạm thời: tiến độ cục bộ vẫn được giữ an toàn.
+        }
+      });
+    }
   }
+
+  static final RegExp _uuidPattern = RegExp(
+    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+  );
+  static bool _isUuid(String id) => _uuidPattern.hasMatch(id);
 }

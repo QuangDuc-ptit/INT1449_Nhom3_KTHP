@@ -397,3 +397,15 @@
 - **Mật khẩu** đăng ký / đặt lại: thêm giới hạn tối đa 72 ký tự như BE.
 - Đã kiểm tra: mã lỗi AI (RATE_LIMITED, AI_TIMEOUT, AI_BAD_RESPONSE, AI_UNAVAILABLE), thời gian chờ (BE 15 giây < app 20 giây), mục tiêu ngày 5–30 khớp BE và đồng bộ Cài đặt ↔ Trang chủ, các giới hạn độ dài khác ở app chặt hơn hoặc bằng BE.
 - Viết lại `test/ai_generate_vocab_test.dart` theo hợp đồng BE (5 test), thêm test mật khẩu 72 ký tự.
+
+#### 14. Đồng bộ Học phần, Từ vựng & Quiz/Dashboard từ Flutter lên Backend PostgreSQL (26/11/2026):
+- **Mục tiêu:** Giữ nguyên kiến trúc Offline-first (`LocalStore`) và chữ ký hàm của `CollectionStore`, `DashboardStore` (không làm gãy bộ 27 file test hiện có), đồng thời tự động đồng bộ toàn bộ thao tác lên Backend khi app chạy kèm `--dart-define=API_BASE_URL=...` và người dùng đã đăng nhập tài khoản thật (không áp dụng cho Demo Mode).
+- **`ApiClient` (`lib/data/remote/api_client.dart`):** Bổ sung phương thức `put()` và `delete()` bên cạnh `get()`, `post()`, `patch()`.
+- **`CollectionStore` (`lib/data/repositories/collection_store.dart`):**
+  - Thêm hàng đợi tuần tự `_syncQueue` và bảng ánh xạ `_remoteIds` để giải quyết vấn đề UUID khi tạo học phần xong rồi thêm từ / lưu AI (`addWords` chia batch tối đa 50 từ khớp `@ArrayMaxSize(50)`) ngay trong cùng 1 nhịp.
+  - `load()`: gọi `GET /collections` (có phân trang) + `GET /collections/:id/words` khi nối BE; giữ nguyên dữ liệu cache cục bộ nếu ngoại tuyến.
+  - Tự đồng bộ `createCollection` (`POST /collections`), `updateCollection` (`PATCH /collections/:id`), `deleteCollection` (`DELETE /collections/:id`), `addWord` / `restoreWord` (`POST /collections/:id/words`), `addWords` (`POST /vocabularies/batch-save`), `updateWord` (`PUT /vocabularies/:id`), `deleteWord` (`DELETE /vocabularies/:id`).
+- **`DashboardStore` (`lib/data/repositories/dashboard_store.dart`) & `TrackSync` (`lib/data/repositories/track_sync.dart`):**
+  - `loadDashboard()`: gọi `GET /home/dashboard` để cập nhật Streak, mục tiêu ngày và số từ đã học hôm nay từ DB.
+  - `recordSessionResult()`: chờ `CollectionStore.pendingSync` để lấy UUID thật của từng từ và gửi `POST /practice/submit-session` (chỉ gửi 4 chế độ hỗ trợ bởi BE: `listen_choose`, `listen_type`, `choose_meaning`, `type_meaning`), cập nhật lại streak từ phản hồi server.
+- **Kiểm thử:** Bổ sung nhóm test *"Đồng bộ Học phần, Từ vựng & Quiz lên Backend"* vào `test/backend_integration_test.dart` bằng `MockClient`.

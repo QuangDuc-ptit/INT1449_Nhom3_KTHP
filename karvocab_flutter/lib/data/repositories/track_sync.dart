@@ -31,6 +31,10 @@ class TrackSync {
       final key = userKeyOf(a);
       c.switchUser(key);
       d.switchUser(key);
+      if (key != null && a.usesBackend && !a.isDemo) {
+        c.ensureLoaded();
+        d.loadDashboard();
+      }
     }
 
     void pushGoal() {
