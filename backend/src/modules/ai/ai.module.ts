@@ -8,6 +8,7 @@ import { AiController } from './ai.controller';
 import { AiService } from './ai.service';
 import { GeminiAiVocabProvider } from './gemini-ai-vocab.provider';
 import { MockAiVocabProvider } from './mock-ai-vocab.provider';
+import { OpenAiCompatVocabProvider } from './openai-compat-vocab.provider';
 
 @Module({
   imports: [CollectionsModule],
@@ -17,16 +18,25 @@ import { MockAiVocabProvider } from './mock-ai-vocab.provider';
     {
       provide: AiVocabProvider,
       inject: [ConfigService],
-      useFactory: (config: ConfigService<Env, true>): AiVocabProvider =>
-        config.get('AI_PROVIDER', { infer: true }) === 'gemini'
-          ? new GeminiAiVocabProvider(
-              new GoogleGenAI({
-                apiKey: config.get('GEMINI_API_KEY', { infer: true }),
-              }),
-              config.get('GEMINI_MODEL', { infer: true }),
-              config.get('GEMINI_FALLBACK_MODELS', { infer: true }),
-            )
-          : new MockAiVocabProvider(),
+      useFactory: (config: ConfigService<Env, true>): AiVocabProvider => {
+        const provider = config.get('AI_PROVIDER', { infer: true });
+        if (provider === 'gemini') {
+          return new GeminiAiVocabProvider(
+            new GoogleGenAI({
+              apiKey: config.get('GEMINI_API_KEY', { infer: true }),
+            }),
+            config.get('GEMINI_MODEL', { infer: true }),
+          );
+        }
+        if (provider === 'openai') {
+          return new OpenAiCompatVocabProvider({
+            apiKey: config.get('OPENAI_API_KEY', { infer: true }),
+            baseUrl: config.get('OPENAI_BASE_URL', { infer: true }),
+            model: config.get('OPENAI_MODEL', { infer: true }),
+          });
+        }
+        return new MockAiVocabProvider();
+      },
     },
   ],
 })

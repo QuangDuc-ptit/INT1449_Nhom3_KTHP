@@ -11,27 +11,18 @@ class RemoteAiVocabRepository implements AiVocabRepository {
 
   final ApiClient _api;
 
-  /// Học phần chưa đồng bộ lên BE còn mang id cục bộ: không gửi (BE sẽ báo 400).
-  static final RegExp _uuid = RegExp(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
-
   @override
   Future<List<AiVocabDraft>> generate({
     required String topic,
     String? cefrLevel,
     required int wordCount,
-    String? collectionId,
   }) async {
     try {
-      final data = await _api.post(
-        '/ai/generate-vocab',
-        body: {
-          'topic': topic,
-          'cefrLevel': cefrLevel ?? ApiConfig.defaultAiCefrLevel,
-          'wordCount': wordCount,
-          if (collectionId != null && _uuid.hasMatch(collectionId)) 'collectionId': collectionId,
-        },
-        timeout: ApiConfig.aiRequestTimeout,
-      );
+      final data = await _api.post('/ai/generate-vocab', body: {
+        'topic': topic,
+        'cefrLevel': cefrLevel ?? ApiConfig.defaultAiCefrLevel,
+        'wordCount': wordCount,
+      });
       final words = data is Map<String, dynamic> ? data['words'] : null;
       if (words is! List) throw const AiVocabException('AI_BAD_RESPONSE');
       return [
@@ -39,10 +30,6 @@ class RemoteAiVocabRepository implements AiVocabRepository {
           if (w is Map<String, dynamic>) AiVocabDraft.fromJson(w),
       ];
     } on ApiException catch (e) {
-      // Học phần không còn trên BE (vừa xoá ở máy khác...): vẫn tạo từ, chỉ bỏ phần tránh trùng
-      if (e.statusCode == 404 && collectionId != null) {
-        return generate(topic: topic, cefrLevel: cefrLevel, wordCount: wordCount);
-      }
       throw AiVocabException(e.errorCode, message: e.message, retryAfterSeconds: e.retryAfterSeconds);
     } on TypeError {
       throw const AiVocabException('AI_BAD_RESPONSE');

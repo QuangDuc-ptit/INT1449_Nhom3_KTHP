@@ -22,19 +22,12 @@ export const envSchema = z
       .default('15m'),
     REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(7),
     CORS_ORIGINS: z.string().default(''),
-    AI_PROVIDER: z.enum(['mock', 'gemini']).default('mock'),
+    AI_PROVIDER: z.enum(['mock', 'gemini', 'openai']).default('mock'),
     GEMINI_API_KEY: z.string().default(''),
-    GEMINI_MODEL: z.string().default('gemini-flash-latest'),
-    // Model dự phòng khi model chính quá tải, cách nhau bởi dấu phẩy (đặt rỗng = không fallback)
-    GEMINI_FALLBACK_MODELS: z
-      .string()
-      .default('gemini-flash-lite-latest')
-      .transform((v) =>
-        v
-          .split(',')
-          .map((m) => m.trim())
-          .filter(Boolean),
-      ),
+    GEMINI_MODEL: z.string().default('gemini-3.8-flash'),
+    OPENAI_API_KEY: z.string().default(''),
+    OPENAI_BASE_URL: z.string().default('https://openrouter.ai/api/v1'),
+    OPENAI_MODEL: z.string().default('openrouter/free'),
     TTS_PROVIDER: z.enum(['mock', 'google']).default('mock'),
     STORAGE_PROVIDER: z.enum(['local', 's3']).default('local'),
     PUBLIC_BASE_URL: z.string().default('http://localhost:3100'),
@@ -77,6 +70,13 @@ export const envSchema = z
         code: 'custom',
         path: ['GEMINI_API_KEY'],
         message: 'Cần GEMINI_API_KEY khi AI_PROVIDER=gemini',
+      });
+    }
+    if (env.AI_PROVIDER === 'openai' && !env.OPENAI_API_KEY) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['OPENAI_API_KEY'],
+        message: 'Cần OPENAI_API_KEY khi AI_PROVIDER=openai',
       });
     }
   });

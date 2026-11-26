@@ -89,9 +89,7 @@ class ApiClient {
 
   Future<dynamic> get(String path, {bool auth = true}) => _send('GET', path, auth: auth);
 
-  /// [timeout] ghi đè thời gian chờ mặc định cho riêng request này (VD: sinh từ bằng AI).
-  Future<dynamic> post(String path, {Object? body, bool auth = true, Duration? timeout}) =>
-      _send('POST', path, body: body, auth: auth, timeout: timeout);
+  Future<dynamic> post(String path, {Object? body, bool auth = true}) => _send('POST', path, body: body, auth: auth);
 
   Future<dynamic> patch(String path, {Object? body, bool auth = true}) => _send('PATCH', path, body: body, auth: auth);
 
@@ -100,8 +98,7 @@ class ApiClient {
   Future<dynamic> delete(String path, {Object? body, bool auth = true}) =>
       _send('DELETE', path, body: body, auth: auth);
 
-  Future<dynamic> _send(String method, String path,
-      {Object? body, required bool auth, bool retried = false, Duration? timeout}) async {
+  Future<dynamic> _send(String method, String path, {Object? body, required bool auth, bool retried = false}) async {
     final request = http.Request(method, Uri.parse('$baseUrl$path'))
       ..headers['Accept'] = 'application/json';
     if (body != null) {
@@ -113,7 +110,7 @@ class ApiClient {
 
     final http.Response response;
     try {
-      response = await http.Response.fromStream(await _http.send(request).timeout(timeout ?? this.timeout));
+      response = await http.Response.fromStream(await _http.send(request).timeout(timeout));
     } on TimeoutException {
       throw const ApiException(0, 'TIMEOUT', 'Máy chủ phản hồi quá lâu, vui lòng thử lại.');
     } catch (_) {
@@ -121,7 +118,7 @@ class ApiClient {
     }
 
     if (response.statusCode == 401 && auth && !retried && _tokens != null && await _refresh()) {
-      return _send(method, path, body: body, auth: auth, retried: true, timeout: timeout);
+      return _send(method, path, body: body, auth: auth, retried: true);
     }
 
     final decoded = _decode(response);

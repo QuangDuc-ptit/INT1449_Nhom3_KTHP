@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../core/config/api_config.dart';
 import '../../core/constants/app_assets.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
@@ -13,7 +12,6 @@ import '../../core/widgets/app_toast.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../data/models/ai_vocab_draft.dart';
 import '../../data/repositories/ai_vocab_repository.dart';
-import '../../data/repositories/collection_bridge.dart';
 import 'ai_preview_screen.dart';
 
 enum _GenState { idle, loading, error }
@@ -103,16 +101,10 @@ class _AiGenerateScreenState extends State<AiGenerateScreen> with SingleTickerPr
     _shimmer.repeat(reverse: true);
 
     try {
-      // ApiClient tự ngắt theo ApiConfig.aiRequestTimeout; mốc này chỉ chặn trường hợp treo ngoài dự kiến.
-      final initial = widget.initialCollectionId;
+      // ApiClient tự ngắt sau 20 giây; mốc này chỉ chặn trường hợp treo ngoài dự kiến.
       final List<AiVocabDraft> drafts = await repo
-          .generate(
-            topic: _topic,
-            wordCount: _count,
-            // Mở từ một học phần: gửi id trên BE để AI tránh sinh lại từ đã có
-            collectionId: initial == null ? null : CollectionBridge.store.resolveRemoteId(initial),
-          )
-          .timeout(ApiConfig.aiRequestTimeout + const Duration(seconds: 5));
+          .generate(topic: _topic, wordCount: _count)
+          .timeout(const Duration(seconds: 25));
       if (!mounted) return;
       _shimmer.stop();
       setState(() => _state = _GenState.idle);

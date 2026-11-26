@@ -19,10 +19,6 @@ class ApiConfig {
   /// BE bắt buộc `cefrLevel` khi sinh từ bằng AI; app không cho chọn nên gửi mức mặc định.
   static const String defaultAiCefrLevel = 'B1';
 
-  /// Thời gian chờ tối đa cho một request thường.
+  /// Thời gian chờ tối đa cho một request thường (AI có timeout riêng 15 giây ở BE).
   static const Duration requestTimeout = Duration(seconds: 20);
-
-  /// Riêng request sinh từ bằng AI: BE tự retry/fallback model khi Gemini quá tải,
-  /// tổng tối đa 30 giây (AI_RETRY.totalBudgetMs), nên app chờ dư thêm một chút.
-  static const Duration aiRequestTimeout = Duration(seconds: 35);
 }

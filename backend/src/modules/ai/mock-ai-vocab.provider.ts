@@ -6,8 +6,6 @@ import { AiVocabProvider, GenerateVocabInput } from './ai-vocab.provider';
  * lượng và cấp độ yêu cầu, không gọi mạng. Chủ đề dùng để xoay vòng thứ tự.
  */
 export class MockAiVocabProvider extends AiVocabProvider {
-  readonly models = ['mock'] as const;
-
   generate(input: GenerateVocabInput): Promise<unknown> {
     const offset =
       [...input.topic].reduce((s, ch) => s + ch.charCodeAt(0), 0) %

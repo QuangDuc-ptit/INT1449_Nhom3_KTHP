@@ -55,4 +55,17 @@ describe('env.schema', () => {
     expect(env.AI_PROVIDER).toBe('mock');
     expect(env.JOBS_ENABLED).toBe(false);
   });
+
+  it('yêu cầu OPENAI_API_KEY khi AI_PROVIDER=openai', () => {
+    expect(() =>
+      validateEnv({ ...base, AI_PROVIDER: 'openai' }),
+    ).toThrow(/OPENAI_API_KEY/);
+    expect(() =>
+      validateEnv({
+        ...base,
+        AI_PROVIDER: 'openai',
+        OPENAI_API_KEY: 'sk-xt-test',
+      }),
+    ).not.toThrow();
+  });
 });

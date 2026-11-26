@@ -16,12 +16,7 @@ class _FakeBackendAi implements AiVocabRepository {
   int? lastCount;
 
   @override
-  Future<List<AiVocabDraft>> generate({
-    required String topic,
-    String? cefrLevel,
-    required int wordCount,
-    String? collectionId,
-  }) async {
+  Future<List<AiVocabDraft>> generate({required String topic, String? cefrLevel, required int wordCount}) async {
     lastTopic = topic;
     lastCount = wordCount;
     return words.take(wordCount).toList();
