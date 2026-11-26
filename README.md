@@ -127,7 +127,7 @@ flowchart TD
 ```
 
 - **Ngoại tuyến:** tài khoản lưu ở khoá `auth.accounts`, phiên ở `auth.session`. Mật khẩu chỉ lưu dưới dạng băm SHA-256 kèm muối riêng của từng tài khoản.
-- **Nối backend:** `/auth/login`, `/auth/register`, `/auth/social-login` trả về access token và refresh token. `ApiClient` tự gọi `/auth/refresh` khi access token hết hạn. Token chưa được lưu xuống máy, nên mở lại app phải đăng nhập lại.
+- **Nối backend:** `/auth/login`, `/auth/register`, `/auth/social-login` trả về access token và refresh token. `ApiClient` tự gọi `/auth/refresh` khi access token hết hạn. Cặp token được lưu xuống máy (`auth.tokens`). Mở lại app thì màn Splash nạp lại token và gọi `/auth/me`: BE từ chối thì quay về màn đăng nhập, còn mất mạng thì vẫn vào app bằng hồ sơ đã lưu.
 - **Quên mật khẩu:** ngoại tuyến thì app tự sinh OTP 6 số (hiệu lực 5 phút) và hiện lên màn hình. Nối backend thì gọi `/auth/forgot-password` (backend gửi mail); mã người dùng nhập được gửi kèm `/auth/reset-password`.
 - **Tách dữ liệu theo tài khoản:** khi đăng nhập hoặc đăng xuất, `TrackSync` gọi `switchUser(email)` cho `CollectionStore` và `DashboardStore`. Hai store đọc khoá có hậu tố tài khoản, ví dụ `library.collections@an@gmail.com`. Đăng xuất thì dữ liệu trên màn hình được xoá khỏi bộ nhớ RAM, còn dữ liệu trên máy vẫn giữ để lần sau đăng nhập lại.
 
@@ -548,7 +548,6 @@ npm run test:e2e     # cần docker compose đang chạy
 ## 🚧 Giới hạn hiện tại
 
 - **Học phần, từ vựng và tiến độ chỉ lưu trên máy**, chưa đồng bộ với API `collections`, `vocabularies`, `quiz`, `sync` của backend. Đổi máy hoặc gỡ app thì mất dữ liệu học.
-- **Nối backend chưa nhớ phiên:** token chỉ giữ trong bộ nhớ, đóng app mở lại phải đăng nhập lại.
 - **Quên mật khẩu khi nối backend cần dịch vụ gửi thư thật** (`MAIL_PROVIDER=resend`); chế độ `console` không cho xem mã OTP.
 - **Tạo từ bằng AI cần backend.** Ở chế độ ngoại tuyến, màn này báo chưa kết nối máy chủ.
 - **Google / Facebook là đăng nhập giả lập** (mock). Muốn dùng thật cần cấu hình OAuth và đặt `SOCIAL_AUTH_MODE=real` ở backend.

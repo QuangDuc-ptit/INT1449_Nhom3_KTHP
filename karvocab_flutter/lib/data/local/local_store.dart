@@ -66,6 +66,8 @@ class StorageKeys {
 
   static const String accounts = 'auth.accounts';
   static const String session = 'auth.session';
+  /// Cặp access / refresh token của backend (chỉ có khi chạy với `API_BASE_URL`).
+  static const String tokens = 'auth.tokens';
   static const String collections = 'library.collections';
   static const String vocabularies = 'library.vocabularies';
   static const String dashboard = 'dashboard.state';

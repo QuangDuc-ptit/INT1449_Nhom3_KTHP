@@ -7,6 +7,7 @@ import 'package:http/testing.dart';
 import 'package:karvocab_flutter/core/constants/app_strings.dart';
 import 'package:karvocab_flutter/core/utils/validators.dart';
 import 'package:karvocab_flutter/core/widgets/app_text_field.dart';
+import 'package:karvocab_flutter/data/local/local_store.dart';
 import 'package:karvocab_flutter/data/remote/api_client.dart';
 import 'package:karvocab_flutter/data/remote/remote_ai_vocab_repository.dart';
 import 'package:karvocab_flutter/data/repositories/ai_vocab_repository.dart';
@@ -298,6 +299,91 @@ void main() {
             .having((e) => e.field, 'field', AuthErrorField.password)),
       );
       expect(api.refreshToken, 'refresh-1');
+    });
+  });
+
+  group('Nhớ phiên khi nối BE (Màn 01)', () {
+    test('Đăng nhập rồi mở lại app: nạp token đã lưu, gọi /auth/me, vào thẳng app', () async {
+      final storage = MemoryLocalStore();
+      final first = AuthRepository(
+        latency: Duration.zero,
+        storage: storage,
+        apiClient: ApiClient(baseUrl: 'http://be/api/v1', httpClient: MockClient((_) async => ok(authData))),
+      );
+      await first.login('learner@karvocab.com', 'Karvocab1');
+      expect(AuthTokens.fromJson(storage.readJson(StorageKeys.tokens))?.refreshToken, 'refresh-1');
+
+      final sent = <http.Request>[];
+      final reopenedApi = ApiClient(
+        baseUrl: 'http://be/api/v1',
+        httpClient: MockClient((r) async {
+          sent.add(r);
+          return ok(authData['user']);
+        }),
+      );
+      final reopened = AuthRepository(latency: Duration.zero, storage: storage, apiClient: reopenedApi);
+      expect(await reopened.restoreSession(), isTrue);
+      expect(reopened.currentUser?.fullName, 'Nguyễn Văn A');
+      expect(sent.single.url.path, '/api/v1/auth/me');
+      expect(sent.single.headers['Authorization'], 'Bearer access-1');
+    });
+
+    test('Access token hết hạn: tự làm mới, lưu cặp token mới', () async {
+      final storage = MemoryLocalStore()
+        ..writeJson(StorageKeys.session, {'email': 'learner@karvocab.com', 'demo': false})
+        ..writeJson(StorageKeys.tokens, {'accessToken': 'old', 'refreshToken': 'refresh-1'});
+      final api = ApiClient(
+        baseUrl: 'http://be/api/v1',
+        httpClient: MockClient((r) async {
+          if (r.url.path.endsWith('/auth/refresh')) return ok({'accessToken': 'new', 'refreshToken': 'refresh-2'});
+          if (r.headers['Authorization'] == 'Bearer new') return ok(authData['user']);
+          return fail(401, 'UNAUTHORIZED', 'Hết hạn');
+        }),
+      );
+      final auth = AuthRepository(latency: Duration.zero, storage: storage, apiClient: api);
+      expect(await auth.restoreSession(), isTrue);
+      expect(AuthTokens.fromJson(storage.readJson(StorageKeys.tokens))?.refreshToken, 'refresh-2');
+    });
+
+    test('Refresh token bị BE từ chối: xoá phiên, về màn đăng nhập', () async {
+      final storage = MemoryLocalStore()
+        ..writeJson(StorageKeys.session, {'email': 'learner@karvocab.com', 'demo': false})
+        ..writeJson(StorageKeys.tokens, {'accessToken': 'old', 'refreshToken': 'revoked'});
+      final api = ApiClient(
+        baseUrl: 'http://be/api/v1',
+        httpClient: MockClient((_) async => fail(401, 'UNAUTHORIZED', 'Phiên đã hết hạn')),
+      );
+      final auth = AuthRepository(latency: Duration.zero, storage: storage, apiClient: api);
+      expect(await auth.restoreSession(), isFalse);
+      expect(storage.read(StorageKeys.tokens), isNull);
+      expect(storage.read(StorageKeys.session), isNull);
+    });
+
+    test('Mất mạng lúc mở app: vẫn vào app bằng hồ sơ đã lưu, giữ token', () async {
+      final storage = MemoryLocalStore()
+        ..writeJson(StorageKeys.session, {'email': 'learner@karvocab.com', 'demo': false})
+        ..writeJson(StorageKeys.tokens, {'accessToken': 'a', 'refreshToken': 'r'});
+      final api = ApiClient(
+        baseUrl: 'http://be/api/v1',
+        httpClient: MockClient((_) async => throw http.ClientException('offline')),
+      );
+      final auth = AuthRepository(latency: Duration.zero, storage: storage, apiClient: api);
+      expect(await auth.restoreSession(), isTrue);
+      expect(api.hasSession, isTrue);
+      expect(storage.read(StorageKeys.tokens), isNotNull);
+    });
+
+    test('Đăng xuất: xoá token đã lưu', () async {
+      final storage = MemoryLocalStore();
+      final auth = AuthRepository(
+        latency: Duration.zero,
+        storage: storage,
+        apiClient: ApiClient(baseUrl: 'http://be/api/v1', httpClient: MockClient((_) async => ok(authData))),
+      );
+      await auth.login('learner@karvocab.com', 'Karvocab1');
+      auth.logout();
+      expect(storage.read(StorageKeys.tokens), isNull);
+      expect(await AuthRepository(latency: Duration.zero, storage: storage).restoreSession(), isFalse);
     });
   });
 }

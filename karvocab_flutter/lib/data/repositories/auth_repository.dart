@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -100,8 +101,9 @@ class _OtpTicket {
 ///
 /// Có [api] (chạy app với `--dart-define=API_BASE_URL=...`): đăng nhập, đăng ký, Google / Facebook
 /// và đăng xuất gọi backend (`/auth/login`, `/auth/register`, `/auth/social-login`, `/auth/logout`).
-/// Token chỉ giữ trong bộ nhớ. Không có [api]: chạy offline, tài khoản và phiên đăng nhập lưu
-/// trên máy qua [storage] (mở lại app vẫn còn đăng nhập).
+/// Cặp token lưu trên máy qua [storage]; mở lại app thì khôi phục phiên và kiểm tra bằng `/auth/me`.
+/// Không có [api]: chạy offline, tài khoản và phiên đăng nhập lưu trên máy qua [storage]
+/// (mở lại app vẫn còn đăng nhập).
 /// Quên mật khẩu (`/auth/forgot-password`, `/auth/reset-password`) và đổi mật khẩu
 /// (`PATCH /users/password`) cũng gọi backend khi có [api].
 /// Chế độ Dùng thử luôn chạy offline.
@@ -113,6 +115,7 @@ class AuthRepository extends ChangeNotifier {
     this._storage,
   })  : _random = random ?? Random(),
         _api = apiClient {
+    apiClient?.onTokensChanged = _saveTokens;
     _restoreAccounts();
     _seedAccounts();
   }
@@ -122,6 +125,9 @@ class AuthRepository extends ChangeNotifier {
   /// Tài khoản Demo để giảng viên đăng nhập thử (không kèm dữ liệu mẫu, bắt đầu trống).
   static const String demoEmail = 'learner@karvocab.com';
   static const String demoPassword = 'Karvocab1';
+
+  /// Thời gian chờ tối đa `/auth/me` lúc mở app; quá hạn thì vào app bằng hồ sơ đã lưu.
+  static const Duration sessionCheckTimeout = Duration(seconds: 5);
 
   /// Thời hạn hiệu lực của mã OTP.
   static const Duration otpLifetime = Duration(minutes: 5);
@@ -153,17 +159,50 @@ class AuthRepository extends ChangeNotifier {
   // ---------------------------------------------------------------------------
 
   /// Màn 01: kiểm tra phiên đã lưu. Trả về `true` nếu còn đăng nhập.
-  /// Bản offline nhớ phiên trên máy; bản nối BE chưa lưu token nên phải đăng nhập lại.
+  /// Nối BE: nạp lại cặp token đã lưu rồi gọi `/auth/me` (hết hạn access token thì
+  /// [ApiClient] tự làm mới). BE từ chối phiên → xoá phiên, về màn đăng nhập.
+  /// Mất mạng / BE không phản hồi → vẫn vào app bằng hồ sơ đã lưu trên máy.
   Future<bool> restoreSession() async {
     if (isLoggedIn) return true;
-    if (_api != null) return false;
     final session = _storage?.readJson(StorageKeys.session);
     if (session is! Map<String, dynamic>) return false;
     final email = session['email'];
     if (email is! String) return false;
     final account = _accounts[email];
     if (account == null) return false;
-    _startSession(_profileFor(email, account), demo: session['demo'] == true);
+    final demo = session['demo'] == true;
+    final api = _api;
+    if (api != null && !demo) {
+      final tokens = AuthTokens.fromJson(_storage?.readJson(StorageKeys.tokens));
+      if (tokens == null) {
+        _storage?.remove(StorageKeys.session);
+        return false;
+      }
+      api.setTokens(tokens);
+      try {
+        final user = await api.get('/auth/me').timeout(sessionCheckTimeout);
+        if (user is Map<String, dynamic>) {
+          final fullName = user['fullName'];
+          if (fullName is String && fullName.isNotEmpty) account.fullName = fullName;
+          final serverEmail = user['email'];
+          if (serverEmail is String && _normalize(serverEmail) != email) {
+            api.setTokens(null);
+            _storage?.remove(StorageKeys.session);
+            return false;
+          }
+        }
+      } on ApiException catch (e) {
+        if (e.statusCode == 401) {
+          api.setTokens(null);
+          _storage?.remove(StorageKeys.session);
+          return false;
+        }
+        // Lỗi mạng / lỗi server tạm thời: giữ phiên, các lời gọi sau sẽ thử lại.
+      } on TimeoutException {
+        // Mạng chậm: vào app trước, token vẫn giữ.
+      }
+    }
+    _startSession(_profileFor(email, account), demo: demo);
     return true;
   }
 
@@ -524,13 +563,24 @@ class AuthRepository extends ChangeNotifier {
     if (storage != null) {
       _saveAccounts();
       final user = _currentUser;
-      if (user == null || _api != null) {
+      if (user == null) {
         storage.remove(StorageKeys.session);
       } else {
         storage.writeJson(StorageKeys.session, {'email': _normalize(user.email), 'demo': _isDemo});
       }
     }
     super.notifyListeners();
+  }
+
+  /// Lưu / xoá cặp token mỗi khi [ApiClient] báo đổi (đăng nhập, làm mới, đăng xuất).
+  void _saveTokens(AuthTokens? tokens) {
+    final storage = _storage;
+    if (storage == null) return;
+    if (tokens == null) {
+      storage.remove(StorageKeys.tokens);
+    } else {
+      storage.writeJson(StorageKeys.tokens, tokens.toJson());
+    }
   }
 
   void _assignBirthDate(_Account account, DateTime birthDate) {

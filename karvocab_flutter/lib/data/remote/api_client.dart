@@ -38,12 +38,23 @@ class AuthTokens {
   final String accessToken;
   final String refreshToken;
   const AuthTokens(this.accessToken, this.refreshToken);
+
+  Map<String, String> toJson() => {'accessToken': accessToken, 'refreshToken': refreshToken};
+
+  /// Đọc lại cặp token đã lưu; dữ liệu thiếu / sai kiểu thì trả `null`.
+  static AuthTokens? fromJson(Object? json) {
+    if (json is! Map) return null;
+    final access = json['accessToken'];
+    final refresh = json['refreshToken'];
+    return access is String && refresh is String ? AuthTokens(access, refresh) : null;
+  }
 }
 
 /// Gọi REST API của backend: tự gắn `Authorization: Bearer`, bóc lớp `{ success, data }`,
 /// đổi lỗi thành [ApiException], hết hạn access token (401) thì làm mới một lần rồi gọi lại.
 ///
-/// Token chỉ giữ trong bộ nhớ: tải lại trang / mở lại app thì đăng nhập lại.
+/// Mỗi lần cặp token đổi (đăng nhập, làm mới, đăng xuất) gọi [onTokensChanged] để
+/// [AuthRepository] lưu xuống máy, nhờ đó mở lại app không phải đăng nhập lại.
 class ApiClient {
   ApiClient({required this.baseUrl, http.Client? httpClient, this.timeout = ApiConfig.requestTimeout})
       : _http = httpClient ?? http.Client();
@@ -58,15 +69,20 @@ class ApiClient {
   AuthTokens? _tokens;
   Future<bool>? _refreshing;
 
+  /// Được gọi mỗi khi cặp token đổi; `null` = phiên đã bị xoá.
+  void Function(AuthTokens? tokens)? onTokensChanged;
+
   bool get hasSession => _tokens != null;
 
-  void setTokens(AuthTokens? tokens) => _tokens = tokens;
+  void setTokens(AuthTokens? tokens) {
+    _tokens = tokens;
+    onTokensChanged?.call(tokens);
+  }
 
   /// Đọc `accessToken` / `refreshToken` trong `data` của các API xác thực và lưu lại.
   void saveTokensFrom(Map<String, dynamic> data) {
-    final access = data['accessToken'];
-    final refresh = data['refreshToken'];
-    if (access is String && refresh is String) _tokens = AuthTokens(access, refresh);
+    final tokens = AuthTokens.fromJson(data);
+    if (tokens != null) setTokens(tokens);
   }
 
   String? get refreshToken => _tokens?.refreshToken;
@@ -119,8 +135,9 @@ class ApiClient {
           return true;
         }
         return false;
-      } on ApiException {
-        _tokens = null;
+      } on ApiException catch (e) {
+        // Chỉ bỏ phiên khi BE từ chối refresh token; mất mạng / quá giờ thì giữ để thử lại sau.
+        if (e.statusCode != 0) setTokens(null);
         return false;
       } finally {
         _refreshing = null;
