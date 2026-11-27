@@ -11,9 +11,9 @@ App chạy được ở hai chế độ:
 | Chế độ | Cách chạy | Đăng nhập / mật khẩu | Tạo từ bằng AI | Học phần, từ vựng, tiến độ |
 | --- | --- | --- | --- | --- |
 | **Ngoại tuyến** (mặc định) | `flutter run` | Lưu trên máy (mật khẩu băm SHA-256 + muối) | Không dùng được | Lưu trên máy |
-| **Nối backend** | `flutter run --dart-define=API_BASE_URL=...` | Gọi backend (JWT) | Gọi backend (Gemini hoặc mock) | Vẫn lưu trên máy |
+| **Nối backend** | `flutter run --dart-define=API_BASE_URL=...` | Gọi backend (JWT) | Gọi backend (Gemini, OpenAI-compatible/OpenRouter hoặc mock) | Lưu trên máy **và** đồng bộ lên backend |
 
-> Ở cả hai chế độ, học phần, từ vựng và tiến độ học đều lưu trên máy (`shared_preferences`), tách riêng theo từng tài khoản. Backend đã có API cho phần này nhưng app chưa đồng bộ lên (xem [Giới hạn hiện tại](#-giới-hạn-hiện-tại)).
+> Ở cả hai chế độ, học phần, từ vựng và tiến độ học đều lưu trên máy (`shared_preferences`), tách riêng theo từng tài khoản. Khi nối backend và đã đăng nhập, app còn đồng bộ học phần, từ vựng và kết quả luyện tập lên server: mở app thì tải dữ liệu từ backend về, mỗi lần thêm / sửa / xoá thì gửi lên ngay (xem [Đồng bộ với backend](#9-đồng-bộ-với-backend)).
 
 ---
 
@@ -204,7 +204,7 @@ flowchart LR
     D --> E[Lưu hàng loạt vào học phần] --> F[Danh sách từ của học phần]
 ```
 
-Backend chọn nhà cung cấp AI theo biến `AI_PROVIDER`: `mock` (mặc định, chạy không cần key) hoặc `gemini`.
+Backend chọn nhà cung cấp AI theo biến `AI_PROVIDER`: `mock` (mặc định, chạy không cần key), `gemini` hoặc `openai` (API tương thích OpenAI, ví dụ OpenRouter).
 
 ### 8. Dữ liệu lưu trên máy
 
@@ -212,6 +212,7 @@ Backend chọn nhà cung cấp AI theo biến `AI_PROVIDER`: `mock` (mặc đị
 | --- | --- | --- |
 | `auth.accounts` | Danh sách tài khoản (họ tên, mật khẩu băm + muối, ngày sinh, mã ID, mục tiêu, giờ nhắc) | — |
 | `auth.session` | Tài khoản đang đăng nhập | — |
+| `auth.tokens` | Cặp access / refresh token của backend (chỉ khi nối backend) | — |
 | `library.collections@<email>` | Học phần | ✓ |
 | `library.vocabularies@<email>` | Từ vựng | ✓ |
 | `dashboard.state@<email>` | Tiến độ SM-2 từng từ, streak, lịch sử 7 ngày, mục tiêu | ✓ |
@@ -219,6 +220,21 @@ Backend chọn nhà cung cấp AI theo biến `AI_PROVIDER`: `mock` (mặc đị
 | `quiz.settings` | Thời gian mỗi câu, âm lượng | — |
 
 Trên web, các khoá này nằm trong localStorage với tiền tố `flutter.`. Dữ liệu hỏng (bị sửa tay, đổi định dạng) được coi như chưa có, nên app không bị crash.
+
+### 9. Đồng bộ với backend
+
+Chỉ chạy khi có `API_BASE_URL` và người dùng đã đăng nhập qua backend. Dữ liệu trên máy vẫn là bản dùng trực tiếp; backend là bản lưu trên server.
+
+| Lúc nào | App làm gì | API |
+| --- | --- | --- |
+| Mở app | Khôi phục token đã lưu, kiểm tra phiên | `GET /auth/me` (quá 5 giây thì vào app bằng hồ sơ đã lưu) |
+| Mở Thư viện | Tải toàn bộ học phần và từ vựng về, ghi đè bản trên máy | `GET /collections?page=…`, `GET /collections/:id/words` |
+| Thêm / sửa / xoá học phần | Lưu trên máy trước, rồi gửi lên | `POST /collections`, `PATCH` / `DELETE /collections/:id` |
+| Thêm / sửa / xoá từ, lưu từ AI | Lưu trên máy trước, rồi gửi lên | `POST /collections/:id/words`, `POST /vocabularies/batch-save`, `PUT` / `DELETE /vocabularies/:id` |
+| Kết thúc một phiên luyện tập | Gửi đáp án để backend tính SM-2 và streak | `POST /practice/submit-session` |
+| Mở Trang chủ | Lấy streak, mục tiêu ngày từ backend | `GET /home/dashboard` |
+
+Các lần gửi lên được xếp hàng chạy lần lượt (`CollectionStore._enqueueSync`). Mất mạng khi tải mà máy đã có dữ liệu thì app vẫn dùng bản trên máy.
 
 ---
 
@@ -232,7 +248,7 @@ Trên web, các khoá này nằm trong localStorage với tiền tố `flutter.`
 | Âm thanh | `flutter_tts` (đọc từ), `audioplayers` (hiệu ứng), `speech_to_text` (luyện phát âm) |
 | Mạng / bảo mật | `http`, `crypto` (băm mật khẩu ở chế độ ngoại tuyến) |
 | Backend | NestJS 11, TypeScript, Prisma 6, PostgreSQL 15, Redis 7, BullMQ, Swagger |
-| AI | Google Gemini (`@google/genai`) qua backend; mặc định chạy mock |
+| AI | Google Gemini (`@google/genai`) hoặc API tương thích OpenAI (OpenRouter) qua backend; mặc định chạy mock |
 | CI | GitHub Actions (`.github/workflows/backend-ci.yml`) cho backend |
 
 ---
@@ -302,7 +318,13 @@ presentation  ──►  data  ──►  core
 - **`TrackSync`:** cầu nối giữa phần của FE1 (tài khoản, thư viện) và FE2 (trang chủ, luyện tập): chuyển dữ liệu theo tài khoản, đồng bộ mục tiêu ngày và streak.
 - **`ApiClient`:** chỉ được tạo khi có `API_BASE_URL`; tự gắn access token và gọi `/auth/refresh` khi token hết hạn.
 
-App hiện gọi các API: `/auth/login`, `/auth/register`, `/auth/social-login`, `/auth/refresh`, `/auth/logout`, `/auth/forgot-password`, `/auth/reset-password`, `/users/password`, `/ai/generate-vocab`.
+- **Đồng bộ backend:** `CollectionStore` (học phần, từ vựng) và `DashboardStore` (kết quả luyện tập, streak, mục tiêu) gọi API khi có phiên đăng nhập backend; xem [Đồng bộ với backend](#9-đồng-bộ-với-backend).
+
+App hiện gọi các API:
+- **Tài khoản:** `/auth/login`, `/auth/register`, `/auth/social-login`, `/auth/refresh`, `/auth/logout`, `/auth/me`, `/auth/forgot-password`, `/auth/reset-password`, `/users/password`.
+- **Thư viện:** `/collections`, `/collections/:id`, `/collections/:id/words`, `/vocabularies/:id`, `/vocabularies/batch-save`.
+- **Luyện tập / Trang chủ:** `/practice/submit-session`, `/home/dashboard`.
+- **AI:** `/ai/generate-vocab`.
 
 ---
 
@@ -513,7 +535,7 @@ Chi tiết biến môi trường, kiểm thử e2e, Docker image và vận hành
 ```bash
 cd karvocab_flutter
 flutter analyze      # 0 lỗi, 0 cảnh báo (chỉ còn thông báo "deprecated" từ SDK)
-flutter test         # 231 test, tất cả đạt
+flutter test         # 238 test, tất cả đạt
 flutter test test/account_data_isolation_test.dart   # chạy riêng một file
 ```
 
@@ -547,7 +569,9 @@ npm run test:e2e     # cần docker compose đang chạy
 
 ## 🚧 Giới hạn hiện tại
 
-- **Học phần, từ vựng và tiến độ chỉ lưu trên máy**, chưa đồng bộ với API `collections`, `vocabularies`, `quiz`, `sync` của backend. Đổi máy hoặc gỡ app thì mất dữ liệu học.
+- **Chế độ ngoại tuyến chỉ lưu trên máy:** không nối backend thì đổi máy hoặc gỡ app sẽ mất dữ liệu học. Khi nối backend, dữ liệu được đồng bộ lên server và tải lại được trên máy khác.
+- **Đồng bộ chưa có hàng đợi thử lại:** nếu một lần gửi lên backend thất bại (mất mạng, server lỗi), thay đổi vẫn giữ trên máy nhưng không được gửi lại và app không báo cho người dùng. Lần mở Thư viện tiếp theo khi có mạng sẽ tải bản của backend về.
+- **Kết quả luyện tập chỉ được ghi khi hết phiên:** thoát giữa chừng thì các câu đã trả lời trong phiên đó không được tính.
 - **Quên mật khẩu khi nối backend cần dịch vụ gửi thư thật** (`MAIL_PROVIDER=resend`); chế độ `console` không cho xem mã OTP.
 - **Tạo từ bằng AI cần backend.** Ở chế độ ngoại tuyến, màn này báo chưa kết nối máy chủ.
 - **Google / Facebook là đăng nhập giả lập** (mock). Muốn dùng thật cần cấu hình OAuth và đặt `SOCIAL_AUTH_MODE=real` ở backend.
