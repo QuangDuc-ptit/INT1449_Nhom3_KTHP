@@ -5,6 +5,18 @@ const bool = z
   .default('false')
   .transform((v) => v === 'true');
 
+/** Danh sách model cách nhau bởi dấu phẩy -> mảng (bỏ phần tử rỗng). */
+const modelList = (fallback: string) =>
+  z
+    .string()
+    .default(fallback)
+    .transform((v) =>
+      v
+        .split(',')
+        .map((m) => m.trim())
+        .filter(Boolean),
+    );
+
 export const envSchema = z
   .object({
     NODE_ENV: z
@@ -24,10 +36,13 @@ export const envSchema = z
     CORS_ORIGINS: z.string().default(''),
     AI_PROVIDER: z.enum(['mock', 'gemini', 'openai']).default('mock'),
     GEMINI_API_KEY: z.string().default(''),
-    GEMINI_MODEL: z.string().default('gemini-2.0-flash'),
+    GEMINI_MODEL: z.string().default('gemini-flash-latest'),
+    // Model dự phòng khi model chính quá tải, cách nhau bởi dấu phẩy (đặt rỗng = không fallback)
+    GEMINI_FALLBACK_MODELS: modelList('gemini-flash-lite-latest'),
     OPENAI_API_KEY: z.string().default(''),
     OPENAI_BASE_URL: z.string().default('https://openrouter.ai/api/v1'),
     OPENAI_MODEL: z.string().default('openrouter/free'),
+    OPENAI_FALLBACK_MODELS: modelList(''),
     TTS_PROVIDER: z.enum(['mock', 'google']).default('mock'),
     STORAGE_PROVIDER: z.enum(['local', 's3']).default('local'),
     PUBLIC_BASE_URL: z.string().default('http://localhost:3100'),

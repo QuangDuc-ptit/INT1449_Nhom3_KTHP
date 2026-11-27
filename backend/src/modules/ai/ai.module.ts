@@ -26,6 +26,7 @@ import { OpenAiCompatVocabProvider } from './openai-compat-vocab.provider';
               apiKey: config.get('GEMINI_API_KEY', { infer: true }),
             }),
             config.get('GEMINI_MODEL', { infer: true }),
+            config.get('GEMINI_FALLBACK_MODELS', { infer: true }),
           );
         }
         if (provider === 'openai') {
@@ -33,6 +34,9 @@ import { OpenAiCompatVocabProvider } from './openai-compat-vocab.provider';
             apiKey: config.get('OPENAI_API_KEY', { infer: true }),
             baseUrl: config.get('OPENAI_BASE_URL', { infer: true }),
             model: config.get('OPENAI_MODEL', { infer: true }),
+            fallbackModels: config.get('OPENAI_FALLBACK_MODELS', {
+              infer: true,
+            }),
           });
         }
         return new MockAiVocabProvider();

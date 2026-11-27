@@ -68,4 +68,18 @@ describe('env.schema', () => {
       }),
     ).not.toThrow();
   });
+
+  it('tách danh sách model dự phòng theo dấu phẩy, bỏ phần tử rỗng', () => {
+    const env = validateEnv({
+      ...base,
+      GEMINI_FALLBACK_MODELS: ' a , ,b ',
+      OPENAI_FALLBACK_MODELS: 'x/free,y/free',
+    });
+    expect(env.GEMINI_FALLBACK_MODELS).toEqual(['a', 'b']);
+    expect(env.OPENAI_FALLBACK_MODELS).toEqual(['x/free', 'y/free']);
+    expect(validateEnv(base).OPENAI_FALLBACK_MODELS).toEqual([]);
+    expect(validateEnv(base).GEMINI_FALLBACK_MODELS).toEqual([
+      'gemini-flash-lite-latest',
+    ]);
+  });
 });
