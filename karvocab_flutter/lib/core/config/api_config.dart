@@ -19,6 +19,10 @@ class ApiConfig {
   /// BE bắt buộc `cefrLevel` khi sinh từ bằng AI; app không cho chọn nên gửi mức mặc định.
   static const String defaultAiCefrLevel = 'B1';
 
-  /// Thời gian chờ tối đa cho một request thường (AI có timeout riêng 15 giây ở BE).
+  /// Thời gian chờ tối đa cho một request thường.
   static const Duration requestTimeout = Duration(seconds: 20);
+
+  /// Riêng request sinh từ bằng AI: BE chờ model tối đa 45 giây (AI_TIMEOUT_MS trong
+  /// `ai.service.ts`) rồi trả AI_TIMEOUT, nên app phải chờ lâu hơn mốc đó một chút.
+  static const Duration aiRequestTimeout = Duration(seconds: 50);
 }

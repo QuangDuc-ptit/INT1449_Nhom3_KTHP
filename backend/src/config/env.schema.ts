@@ -24,7 +24,7 @@ export const envSchema = z
     CORS_ORIGINS: z.string().default(''),
     AI_PROVIDER: z.enum(['mock', 'gemini', 'openai']).default('mock'),
     GEMINI_API_KEY: z.string().default(''),
-    GEMINI_MODEL: z.string().default('gemini-3.8-flash'),
+    GEMINI_MODEL: z.string().default('gemini-2.0-flash'),
     OPENAI_API_KEY: z.string().default(''),
     OPENAI_BASE_URL: z.string().default('https://openrouter.ai/api/v1'),
     OPENAI_MODEL: z.string().default('openrouter/free'),
