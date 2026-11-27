@@ -4,9 +4,10 @@ describe('OpenAiCompatVocabProvider', () => {
   it('gửi request đúng chuẩn OpenAI Chat Completions và bóc tách JSON', async () => {
     const fetchMock = jest.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({
-        choices: [{ message: { content: '```json\n{"words":[]}\n```' } }],
-      }),
+      json: () =>
+        Promise.resolve({
+          choices: [{ message: { content: '```json\n{"words":[]}\n```' } }],
+        }),
     });
 
     const provider = new OpenAiCompatVocabProvider(
@@ -15,7 +16,7 @@ describe('OpenAiCompatVocabProvider', () => {
         baseUrl: 'https://api.xkiro.com/v1/',
         model: 'openai/gpt-5.6-sol',
       },
-      fetchMock as unknown as typeof fetch,
+      fetchMock,
     );
     const controller = new AbortController();
 
@@ -50,13 +51,14 @@ describe('OpenAiCompatVocabProvider', () => {
       .mockResolvedValueOnce({
         ok: false,
         status: 400,
-        text: async () => 'response_format is not supported',
+        text: () => Promise.resolve('response_format is not supported'),
       })
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({
-          choices: [{ message: { content: '{"words":[]}' } }],
-        }),
+        json: () =>
+          Promise.resolve({
+            choices: [{ message: { content: '{"words":[]}' } }],
+          }),
       });
 
     const provider = new OpenAiCompatVocabProvider(
@@ -65,7 +67,7 @@ describe('OpenAiCompatVocabProvider', () => {
         baseUrl: 'https://openrouter.ai/api/v1',
         model: 'openrouter/free',
       },
-      fetchMock as unknown as typeof fetch,
+      fetchMock,
     );
 
     const out = await provider.generate(
@@ -85,7 +87,7 @@ describe('OpenAiCompatVocabProvider', () => {
     const fetchMock = jest.fn().mockResolvedValue({
       ok: false,
       status: 401,
-      text: async () => 'Unauthorized',
+      text: () => Promise.resolve('Unauthorized'),
     });
     const provider = new OpenAiCompatVocabProvider(
       {
@@ -93,7 +95,7 @@ describe('OpenAiCompatVocabProvider', () => {
         baseUrl: 'https://api.xkiro.com/v1',
         model: 'openai/gpt-5.6-sol',
       },
-      fetchMock as unknown as typeof fetch,
+      fetchMock,
     );
 
     await expect(
@@ -104,4 +106,3 @@ describe('OpenAiCompatVocabProvider', () => {
     ).rejects.toThrow(/401/);
   });
 });
-

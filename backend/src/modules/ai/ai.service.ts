@@ -30,7 +30,7 @@ const badResponse = () =>
     'AI trả về dữ liệu không hợp lệ, vui lòng thử lại',
   );
 
-class AiTimeoutError extends Error { }
+class AiTimeoutError extends Error {}
 
 const str = (v: unknown, max: number): string | null =>
   typeof v === 'string' && v.trim() && v.trim().length <= max ? v.trim() : null;
@@ -73,7 +73,7 @@ export class AiService {
     private readonly provider: AiVocabProvider,
     private readonly collections: CollectionsService,
     private readonly prisma: PrismaService,
-  ) { }
+  ) {}
 
   async generate(
     userId: string,

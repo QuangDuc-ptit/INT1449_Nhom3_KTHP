@@ -57,9 +57,9 @@ describe('env.schema', () => {
   });
 
   it('yêu cầu OPENAI_API_KEY khi AI_PROVIDER=openai', () => {
-    expect(() =>
-      validateEnv({ ...base, AI_PROVIDER: 'openai' }),
-    ).toThrow(/OPENAI_API_KEY/);
+    expect(() => validateEnv({ ...base, AI_PROVIDER: 'openai' })).toThrow(
+      /OPENAI_API_KEY/,
+    );
     expect(() =>
       validateEnv({
         ...base,
